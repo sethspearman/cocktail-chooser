@@ -13,11 +13,11 @@ public class CocktailChooserRepository
         _connectionString = connectionString;
     }
 
-    public async Task<IEnumerable<MyModel>> GetAllAsync()
+    public async Task<IEnumerable<CocktailChooserRepository>> GetAllAsync()
     {
         using (IDbConnection db = new SqliteConnection(_connectionString))
         {
-            return await db.QueryAsync<MyModel>("SELECT * FROM MyTable");
+            return await db.QueryAsync<CocktailChooserRepository>("SELECT * FROM MyTable");
         }
     }
 }
