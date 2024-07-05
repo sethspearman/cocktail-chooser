@@ -6,8 +6,8 @@
     
 
         INSERT INTO Cocktails (Name, Description, Method, GlassTypeId, TimePeriodId, IsPopular, CocktailSourceID) 
-        SELECT 'BEE'S KNEES', 'Sweet and Citrusy', 'Combine all ingredients in a shaker with ice. Shake well. Strain into a chilled coupe glass.', 8, 4, 0, 1
-        WHERE NOT EXISTS (SELECT 1 FROM Cocktails WHERE Name = 'BEE'S KNEES');
+        SELECT 'BEE''S KNEES', 'Sweet and Citrusy', 'Combine all ingredients in a shaker with ice. Shake well. Strain into a chilled coupe glass.', 8, 4, 0, 1
+        WHERE NOT EXISTS (SELECT 1 FROM Cocktails WHERE Name = 'BEE''S KNEES');
         
 
             INSERT INTO Ingredients (Name, IngredientTypeId, MixerSubtypeId, LongDescription) 
@@ -20,11 +20,11 @@
             WHERE NOT EXISTS (SELECT 1 FROM Amounts WHERE MeasurementName = '2 fl oz');
             
 
-            WITH LastCocktail AS (SELECT Id AS CocktailId FROM Cocktails WHERE Name = 'BEE'S KNEES')
+            WITH LastCocktail AS (SELECT Id AS CocktailId FROM Cocktails WHERE Name = 'BEE''S KNEES')
             INSERT INTO CocktailIngredients (CocktailId, IngredientId, AmountId)
             SELECT CocktailId, (SELECT Id FROM Ingredients WHERE Name = 'Gin'), (SELECT Id FROM Amounts WHERE MeasurementName = '2 fl oz')
             FROM LastCocktail
-            WHERE NOT EXISTS (SELECT 1 FROM CocktailIngredients WHERE CocktailId = (SELECT Id FROM Cocktails WHERE Name = 'BEE'S KNEES') AND IngredientId = (SELECT Id FROM Ingredients WHERE Name = 'Gin') AND AmountId = (SELECT Id FROM Amounts WHERE MeasurementName = '2 fl oz'));
+            WHERE NOT EXISTS (SELECT 1 FROM CocktailIngredients WHERE CocktailId = (SELECT Id FROM Cocktails WHERE Name = 'BEE''S KNEES') AND IngredientId = (SELECT Id FROM Ingredients WHERE Name = 'Gin') AND AmountId = (SELECT Id FROM Amounts WHERE MeasurementName = '2 fl oz'));
             
 
             INSERT INTO Ingredients (Name, IngredientTypeId, MixerSubtypeId, LongDescription) 
@@ -37,11 +37,11 @@
             WHERE NOT EXISTS (SELECT 1 FROM Amounts WHERE MeasurementName = '0.75 fl oz');
             
 
-            WITH LastCocktail AS (SELECT Id AS CocktailId FROM Cocktails WHERE Name = 'BEE'S KNEES')
+            WITH LastCocktail AS (SELECT Id AS CocktailId FROM Cocktails WHERE Name = 'BEE''S KNEES')
             INSERT INTO CocktailIngredients (CocktailId, IngredientId, AmountId)
             SELECT CocktailId, (SELECT Id FROM Ingredients WHERE Name = 'Honey-flavored syrup'), (SELECT Id FROM Amounts WHERE MeasurementName = '0.75 fl oz')
             FROM LastCocktail
-            WHERE NOT EXISTS (SELECT 1 FROM CocktailIngredients WHERE CocktailId = (SELECT Id FROM Cocktails WHERE Name = 'BEE'S KNEES') AND IngredientId = (SELECT Id FROM Ingredients WHERE Name = 'Honey-flavored syrup') AND AmountId = (SELECT Id FROM Amounts WHERE MeasurementName = '0.75 fl oz'));
+            WHERE NOT EXISTS (SELECT 1 FROM CocktailIngredients WHERE CocktailId = (SELECT Id FROM Cocktails WHERE Name = 'BEE''S KNEES') AND IngredientId = (SELECT Id FROM Ingredients WHERE Name = 'Honey-flavored syrup') AND AmountId = (SELECT Id FROM Amounts WHERE MeasurementName = '0.75 fl oz'));
             
 
             INSERT INTO Ingredients (Name, IngredientTypeId, MixerSubtypeId, LongDescription) 
@@ -54,11 +54,11 @@
             WHERE NOT EXISTS (SELECT 1 FROM Amounts WHERE MeasurementName = '0.75 fl oz');
             
 
-            WITH LastCocktail AS (SELECT Id AS CocktailId FROM Cocktails WHERE Name = 'BEE'S KNEES')
+            WITH LastCocktail AS (SELECT Id AS CocktailId FROM Cocktails WHERE Name = 'BEE''S KNEES')
             INSERT INTO CocktailIngredients (CocktailId, IngredientId, AmountId)
             SELECT CocktailId, (SELECT Id FROM Ingredients WHERE Name = 'Freshly-squeezed lemon juice'), (SELECT Id FROM Amounts WHERE MeasurementName = '0.75 fl oz')
             FROM LastCocktail
-            WHERE NOT EXISTS (SELECT 1 FROM CocktailIngredients WHERE CocktailId = (SELECT Id FROM Cocktails WHERE Name = 'BEE'S KNEES') AND IngredientId = (SELECT Id FROM Ingredients WHERE Name = 'Freshly-squeezed lemon juice') AND AmountId = (SELECT Id FROM Amounts WHERE MeasurementName = '0.75 fl oz'));
+            WHERE NOT EXISTS (SELECT 1 FROM CocktailIngredients WHERE CocktailId = (SELECT Id FROM Cocktails WHERE Name = 'BEE''S KNEES') AND IngredientId = (SELECT Id FROM Ingredients WHERE Name = 'Freshly-squeezed lemon juice') AND AmountId = (SELECT Id FROM Amounts WHERE MeasurementName = '0.75 fl oz'));
             
 
         INSERT INTO Cocktails (Name, Description, Method, GlassTypeId, TimePeriodId, IsPopular, CocktailSourceID) 
