@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Notes\NOTES.txt = Notes\NOTES.txt
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CocktailChooser.Repository", "CocktailChooser.Repository\CocktailChooser.Repository.csproj", "{B1595F08-ED02-463F-A9E1-4A74177A98B0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{D5DD7B3A-64AB-4347-A2B7-95865051D004}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5DD7B3A-64AB-4347-A2B7-95865051D004}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5DD7B3A-64AB-4347-A2B7-95865051D004}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1595F08-ED02-463F-A9E1-4A74177A98B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1595F08-ED02-463F-A9E1-4A74177A98B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1595F08-ED02-463F-A9E1-4A74177A98B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1595F08-ED02-463F-A9E1-4A74177A98B0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
