@@ -14,6 +14,41 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CocktailChooser.Repository", "CocktailChooser.Repository\CocktailChooser.Repository.csproj", "{B1595F08-ED02-463F-A9E1-4A74177A98B0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cocktailchooser-frontend", "cocktailchooser-frontend", "{8B3F5987-BD9E-4B0E-AD8A-61F6291F0647}"
+	ProjectSection(SolutionItems) = preProject
+		cocktailchooser-frontend\.gitignore = cocktailchooser-frontend\.gitignore
+		cocktailchooser-frontend\babel.config.js = cocktailchooser-frontend\babel.config.js
+		cocktailchooser-frontend\jsconfig.json = cocktailchooser-frontend\jsconfig.json
+		cocktailchooser-frontend\package-lock.json = cocktailchooser-frontend\package-lock.json
+		cocktailchooser-frontend\package.json = cocktailchooser-frontend\package.json
+		cocktailchooser-frontend\README.md = cocktailchooser-frontend\README.md
+		cocktailchooser-frontend\vue.config.js = cocktailchooser-frontend\vue.config.js
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{13EBA443-F2BB-432C-81C4-465F2EFBF2F4}"
+	ProjectSection(SolutionItems) = preProject
+		cocktailchooser-frontend\src\App.vue = cocktailchooser-frontend\src\App.vue
+		cocktailchooser-frontend\src\main.js = cocktailchooser-frontend\src\main.js
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "public", "public", "{4E717494-0DA2-454F-BACE-5A98E06829F2}"
+	ProjectSection(SolutionItems) = preProject
+		cocktailchooser-frontend\public\favicon.ico = cocktailchooser-frontend\public\favicon.ico
+		cocktailchooser-frontend\public\index.html = cocktailchooser-frontend\public\index.html
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{779C0A97-3249-4547-840C-724F373BE807}"
+	ProjectSection(SolutionItems) = preProject
+		cocktailchooser-frontend\src\assets\logo.png = cocktailchooser-frontend\src\assets\logo.png
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", "{03EF9F57-8F41-41E0-A326-2E5841089FC0}"
+	ProjectSection(SolutionItems) = preProject
+		cocktailchooser-frontend\src\components\HelloWorld.vue = cocktailchooser-frontend\src\components\HelloWorld.vue
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CocktailChooser.Maui", "CocktailChooser.Maui\CocktailChooser.Maui.csproj", "{B051BA4E-93F5-418E-AE7A-A81C99D92E18}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,9 +67,21 @@ Global
 		{B1595F08-ED02-463F-A9E1-4A74177A98B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1595F08-ED02-463F-A9E1-4A74177A98B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1595F08-ED02-463F-A9E1-4A74177A98B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{13EBA443-F2BB-432C-81C4-465F2EFBF2F4} = {8B3F5987-BD9E-4B0E-AD8A-61F6291F0647}
+		{4E717494-0DA2-454F-BACE-5A98E06829F2} = {8B3F5987-BD9E-4B0E-AD8A-61F6291F0647}
+		{779C0A97-3249-4547-840C-724F373BE807} = {13EBA443-F2BB-432C-81C4-465F2EFBF2F4}
+		{03EF9F57-8F41-41E0-A326-2E5841089FC0} = {13EBA443-F2BB-432C-81C4-465F2EFBF2F4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4C2C44D9-4429-412B-81CE-637655DFF232}
