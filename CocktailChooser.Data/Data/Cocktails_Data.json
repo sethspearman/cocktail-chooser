@@ -1,0 +1,2592 @@
+{
+    "20TH CENTURY": {
+        "Description": "Creamy and Citrusy",
+        "Method": "Combine all ingredients in a shaker with ice. Shake. Strain into a chilled coupe glass. Garnish with a lemon zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Lillet Blanc",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "White Creme de Cacao",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "ALGONQUIN": {
+        "Description": "Dry and Aromatic",
+        "Method": "Combine all ingredients in a shaker with ice. Shake. Strain into a coupe glass. Garnish with a speared pineapple wedge and cherry.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Vintage",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Pineapple juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Rye whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Dry vermouth",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "ARCHIBALD\u00e2\u20ac\u2122S LAST MEMORY": {
+        "Description": "Bitter and Herbal",
+        "Method": "Combine all ingredients in a mixing glass with ice. Stir. Strain into a chilled old-fashioned glass. Garnish with an orange zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Benedictine D.O.M",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Maraschino liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Rye whisky",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Fernet Branca",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "ARMY AND NAVY": {
+        "Description": "Citrusy and Dry",
+        "Method": "Combine ingredients in a cocktail shaker with ice. Shake well. Strain into a chilled martini glass. Garnish with a lemon zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Almond-flavored syrup",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "AVIATION": {
+        "Description": "Tart and Floral",
+        "Method": "Combine ingredients in a cocktail shaker with ice. Shake well. Strain into a chilled coupe glass.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Maraschino liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Maraschino liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Cr\u00c3\u00a8me de Violette",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Cr\u00c3\u00a8me de violette",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BEE STING": {
+        "Description": "Spicy and Refreshing",
+        "Method": "Combine whiskey and honey in the base of a shaker. Stir until honey dissolves. Add tequila, apple juice, and ice. Shake. Strain into an ice-filled collins glass.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Rye whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 bar spoon",
+                "Ingredient": "Runny honey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Tequila",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Apple juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Ginger ale",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BEE'S KNEES": {
+        "Description": "Sweet and Citrusy",
+        "Method": "Combine all ingredients in a shaker with ice. Shake well. Strain into a chilled coupe glass.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Honey-flavored syrup",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BEELZEBUB": {
+        "Description": "Bitter and Sweet",
+        "Method": "Combine ingredients in a cocktail shaker with ice. Shake. Strain into a chilled coupe glass. Garnish with grated nutmeg.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Mezcal",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Amaro Lucano liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Orgeat",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BIJOU": {
+        "Description": "Complex and Spirit-Forward",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into a chilled coupe glass. Garnish with a lemon twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Green Chartreuse",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Orange bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Sweet Vermouth",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BLACK SPRING": {
+        "Description": "Spicy and Complex",
+        "Method": "Combine first three ingredients in a mixing glass with ice. Stir. Strain into an ice-filled collins glass. Garnish with three speared cherries.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Aromatized wine",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Amaro liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Ginger beer",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BLINKER": {
+        "Description": "Fruity and Refreshing",
+        "Method": "Combine ingredients in a shaker with ice. Shake well. Strain into a chilled coupe glass. Garnish with a lemon zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 bar spoon",
+                "Ingredient": "Grenadine",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Grapefruit juice",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BOSTON SOUR": {
+        "Description": "Sweet and Smooth",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain back into the shaker and discard ice. Dry shake. Strain into a chilled coupe glass. Garnish with a lemon zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1",
+                "Ingredient": "Pasteurized egg white",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BOULEVARDIER": {
+        "Description": "Bitter and Spirit-forward",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into a chilled old-fashioned glass. Garnish with an orange zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Campari",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BOURBON ALEXANDER": {
+        "Description": "Sweet and Decadent",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain into a chilled coupe glass. Garnish with grated nutmeg.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Cherry liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Cream or half and half",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Cr\u00c3\u00a8me de Cacao",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BOURBON CIDER": {
+        "Description": "Sweet and Fruity",
+        "Method": "Combine first three ingredients in a mixing glass with ice. Stir. Strain into an old-fashioned glass. Top with cider. Garnish with a cherry.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2.25",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Dry, hard cider",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BOURBON LIFT": {
+        "Description": "Sweet and Creamy",
+        "Method": "Combine first four ingredients into a cocktail shaker with ice. Shake well. Fine strain into a Collins glass. Top with club soda.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Vintage",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Orgeat",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Club soda",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Heavy cream",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Coffee liqueur",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BOURBON SMASH": {
+        "Description": "Fruity and Refreshing",
+        "Method": "Muddle raspberries in the base of a shaker. Add remaining ingredients to the shaker with ice. Shake. Strain into an ice-filled collins glass. Garnish with a lime wheel.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Freshly-squeezed lime juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2.25",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "12",
+                "Ingredient": "Fresh raspberries",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "4",
+                "Ingredient": "Mint leaves",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "3 fl oz",
+                "Ingredient": "Cranberry juice",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BRAMBLE": {
+        "Description": "Fruity and Citrus",
+        "Method": "Combine gin, lemon juice, and simple syrup in a shaker with ice. Shake well. Strain into an old-fashioned glass with crushed ice. Float cr\u00c3\u00a8me de mure on top of the ice. Garnish with a lemon half-wheel and a fresh blackberry.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Vintage",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Cr\u00c3\u00a8me de mure",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BROOKLYN": {
+        "Description": "Herbal and Complex",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into a chilled coupe glass.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Maraschino liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Amaro",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "BROWN DERBY": {
+        "Description": "Unknown",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Fine strain into a chilled coupe glass. Garnish with a grapefruit zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Grapefruit juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Honey syrup",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "CASINO": {
+        "Description": "Dry and Spirit-forward",
+        "Method": "Combine all ingredients in a shaker with ice. Shake well. Strain into a chilled martini or coupe glass. Garnish with a cherry.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Vintage",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Maraschino liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "CLOVER CLUB": {
+        "Description": "Sweet and Fruity",
+        "Method": "Muddle raspberries with simple syrup in the base of a shaker. Combine remaining ingredients in the shaker with ice. Shake well. Strain into a chilled coupe glass. Garnish with three speared raspberries.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Vintage",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1",
+                "Ingredient": "Pasteurized egg white",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Dry vermouth",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "4",
+                "Ingredient": "Fresh raspberries",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "COCO CHANEL": {
+        "Description": "Sweet and Spirit Forward",
+        "Method": "Combine all ingredients in a shaker. Shake vigorously with ice. Strain into a chilled martini glass.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Heavy cream",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Kahlua",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "CORPSE REVIVER #2": {
+        "Description": "Tart and Spirit-forward",
+        "Method": "Rinse a chilled martini or coupe glass with absinthe and set aside. Combine all other ingredients in a shaker with ice. Shake well. Strain into the prepared martini or coupe glass.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to rinse",
+                "Ingredient": "Absinthe",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Cointreau",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Lillet blanc",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "DE LA LOUISIANE #4": {
+        "Description": "Sweet and Herbal",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into a chilled coupe glass. Garnish with a cherry.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Benedictine D.O.M",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Absinthe",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2.25",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "DIAMONDBACK": {
+        "Description": "Dry and Herbal",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into a chilled coupe glass. Garnish with a cherry.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Vintage",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Apple brandy",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Yellow Chartreuse",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "DIXIE DEW": {
+        "Description": "Minty and Complex",
+        "Method": "Combine ingredients in a cocktail shaker with ice. Shake. Strain into a chilled coupe glass. Garnish with an orange zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Cr\u00c3\u00a8me de menthe",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Triple Sec",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Dark and Stormy": {
+        "Description": "Spicy and Refreshing",
+        "Method": "Fill a highball glass with ice.  Add rum.  Top with Ginger Beer.  Garnish with a Lime Wedge.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": null,
+        "Ingredients": [
+            {
+                "Amount": null,
+                "Ingredient": null,
+                "IngredientType": "Unknown"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Ginger beer",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Eclipse": {
+        "Description": "Fruity and Refreshing",
+        "Method": "Muddle raspberries in the base of a shaker. Add other ingredients to the shaker with ice. Strain into an ice-filled collins glass. Garnish with a raspberry and sprig of mint.",
+        "GlassType": "Collins",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed lime juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "12",
+                "Ingredient": "Fresh raspberries",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Cranberry juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Blackberry liqueur",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "El Floridita": {
+        "Description": "Sweet and Fruity",
+        "Method": "Combine ingredients in a blender with 6 oz crushed ice.  Blend.  Pour into martini glass.  Garnish with a cherry.",
+        "GlassType": "Martini Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": null,
+        "Ingredients": [
+            {
+                "Amount": null,
+                "Ingredient": null,
+                "IngredientType": "Unknown"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": null,
+                "IngredientType": "Unknown"
+            },
+            {
+                "Amount": null,
+                "Ingredient": "Freshly-squeezed lime juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": null,
+                "Ingredient": "Maraschino liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": null,
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Enrico Palazzo": {
+        "Description": "Bittersweet and Complex",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain into a chilled coupe glass. Garnish with a grapefruit zest twist.",
+        "GlassType": "Coupe",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Aperol",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Suze gentian liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 Dashes",
+                "Ingredient": "Grapefruit bitters",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "FALCONI": {
+        "Description": "Herbal and Dry",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into a chilled martini glass. Garnish with an orange zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Vintage",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Dry vermouth",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Tawny Port",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Orange bitters",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Fancy Free": {
+        "Description": "Fruity and Complex",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain into a chilled martini glass. Garnish with a lemon zest twist.",
+        "GlassType": "Martini Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Maraschino liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 Dashes",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 Dash",
+                "Ingredient": "Orange bitters",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "GIMLET": {
+        "Description": "Tart and Spirit-forward",
+        "Method": "Combine all ingredients in a shaker with ice. Shake well. Strain into a chilled coupe glass. Garnish with a lime wheel.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lime juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "GIN AND TONIC": {
+        "Description": "Bubbly and Sweet",
+        "Method": "Add gin to a highball glass and fill with ice. Top with tonic water. Squeeze lemon or lime wedge over the top and stir.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Tonic water",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "GIN AND TONIC*": {
+        "Description": "",
+        "Method": "Add gin to a highball glass and fill with ice Top with tonic water ",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "10.25",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "GIN BUCK": {
+        "Description": "Bubbly and Sweet",
+        "Method": "Fill a collins glass with ice. Add gin and lemon juice to collins glass. Stir briefly. Top with ginger ale. Garnish with a lemon wedge. Variation: substitute lime juice and a lime wedge.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Ginger ale",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "GIN RICKEY": {
+        "Description": "",
+        "Method": "Club soda, to top Filla highball glass with ice Top with club soda ",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "10.25",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Lime",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1, cut in half",
+                "Ingredient": "Lime",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Club soda",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "GIN SODA": {
+        "Description": "",
+        "Method": "Prepare exactly as Gin and Tonic, but top with club soda.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": null,
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": null,
+                "Ingredient": "Club Soda",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Club Soda",
+                "IngredientType": "Mixer"
+            }
+        ]
+    },
+    "Godfather": {
+        "Description": "Bitter and Complex",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into an ice-filled old-fashioned glass. Garnish with a cherry.",
+        "GlassType": "Old Fashioned Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 Dashes",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Scotch",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Dark rum",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Amaretto",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "HANKY PANKY": {
+        "Description": "Herbal and Spirit-Forward",
+        "Method": "Combine all ingredients into a mixing glass with ice. Stir. Strain into a chilled martini or coupe glass. Garnish with an orange zest twist.",
+        "GlassType": "Martini Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "0.5 oz",
+                "Ingredient": "Fernet-Branca",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Fernet-Branca",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2.25",
+                "Ingredient": "Peach bitters",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Hebridean Shores": {
+        "Description": "Fruity and Citrusy",
+        "Method": "Combine first three ingredients in a cocktail shaker with ice. Shake well. Strain into an ice-filled Collins glass. Top with beer. Garnish with a grapefruit wedge.",
+        "GlassType": "Collins",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Grapefruit juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Scotch",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Peach Schnapps",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Hoppy beer",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Hobnail": {
+        "Description": "Spicy and Bitter",
+        "Method": "Combine all ingredients in a shaker with ice. Shake well. Strain into an ice-filled Collins glass. Garnish with an orange zest twist.",
+        "GlassType": "Collins",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 Dashes",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Scotch",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Ginger syrup",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Kentucky Buck": {
+        "Description": "Fruity and Spicy",
+        "Method": "Muddle the strawberry in the base of a shaker. Add next four ingredients and ice to the shaker. Shake well. Fine strain into an ice-filled Collins glass. Top with ginger beer. Garnish with a lemon wheel and strawberry slice.",
+        "GlassType": "Collins",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 Dashes",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Ginger beer",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1",
+                "Ingredient": "Fresh, hulled strawberry",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "LAST WORD": {
+        "Description": "Zari and Herbal",
+        "Method": "Combine all ingredients into a shaker with ice. Shake. Fine strain into a chilled coupe glass.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.75 oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 oz",
+                "Ingredient": "Freshly-squeezed lime juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 oz",
+                "Ingredient": "Green Chartreuse",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 oz",
+                "Ingredient": "Maraschino liqueur",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "LEFT BANK MARTINI (BY SIMON DIFFORD)": {
+        "Description": "Dry and Herbal",
+        "Method": "Combine all ingredients in a shaker with ice. Shake. Strain into a chilled coupe glass. Garnish with a lime zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2.25",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 oz",
+                "Ingredient": "Elderflower liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 oz",
+                "Ingredient": "Chardonnay white wine",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 oz",
+                "Ingredient": "Dry Vermouth",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "LORRAINE": {
+        "Description": "Dry and Spirit-forward",
+        "Method": "Combine all ingredients in a mixing glass and stir. Strain into an ice-filled old-fashioned glass. Garnish with an orange zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Vintage",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Orange liqueur",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "LYNCHBURG LEMONADE": {
+        "Description": "Light and Refreshing",
+        "Method": "Combine first three ingredients in a shaker with ice. Shake. Strain into an ice-filled collins glass. Top with lemon-lime soda. Garnish with a lemon wedge.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Triple sec",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Lemon-lime soda",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "MANHATTAN": {
+        "Description": "Tart and Spirit-forward",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain into a chilled coupe glass.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Maraschino liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2.25",
+                "Ingredient": "Bitters",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "MARTINI": {
+        "Description": "Dry and Spirit-forward",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into a chilled martini glass. Garnish with a lemon zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Dry vermouth",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "MCKINLEY'S DELIGHT": {
+        "Description": "Herbal and Complex",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into a chilled coupe glass. Garnish with a lemon zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Absinthe",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Cherry liqueur",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Mamie Taylor": {
+        "Description": "Citrusy and Refreshing",
+        "Method": "Combine first two ingredients in an ice-filled highball glass. Stir briefly. Top with ginger beer. Garnish with a lime wedge.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed lime juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Ginger beer",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Scotch",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Morning Glory Fizz": {
+        "Description": "Sweet and Aromatic",
+        "Method": "Combine first five ingredients in a shaker with ice. Shake vigorously. Strain into a chilled collins glass. Top with club soda. Garnish with a lime wheel.",
+        "GlassType": "Collins",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 Dash",
+                "Ingredient": "Absinthe",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1",
+                "Ingredient": "Pasteurized egg white",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Club soda",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Scotch",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "NEGRONI": {
+        "Description": "Bitter and Spirit-forward",
+        "Method": "Combine ingredients in an old-fashioned glass with ice. Stir well. Garnish with an orange zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Campari",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "NEW YORK SOUR": {
+        "Description": "Sweet and Tart",
+        "Method": "Combine first four ingredients in a shaker with ice. Shake. Strain into an ice-filled old-fashioned glass. Top with red wine carefully poured over the back of a spoon.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1",
+                "Ingredient": "Pasteurized egg white",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Red wine",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "New York Sour": {
+        "Description": "Smooth and Sweet",
+        "Method": "Combine first three ingredients in a shaker with ice. Shake. Strain into an ice-filled old-fashioned glass. Pour Port on top of the ice over the back of a spoon.",
+        "GlassType": "Old Fashioned Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Port",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Painkiller": {
+        "Description": "Fruity and Sweet",
+        "Method": "Add all ingredients to a shaker with ice. Shake. Strain into a snifter filled with pebble ice. Garnish with grated nutmeg.",
+        "GlassType": "Snifter",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Pineapple juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Dark rum",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Orange juice",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Cream of coconut",
+                "IngredientType": "Garnish"
+            }
+        ]
+    },
+    "Pina Colada": {
+        "Description": "Smooth and Fruity",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain into an ice-filled hurricane glass. Garnish with a pineapple wedge.",
+        "GlassType": "Hurricane",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Pineapple juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed lime juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Cream of coconut",
+                "IngredientType": "Garnish"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "White rum",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Presbyterian": {
+        "Description": "Subtle and Spicy",
+        "Method": "Add scotch to a Collins glass. Fill with ice. Top with equal amounts of club soda and ginger ale.",
+        "GlassType": "Collins",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "to top",
+                "Ingredient": "Ginger ale",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Club soda",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Scotch",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Purple Heather": {
+        "Description": "Sweet and Simple",
+        "Method": "Combine first two ingredients in a shaker with ice. Shake. Strain into an ice-filled old-fashioned glass. Top with club soda.",
+        "GlassType": "Old Fashioned Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Blackberry liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Scotch",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Soda water",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "RAMOS GIN FIZZ": {
+        "Description": "Smooth and Sweet",
+        "Method": "Combine first seven ingredients into a cocktail shaker without ice. Dry shake (no ice) very well for 45-60 seconds. Strain into a chilled collins glass. Top with club soda.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Vintage",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed lime juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1",
+                "Ingredient": "Pasteurized egg white",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Club soda",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2.25",
+                "Ingredient": "Orange flower water",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Cream or half and half",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "ROCK N' RYE": {
+        "Description": "Sweet and Citrusy",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain into an ice-filled old-fashioned glass. Garnish with a cherry.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed lime juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed orange juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Cherry syrup",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "RYE AND POMEGRANATE PUNCH": {
+        "Description": "Fruity and Sweet",
+        "Method": "Combine first four ingredients in a mixing glass with ice. Stir. Strain into an ice-filled Collins glass. Top with club soda.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Club soda",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Pomegranate juice",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Rob Roy": {
+        "Description": "Strong and Spirit-forward",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into a chilled coupe glass. Garnish with a cherry.",
+        "GlassType": "Coupe",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "3 Dashes",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Scotch",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Rum Caipirinha": {
+        "Description": "Curdy and spirit-forward",
+        "Method": "Muddle syrup and lime wedges in the base of a shaker. Add rum and ice to the shaker. Shake. Strain into an ice-filled old-fashioned glass. Garnish with a lime wedge.",
+        "GlassType": "Old Fashioned Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": null,
+        "Ingredients": [
+            {
+                "Amount": null,
+                "Ingredient": null,
+                "IngredientType": "Unknown"
+            },
+            {
+                "Amount": null,
+                "Ingredient": null,
+                "IngredientType": "Unknown"
+            },
+            {
+                "Amount": null,
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Rum Dum": {
+        "Description": "Sweet and Refreshing",
+        "Method": "Combine first four ingredients in a shaker with ice. Shake well. Strain into an ice-filled Collins glass. Top with Dark rum.",
+        "GlassType": "Collins",
+        "TimePeriod": "Vintage",
+        "IsPopular": 0,
+        "Source": null,
+        "Ingredients": [
+            {
+                "Amount": null,
+                "Ingredient": null,
+                "IngredientType": "Unknown"
+            },
+            {
+                "Amount": null,
+                "Ingredient": null,
+                "IngredientType": "Unknown"
+            },
+            {
+                "Amount": "1",
+                "Ingredient": null,
+                "IngredientType": "Unknown"
+            },
+            {
+                "Amount": null,
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": null,
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "SARATOGA COCKTAIL #1": {
+        "Description": "Dry and Aromatic",
+        "Method": "Combine all ingredients in a mixing glass with ice. Stir. Strain into a chilled coupe glass. Garnish with a lemon wheel.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Angostura bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Rye whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Dry vermouth",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "SAZERAC": {
+        "Description": "Spirit-forward",
+        "Method": "Chill an old-fashioned glass with ice and set aside. Combine first three ingredients in a mixing glass with ice. Discard ice in the old-fashioned glass and rinse with absinthe. Strain mixture into the absinthe-rinsed, chilled old-fashioned glass. Garnish with a lemon zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "for rinse",
+                "Ingredient": "Absinthe",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "3.25",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Rye whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1",
+                "Ingredient": "Sugar cube",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "SHERMAN COCKTAIL": {
+        "Description": "Spirit-forward",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain into a chilled coupe glass. Garnish with a lemon zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Absinthe",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Orange bitters",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "SINGAPORE SLING": {
+        "Description": "",
+        "Method": "Club soda, to top Combine first eight ingredients into a shaker Shake Strain into glass Top with club soda Stir lightly and garnish with a speared lemon wheel and cherry. ",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "4 fl",
+                "Ingredient": "Benedictine D.O.M",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Benedictine D.O.M",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "4 fl",
+                "Ingredient": "Triple sec",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Triple sec",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "4 fl",
+                "Ingredient": "Pineapple juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Pineapple juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1/44 fl",
+                "Ingredient": "Freshly-squeezed lime juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Freshly-squeezed lime juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "4 1/4",
+                "Ingredient": "Grenadine",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Grenadine",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 Dash",
+                "Ingredient": "Angostura bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Angostura bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Cherry liqueur",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Club soda",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "STONE FENCE": {
+        "Description": "Dry and Lightly-spiced",
+        "Method": "Pour ingredients into an ice-filled pint glass. Lightly stir. Serve with straws.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "to top",
+                "Ingredient": "Medium-dry apple cider",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Scofflaw": {
+        "Description": "Sweet and Spirit-forward",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain into a chilled coupe glass.",
+        "GlassType": "Coupe",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Grenadine",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Dry vermouth",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 Dashes",
+                "Ingredient": "Orange bitters",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Singapore Sling": {
+        "Description": "Fruity and Tart",
+        "Method": "Fill a sling glass with ice. Combine first eight ingredients into a shaker. Shake. Strain into glass. Top with club soda. Stir lightly and garnish with a speared lemon wheel and cherry. Serve with a straw.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Vintage",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": null,
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "THIRD DEGREE": {
+        "Description": "",
+        "Method": "Combine all ingredients in a mixing glass with ice Strain into a chilled coupe glass ",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "% \u00c2\u00a31",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "% \u00a31",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "4 Dashes",
+                "Ingredient": "Absinthe",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "4.25",
+                "Ingredient": "Absinthe",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "30 Q",
+                "Ingredient": "Ss",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "3 ta",
+                "Ingredient": "fa 2a",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 oz",
+                "Ingredient": "Dry Vermouth",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "TRINIDAD SOUR (BY GIUSEPPE GONZALEZ)": {
+        "Description": "Bitter and Herbal",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain to a chilled coupe glass.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.5 oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 oz",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Almond syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "The Modern": {
+        "Description": "Sweet and Spirit-forward",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain into a chilled coupe glass. Garnish with a cherry.",
+        "GlassType": "Coupe",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 Dash",
+                "Ingredient": "Absinthe",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1 Dash",
+                "Ingredient": "Orange bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Scotch",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "The Orkney Chapel": {
+        "Description": "Complex and Spirit-forward",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into a coupe glass. Garnish with an orange zest twist.",
+        "GlassType": "Coupe",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.25 fl oz",
+                "Ingredient": "Dry vermouth",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Scotch",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Sherry",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Grand Marnier",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Third Degree": {
+        "Description": "Complex and Herbal",
+        "Method": "Combine all ingredients in a mixing glass with ice. Stir. Strain into a chilled coupe glass.",
+        "GlassType": "Coupe",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": null,
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Unnamed Cocktail": {
+        "Description": "Complex",
+        "Method": "Combine ingredients in a mixing glass with ice. Stir. Strain into an ice-filled old-fashioned glass. Garnish with a lemon zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Sweet vermouth",
+                "IngredientType": "Mixer"
+            },
+            {
+                "Amount": "1 fl oz",
+                "Ingredient": "Benedictine D.O.M",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2.25",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "WHISKEY SOUR*": {
+        "Description": "Sweet and Sour",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain into an ice-filled old-fashioned glass. Garnish with a speared lemon wheel and a cherry.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2.25",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "3.25",
+                "Ingredient": "Aromatic bitters",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1.25",
+                "Ingredient": "Simple syrup",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1",
+                "Ingredient": "Pasteurized egg white",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "WHITE LADY": {
+        "Description": "Bright and Citrusy",
+        "Method": "Combine all ingredients in a shaker with ice. Shake. Strain back into the same shaker to remove ice. Shake again (dry shake). Strain into a chilled coupe glass. Garnish with a lemon zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "1.5 fl oz",
+                "Ingredient": "Gin",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Triple sec",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "1",
+                "Ingredient": "Egg white (optional)",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "WITTY COMEBACK": {
+        "Description": "Complex and Herbal",
+        "Method": "Combine ingredients in a cocktail shaker with ice. Shake well. Strain into a chilled coupe glass. Garnish with a lemon zest twist.",
+        "GlassType": "Highball Glass",
+        "TimePeriod": "Modern",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Whiskey",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Averna amaro",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.75 fl oz",
+                "Ingredient": "Ginger simple syrup",
+                "IngredientType": "Spirit"
+            }
+        ]
+    },
+    "Ward Eight": {
+        "Description": "Sweet and Citrusy",
+        "Method": "Combine ingredients in a shaker with ice. Shake. Strain into a chilled coupe glass. Garnish with an orange slice and a cherry.",
+        "GlassType": "Coupe",
+        "TimePeriod": "Classic",
+        "IsPopular": 0,
+        "Source": "Cocktail Recipe Book",
+        "Ingredients": [
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Grenadine",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed lemon juice",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "2 fl oz",
+                "Ingredient": "Bourbon",
+                "IngredientType": "Spirit"
+            },
+            {
+                "Amount": "0.5 fl oz",
+                "Ingredient": "Freshly-squeezed orange juice",
+                "IngredientType": "Spirit"
+            }
+        ]
+    }
+}
