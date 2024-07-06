@@ -12,8 +12,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Notes\NOTES.txt = Notes\NOTES.txt
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CocktailChooser.Repository", "CocktailChooser.Repository\CocktailChooser.Repository.csproj", "{B1595F08-ED02-463F-A9E1-4A74177A98B0}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cocktailchooser-frontend", "cocktailchooser-frontend", "{8B3F5987-BD9E-4B0E-AD8A-61F6291F0647}"
 	ProjectSection(SolutionItems) = preProject
 		cocktailchooser-frontend\.gitignore = cocktailchooser-frontend\.gitignore
@@ -47,7 +45,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", 
 		cocktailchooser-frontend\src\components\HelloWorld.vue = cocktailchooser-frontend\src\components\HelloWorld.vue
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CocktailChooser.Maui", "CocktailChooser.Maui\CocktailChooser.Maui.csproj", "{B051BA4E-93F5-418E-AE7A-A81C99D92E18}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CocktailChooser.Maui", "CocktailChooser.Maui\CocktailChooser.Maui.csproj", "{B051BA4E-93F5-418E-AE7A-A81C99D92E18}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,10 +61,6 @@ Global
 		{D5DD7B3A-64AB-4347-A2B7-95865051D004}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5DD7B3A-64AB-4347-A2B7-95865051D004}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5DD7B3A-64AB-4347-A2B7-95865051D004}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B1595F08-ED02-463F-A9E1-4A74177A98B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B1595F08-ED02-463F-A9E1-4A74177A98B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B1595F08-ED02-463F-A9E1-4A74177A98B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B1595F08-ED02-463F-A9E1-4A74177A98B0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
