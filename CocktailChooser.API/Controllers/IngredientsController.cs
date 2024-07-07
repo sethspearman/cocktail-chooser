@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using CocktailChooser.API.Models;
+using CocktailChooser.API.DTOs;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 
 namespace CocktailChooser.API.Controllers
 {
@@ -9,20 +11,23 @@ namespace CocktailChooser.API.Controllers
     public class IngredientsController : ControllerBase
     {
         private readonly CocktailChooserContext _context;
+        private readonly IMapper _mapper;
 
-        public IngredientsController(CocktailChooserContext context)
+        public IngredientsController(CocktailChooserContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Ingredient>>> GetIngredients()
+        public async Task<ActionResult<IEnumerable<IngredientDto>>> GetIngredients()
         {
-            return await _context.Ingredients.ToListAsync();
+            var ingredients = await _context.Ingredients.ToListAsync();
+            return _mapper.Map<List<IngredientDto>>(ingredients);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Ingredient>> GetIngredient(int id)
+        public async Task<ActionResult<IngredientDto>> GetIngredient(int id)
         {
             var ingredient = await _context.Ingredients.FindAsync(id);
 
@@ -31,26 +36,30 @@ namespace CocktailChooser.API.Controllers
                 return NotFound();
             }
 
-            return ingredient;
+            return _mapper.Map<IngredientDto>(ingredient);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Ingredient>> PostIngredient(Ingredient ingredient)
+        public async Task<ActionResult<IngredientDto>> PostIngredient(IngredientDto ingredientDto)
         {
+            var ingredient = _mapper.Map<Ingredient>(ingredientDto);
             _context.Ingredients.Add(ingredient);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetIngredient), new { id = ingredient.Id }, ingredient);
+            ingredientDto.Id = ingredient.Id;
+
+            return CreatedAtAction(nameof(GetIngredient), new { id = ingredientDto.Id }, ingredientDto);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutIngredient(int id, Ingredient ingredient)
+        public async Task<IActionResult> PutIngredient(int id, IngredientDto ingredientDto)
         {
-            if (id != ingredient.Id)
+            if (id != ingredientDto.Id)
             {
                 return BadRequest();
             }
 
+            var ingredient = _mapper.Map<Ingredient>(ingredientDto);
             _context.Entry(ingredient).State = EntityState.Modified;
 
             try

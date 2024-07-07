@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using CocktailChooser.API.Models;
+using CocktailChooser.API.DTOs;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 
 namespace CocktailChooser.API.Controllers
 {
@@ -9,43 +11,50 @@ namespace CocktailChooser.API.Controllers
     public class CocktailRecipesController : ControllerBase
     {
         private readonly CocktailChooserContext _context;
+        private readonly IMapper _mapper;
 
-        public CocktailRecipesController(CocktailChooserContext context)
+        public CocktailRecipesController(CocktailChooserContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CocktailRecipe>>> GetCocktailRecipes()
+        public async Task<ActionResult<IEnumerable<CocktailRecipeDto>>> GetCocktailRecipes()
         {
-            return await _context.CocktailRecipes.ToListAsync();
+            var cocktailRecipes = await _context.CocktailRecipes.ToListAsync();
+            return _mapper.Map<List<CocktailRecipeDto>>(cocktailRecipes);
         }
 
         [HttpGet("{cocktailId}")]
-        public async Task<ActionResult<IEnumerable<CocktailRecipe>>> GetCocktailRecipesByCocktailId(int cocktailId)
+        public async Task<ActionResult<IEnumerable<CocktailRecipeDto>>> GetCocktailRecipesByCocktailId(int cocktailId)
         {
-            return await _context.CocktailRecipes
+            var cocktailRecipes = await _context.CocktailRecipes
                 .Where(cr => cr.CocktailId == cocktailId)
                 .ToListAsync();
+
+            return _mapper.Map<List<CocktailRecipeDto>>(cocktailRecipes);
         }
 
         [HttpPost]
-        public async Task<ActionResult<CocktailRecipe>> PostCocktailRecipe(CocktailRecipe cocktailRecipe)
+        public async Task<ActionResult<CocktailRecipeDto>> PostCocktailRecipe(CocktailRecipeDto cocktailRecipeDto)
         {
+            var cocktailRecipe = _mapper.Map<CocktailRecipe>(cocktailRecipeDto);
             _context.CocktailRecipes.Add(cocktailRecipe);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetCocktailRecipesByCocktailId), new { cocktailId = cocktailRecipe.CocktailId }, cocktailRecipe);
+            return CreatedAtAction(nameof(GetCocktailRecipesByCocktailId), new { cocktailId = cocktailRecipe.CocktailId }, cocktailRecipeDto);
         }
 
         [HttpPut("{cocktailId}/{stepNumber}")]
-        public async Task<IActionResult> PutCocktailRecipe(int cocktailId, int stepNumber, CocktailRecipe cocktailRecipe)
+        public async Task<IActionResult> PutCocktailRecipe(int cocktailId, int stepNumber, CocktailRecipeDto cocktailRecipeDto)
         {
-            if (cocktailId != cocktailRecipe.CocktailId || stepNumber != cocktailRecipe.StepNumber)
+            if (cocktailId != cocktailRecipeDto.CocktailId || stepNumber != cocktailRecipeDto.StepNumber)
             {
                 return BadRequest();
             }
 
+            var cocktailRecipe = _mapper.Map<CocktailRecipe>(cocktailRecipeDto);
             _context.Entry(cocktailRecipe).State = EntityState.Modified;
 
             try
@@ -73,7 +82,7 @@ namespace CocktailChooser.API.Controllers
             var cocktailRecipe = await _context.CocktailRecipes
                 .Where(cr => cr.CocktailId == cocktailId && cr.StepNumber == stepNumber)
                 .FirstOrDefaultAsync();
-                
+
             if (cocktailRecipe == null)
             {
                 return NotFound();
