@@ -18,13 +18,9 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        var connectionString = Configuration.GetConnectionString("DefaultConnection");
-        Console.WriteLine($"Connection String: {connectionString}");
-        Console.WriteLine($"Database Exists: {File.Exists("../CocktailChooser.Data/Data/CocktailChooser.db")}");
+        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
-        services.AddControllers();
-
-        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Test")
+        if (environment == "Test")
         {
             services.AddDbContext<CocktailChooserContext>(options =>
                 options.UseInMemoryDatabase("TestDatabase"));
@@ -35,6 +31,7 @@ public class Startup
                 options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
         }
 
+        services.AddControllers();
         services.AddAutoMapper(typeof(MappingProfile));
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
@@ -54,7 +51,6 @@ public class Startup
 
         app.UseHttpsRedirection();
         app.UseAuthorization();
-
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();

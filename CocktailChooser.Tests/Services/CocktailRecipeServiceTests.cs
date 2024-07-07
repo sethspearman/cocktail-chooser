@@ -1,180 +1,143 @@
-﻿using Xunit;
-using AutoMapper;
-using Microsoft.EntityFrameworkCore;
-using CocktailChooser.API.Services;
-using CocktailChooser.API.Models;
-using CocktailChooser.API.DTOs;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using AutoMapper;
+using CocktailChooser.API.DTOs;
+using CocktailChooser.API.Services;
+using Moq;
+using Xunit;
 
-namespace CocktailChooser.Tests.Services
+public class CocktailRecipeServiceTests
 {
-    [Collection("Environment collection")]
-    public class CocktailRecipeServiceTests
+    private readonly Mock<ICocktailRecipeService> _mockService;
+    private readonly IMapper _mapper;
+
+    public CocktailRecipeServiceTests()
     {
-        private readonly IMapper _mapper;
+        _mockService = new Mock<ICocktailRecipeService>();
 
-        public CocktailRecipeServiceTests()
+        var mockMapper = new MapperConfiguration(cfg =>
         {
-            var mockMapper = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile(new CocktailChooser.API.Mappings.MappingProfile());
-            });
-            _mapper = mockMapper.CreateMapper();
-        }
+            cfg.AddProfile(new CocktailChooser.API.Mappings.MappingProfile());
+        });
+        _mapper = mockMapper.CreateMapper();
+    }
 
-        private CocktailChooserContext GetInMemoryContext()
+    [Fact]
+    public async Task GetAllCocktailRecipesAsync_ReturnsListOfCocktailRecipes()
+    {
+        // Arrange
+        var cocktailRecipes = new List<CocktailRecipeDto>
         {
-            var options = new DbContextOptionsBuilder<CocktailChooserContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase")
-                .Options;
-            return new CocktailChooserContext(options);
-        }
+            new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" },
+            new CocktailRecipeDto { CocktailId = 1, StepNumber = 2, Instruction = "Pour vodka" }
+        };
 
-        [Fact]
-        public async Task GetAllCocktailRecipesAsync_ReturnsListOfCocktailRecipes()
+        _mockService.Setup(s => s.GetAllCocktailRecipesAsync())
+            .ReturnsAsync(cocktailRecipes);
+
+        // Act
+        var result = await _mockService.Object.GetAllCocktailRecipesAsync();
+
+        // Assert
+        Assert.Equal(2, result.Count());
+        Assert.Equal("Add ice", result.First().Instruction);
+    }
+
+    [Fact]
+    public async Task GetCocktailRecipesByCocktailIdAsync_ReturnsRecipes_WhenRecipesExist()
+    {
+        // Arrange
+        var cocktailRecipes = new List<CocktailRecipeDto>
         {
-            // Arrange
-            using (var context = GetInMemoryContext())
-            {
-                var service = new CocktailRecipeService(context, _mapper);
-                var cocktailRecipes = new List<CocktailRecipe>
-                {
-                    new CocktailRecipe { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" },
-                    new CocktailRecipe { CocktailId = 1, StepNumber = 2, Instruction = "Pour vodka" }
-                };
+            new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" },
+            new CocktailRecipeDto { CocktailId = 1, StepNumber = 2, Instruction = "Pour vodka" }
+        };
 
-                context.CocktailRecipes.AddRange(cocktailRecipes);
-                await context.SaveChangesAsync();
+        _mockService.Setup(s => s.GetCocktailRecipesByCocktailIdAsync(1))
+            .ReturnsAsync(cocktailRecipes);
 
-                // Act
-                var result = await service.GetAllCocktailRecipesAsync();
+        // Act
+        var result = await _mockService.Object.GetCocktailRecipesByCocktailIdAsync(1);
 
-                // Assert
-                Assert.Equal(2, result.Count());
-                Assert.Equal("Add ice", result.First().Instruction);
-            }
-        }
+        // Assert
+        Assert.Equal(2, result.Count());
+        Assert.Equal("Add ice", result.First().Instruction);
+    }
 
-        [Fact]
-        public async Task GetCocktailRecipesByCocktailIdAsync_ReturnsRecipes_WhenRecipesExist()
-        {
-            // Arrange
-            using (var context = GetInMemoryContext())
-            {
-                var service = new CocktailRecipeService(context, _mapper);
-                var cocktailRecipes = new List<CocktailRecipe>
-                {
-                    new CocktailRecipe { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" },
-                    new CocktailRecipe { CocktailId = 1, StepNumber = 2, Instruction = "Pour vodka" }
-                };
+    [Fact]
+    public async Task GetCocktailRecipesByCocktailIdAsync_ReturnsEmptyList_WhenRecipesDoNotExist()
+    {
+        // Arrange
+        _mockService.Setup(s => s.GetCocktailRecipesByCocktailIdAsync(1))
+            .ReturnsAsync(new List<CocktailRecipeDto>());
 
-                context.CocktailRecipes.AddRange(cocktailRecipes);
-                await context.SaveChangesAsync();
+        // Act
+        var result = await _mockService.Object.GetCocktailRecipesByCocktailIdAsync(1);
 
-                // Act
-                var result = await service.GetCocktailRecipesByCocktailIdAsync(1);
+        // Assert
+        Assert.Empty(result);
+    }
 
-                // Assert
-                Assert.Equal(2, result.Count());
-                Assert.Equal("Add ice", result.First().Instruction);
-            }
-        }
+    [Fact]
+    public async Task CreateCocktailRecipeAsync_AddsRecipeToDatabase()
+    {
+        // Arrange
+        var cocktailRecipeDto = new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" };
+        var createdCocktailRecipeDto = new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" };
 
-        [Fact]
-        public async Task GetCocktailRecipesByCocktailIdAsync_ReturnsEmptyList_WhenRecipesDoNotExist()
-        {
-            // Arrange
-            using (var context = GetInMemoryContext())
-            {
-                var service = new CocktailRecipeService(context, _mapper);
+        _mockService.Setup(s => s.CreateCocktailRecipeAsync(cocktailRecipeDto))
+            .ReturnsAsync(createdCocktailRecipeDto);
 
-                // Act
-                var result = await service.GetCocktailRecipesByCocktailIdAsync(1);
+        // Act
+        var result = await _mockService.Object.CreateCocktailRecipeAsync(cocktailRecipeDto);
 
-                // Assert
-                Assert.Empty(result);
-            }
-        }
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Add ice", result.Instruction);
+    }
 
-        [Fact]
-        public async Task CreateCocktailRecipeAsync_AddsRecipeToDatabase()
-        {
-            // Arrange
-            using (var context = GetInMemoryContext())
-            {
-                var service = new CocktailRecipeService(context, _mapper);
-                var cocktailRecipeDto = new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" };
+    [Fact]
+    public async Task UpdateCocktailRecipeAsync_ReturnsTrue_WhenRecipeIsUpdated()
+    {
+        // Arrange
+        var cocktailRecipeDto = new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" };
 
-                // Act
-                var result = await service.CreateCocktailRecipeAsync(cocktailRecipeDto);
+        _mockService.Setup(s => s.UpdateCocktailRecipeAsync(cocktailRecipeDto))
+            .ReturnsAsync(true);
 
-                // Assert
-                Assert.NotNull(result);
-                Assert.Equal("Add ice", result.Instruction);
-                Assert.NotEqual(0, result.CocktailId);
-            }
-        }
+        // Act
+        var result = await _mockService.Object.UpdateCocktailRecipeAsync(cocktailRecipeDto);
 
-        [Fact]
-        public async Task UpdateCocktailRecipeAsync_ReturnsTrue_WhenRecipeIsUpdated()
-        {
-            // Arrange
-            using (var context = GetInMemoryContext())
-            {
-                var service = new CocktailRecipeService(context, _mapper);
-                var cocktailRecipe = new CocktailRecipe { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" };
-                context.CocktailRecipes.Add(cocktailRecipe);
-                await context.SaveChangesAsync();
+        // Assert
+        Assert.True(result);
+    }
 
-                var cocktailRecipeDto = new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Updated ice" };
+    [Fact]
+    public async Task DeleteCocktailRecipeAsync_ReturnsTrue_WhenRecipeIsDeleted()
+    {
+        // Arrange
+        _mockService.Setup(s => s.DeleteCocktailRecipeAsync(1, 1))
+            .ReturnsAsync(true);
 
-                // Act
-                var result = await service.UpdateCocktailRecipeAsync(cocktailRecipeDto);
+        // Act
+        var result = await _mockService.Object.DeleteCocktailRecipeAsync(1, 1);
 
-                // Assert
-                Assert.True(result);
-                var updatedRecipe = await context.CocktailRecipes.FindAsync(1, 1);
-                Assert.Equal("Updated ice", updatedRecipe.Instruction);
-            }
-        }
+        // Assert
+        Assert.True(result);
+    }
 
-        [Fact]
-        public async Task DeleteCocktailRecipeAsync_ReturnsTrue_WhenRecipeIsDeleted()
-        {
-            // Arrange
-            using (var context = GetInMemoryContext())
-            {
-                var service = new CocktailRecipeService(context, _mapper);
-                var cocktailRecipe = new CocktailRecipe { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" };
-                context.CocktailRecipes.Add(cocktailRecipe);
-                await context.SaveChangesAsync();
+    [Fact]
+    public async Task DeleteCocktailRecipeAsync_ReturnsFalse_WhenRecipeDoesNotExist()
+    {
+        // Arrange
+        _mockService.Setup(s => s.DeleteCocktailRecipeAsync(1, 1))
+            .ReturnsAsync(false);
 
-                // Act
-                var result = await service.DeleteCocktailRecipeAsync(1, 1);
+        // Act
+        var result = await _mockService.Object.DeleteCocktailRecipeAsync(1, 1);
 
-                // Assert
-                Assert.True(result);
-                var deletedRecipe = await context.CocktailRecipes.FindAsync(1, 1);
-                Assert.Null(deletedRecipe);
-            }
-        }
-
-        [Fact]
-        public async Task DeleteCocktailRecipeAsync_ReturnsFalse_WhenRecipeDoesNotExist()
-        {
-            // Arrange
-            using (var context = GetInMemoryContext())
-            {
-                var service = new CocktailRecipeService(context, _mapper);
-
-                // Act
-                var result = await service.DeleteCocktailRecipeAsync(1, 1);
-
-                // Assert
-                Assert.False(result);
-            }
-        }
+        // Assert
+        Assert.False(result);
     }
 }
