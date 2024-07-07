@@ -20,16 +20,16 @@ public class Startup
     {
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
-        if (environment == "Test")
-        {
+        //if (environment == "Test")
+        //{
             services.AddDbContext<CocktailChooserContext>(options =>
                 options.UseInMemoryDatabase("TestDatabase"));
-        }
-        else
-        {
-            services.AddDbContext<CocktailChooserContext>(options =>
-                options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
-        }
+        //}
+        //else
+        //{
+        //    services.AddDbContext<CocktailChooserContext>(options =>
+        //        options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
+        //}
 
         services.AddControllers();
         services.AddAutoMapper(typeof(MappingProfile));

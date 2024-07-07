@@ -1,12 +1,45 @@
-﻿using Xunit;
-
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using CocktailChooser.API.Mappings;
+using CocktailChooser.API.Models;
+using CocktailChooser.API.Services;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 
 public class TestStartup
 {
-    public TestStartup()
+    public TestStartup(IConfiguration configuration)
     {
-        // Set environment to 'Test'
-        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Test");
+        Configuration = configuration;
+    }
+
+    public IConfiguration Configuration { get; }
+
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddDbContext<CocktailChooserContext>(options =>
+            options.UseInMemoryDatabase("TestDatabase"));
+
+        services.AddControllers();
+        services.AddAutoMapper(typeof(MappingProfile));
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen();
+        services.AddScoped<ICocktailService, CocktailService>();
+        services.AddScoped<IIngredientService, IngredientService>();
+        services.AddScoped<ICocktailRecipeService, CocktailRecipeService>();
+    }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        app.UseDeveloperExceptionPage();
+        app.UseSwagger();
+        app.UseSwaggerUI();
+        app.UseHttpsRedirection();
+        app.UseAuthorization();
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
     }
 }

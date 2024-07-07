@@ -5,13 +5,12 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using CocktailChooser.API.Models;
 
-public class CocktailChooserWebApplicationFactory : WebApplicationFactory<Program>
+public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
         {
-            // Remove the app's CocktailChooserContext registration.
             var descriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<CocktailChooserContext>));
 
@@ -20,22 +19,18 @@ public class CocktailChooserWebApplicationFactory : WebApplicationFactory<Progra
                 services.Remove(descriptor);
             }
 
-            // Add the in-memory database context for testing.
             services.AddDbContext<CocktailChooserContext>(options =>
             {
-                options.UseInMemoryDatabase("InMemoryDbForTesting");
+                options.UseInMemoryDatabase("TestDatabase");
             });
 
-            // Build the service provider.
             var sp = services.BuildServiceProvider();
 
-            // Create a scope to obtain a reference to the database context (CocktailChooserContext).
             using (var scope = sp.CreateScope())
             {
                 var scopedServices = scope.ServiceProvider;
                 var db = scopedServices.GetRequiredService<CocktailChooserContext>();
 
-                // Ensure the database is created.
                 db.Database.EnsureCreated();
             }
         });
