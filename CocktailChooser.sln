@@ -10,6 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D6551EF0-5314-4407-971A-6BDE784D0775}"
 	ProjectSection(SolutionItems) = preProject
 		Notes\NOTES.txt = Notes\NOTES.txt
+		Notes\Step-by-Step_Process_for_API_Changes.md = Notes\Step-by-Step_Process_for_API_Changes.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cocktailchooser-frontend", "cocktailchooser-frontend", "{8B3F5987-BD9E-4B0E-AD8A-61F6291F0647}"

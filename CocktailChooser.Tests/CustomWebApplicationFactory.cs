@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
 using CocktailChooser.API.Models;
 
 public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
@@ -30,7 +29,6 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             {
                 var scopedServices = scope.ServiceProvider;
                 var db = scopedServices.GetRequiredService<CocktailChooserContext>();
-
                 db.Database.EnsureCreated();
             }
         });
