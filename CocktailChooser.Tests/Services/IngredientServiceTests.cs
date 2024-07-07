@@ -1,140 +1,172 @@
-﻿using Xunit;
-using AutoMapper;
-using Microsoft.EntityFrameworkCore;
-using CocktailChooser.API.Services;
-using CocktailChooser.API.Models;
-using CocktailChooser.API.DTOs;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using AutoMapper;
+using CocktailChooser.API.DTOs;
+using CocktailChooser.API.Models;
+using CocktailChooser.API.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
 
-namespace CocktailChooser.Tests.Services
+public class IngredientServiceTests : IClassFixture<CocktailChooserWebApplicationFactory>
 {
-    public class IngredientServiceTests
+    private readonly CocktailChooserWebApplicationFactory _factory;
+    private readonly IMapper _mapper;
+
+    public IngredientServiceTests(CocktailChooserWebApplicationFactory factory)
     {
-        private readonly IMapper _mapper;
-        private readonly CocktailChooserContext _context;
-        private readonly IngredientService _service;
+        _factory = factory;
 
-        public IngredientServiceTests()
+        var mockMapper = new MapperConfiguration(cfg =>
         {
-            var mockMapper = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile(new CocktailChooser.API.Mappings.MappingProfile());
-            });
-            _mapper = mockMapper.CreateMapper();
+            cfg.AddProfile(new CocktailChooser.API.Mappings.MappingProfile());
+        });
+        _mapper = mockMapper.CreateMapper();
+    }
 
-            var options = new DbContextOptionsBuilder<CocktailChooserContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase")
-                .Options;
+    private CocktailChooserContext GetInMemoryContext()
+    {
+        var options = new DbContextOptionsBuilder<CocktailChooserContext>()
+            .UseInMemoryDatabase(databaseName: "InMemoryDbForTesting")
+            .Options;
+        return new CocktailChooserContext(options);
+    }
 
-            _context = new CocktailChooserContext(options);
-            _service = new IngredientService(_context, _mapper);
-        }
-
-        [Fact]
-        public async Task GetAllIngredientsAsync_ReturnsListOfIngredients()
+    [Fact]
+    public async Task GetAllIngredientsAsync_ReturnsListOfIngredients()
+    {
+        // Arrange
+        using (var context = GetInMemoryContext())
         {
-            // Arrange
+            var service = new IngredientService(context, _mapper);
             var ingredients = new List<Ingredient>
             {
                 new Ingredient { Id = 1, Name = "Vodka" },
                 new Ingredient { Id = 2, Name = "Gin" }
             };
 
-            _context.Ingredients.AddRange(ingredients);
-            await _context.SaveChangesAsync();
+            context.Ingredients.AddRange(ingredients);
+            await context.SaveChangesAsync();
 
             // Act
-            var result = await _service.GetAllIngredientsAsync();
+            var result = await service.GetAllIngredientsAsync();
 
             // Assert
             Assert.Equal(2, result.Count());
             Assert.Equal("Vodka", result.First().Name);
         }
+    }
 
-        [Fact]
-        public async Task GetIngredientByIdAsync_ReturnsIngredient_WhenIngredientExists()
+    [Fact]
+    public async Task GetIngredientByIdAsync_ReturnsIngredient_WhenIngredientExists()
+    {
+        // Arrange
+        using (var context = GetInMemoryContext())
         {
-            // Arrange
+            var service = new IngredientService(context, _mapper);
             var ingredient = new Ingredient { Id = 1, Name = "Vodka" };
-            _context.Ingredients.Add(ingredient);
-            await _context.SaveChangesAsync();
+            context.Ingredients.Add(ingredient);
+            await context.SaveChangesAsync();
 
             // Act
-            var result = await _service.GetIngredientByIdAsync(1);
+            var result = await service.GetIngredientByIdAsync(1);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal("Vodka", result.Name);
         }
+    }
 
-        [Fact]
-        public async Task GetIngredientByIdAsync_ReturnsNull_WhenIngredientDoesNotExist()
+    [Fact]
+    public async Task GetIngredientByIdAsync_ReturnsNull_WhenIngredientDoesNotExist()
+    {
+        // Arrange
+        using (var context = GetInMemoryContext())
         {
+            var service = new IngredientService(context, _mapper);
+
             // Act
-            var result = await _service.GetIngredientByIdAsync(1);
+            var result = await service.GetIngredientByIdAsync(1);
 
             // Assert
             Assert.Null(result);
         }
+    }
 
-        [Fact]
-        public async Task CreateIngredientAsync_AddsIngredientToDatabase()
+    [Fact]
+    public async Task CreateIngredientAsync_AddsIngredientToDatabase()
+    {
+        // Arrange
+        using (var context = GetInMemoryContext())
         {
-            // Arrange
+            var service = new IngredientService(context, _mapper);
             var ingredientDto = new IngredientDto { Name = "Vodka" };
 
             // Act
-            var result = await _service.CreateIngredientAsync(ingredientDto);
+            var result = await service.CreateIngredientAsync(ingredientDto);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal("Vodka", result.Name);
             Assert.NotEqual(0, result.Id);
         }
+    }
 
-        [Fact]
-        public async Task UpdateIngredientAsync_ReturnsTrue_WhenIngredientIsUpdated()
+    [Fact]
+    public async Task UpdateIngredientAsync_ReturnsTrue_WhenIngredientIsUpdated()
+    {
+        // Arrange
+        using (var context = GetInMemoryContext())
         {
-            // Arrange
+            var service = new IngredientService(context, _mapper);
             var ingredient = new Ingredient { Id = 1, Name = "Vodka" };
-            _context.Ingredients.Add(ingredient);
-            await _context.SaveChangesAsync();
+            context.Ingredients.Add(ingredient);
+            await context.SaveChangesAsync();
 
             var ingredientDto = new IngredientDto { Id = 1, Name = "Updated Vodka" };
 
             // Act
-            var result = await _service.UpdateIngredientAsync(ingredientDto);
+            var result = await service.UpdateIngredientAsync(ingredientDto);
 
             // Assert
             Assert.True(result);
-            var updatedIngredient = await _context.Ingredients.FindAsync(1);
+            var updatedIngredient = await context.Ingredients.FindAsync(1);
             Assert.Equal("Updated Vodka", updatedIngredient.Name);
         }
+    }
 
-        [Fact]
-        public async Task DeleteIngredientAsync_ReturnsTrue_WhenIngredientIsDeleted()
+    [Fact]
+    public async Task DeleteIngredientAsync_ReturnsTrue_WhenIngredientIsDeleted()
+    {
+        // Arrange
+        using (var context = GetInMemoryContext())
         {
-            // Arrange
+            var service = new IngredientService(context, _mapper);
             var ingredient = new Ingredient { Id = 1, Name = "Vodka" };
-            _context.Ingredients.Add(ingredient);
-            await _context.SaveChangesAsync();
+            context.Ingredients.Add(ingredient);
+            await context.SaveChangesAsync();
 
             // Act
-            var result = await _service.DeleteIngredientAsync(1);
+            var result = await service.DeleteIngredientAsync(1);
 
             // Assert
             Assert.True(result);
-            var deletedIngredient = await _context.Ingredients.FindAsync(1);
+            var deletedIngredient = await context.Ingredients.FindAsync(1);
             Assert.Null(deletedIngredient);
         }
+    }
 
-        [Fact]
-        public async Task DeleteIngredientAsync_ReturnsFalse_WhenIngredientDoesNotExist()
+    [Fact]
+    public async Task DeleteIngredientAsync_ReturnsFalse_WhenIngredientDoesNotExist()
+    {
+        // Arrange
+        using (var context = GetInMemoryContext())
         {
+            var service = new IngredientService(context, _mapper);
+
             // Act
-            var result = await _service.DeleteIngredientAsync(1);
+            var result = await service.DeleteIngredientAsync(1);
 
             // Assert
             Assert.False(result);
