@@ -1,6 +1,7 @@
 using AutoMapper;
 using CocktailChooser.API.Mappings;
 using CocktailChooser.API.Models;
+using CocktailChooser.API.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,10 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<ICocktailService, CocktailService>();
+builder.Services.AddScoped<ICocktailService, CocktailService>();
+builder.Services.AddScoped<IIngredientService, IngredientService>();
+builder.Services.AddScoped<ICocktailRecipeService, CocktailRecipeService>();
 
 var app = builder.Build();
 

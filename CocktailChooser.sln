@@ -47,6 +47,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CocktailChooser.Maui", "CocktailChooser.Maui\CocktailChooser.Maui.csproj", "{B051BA4E-93F5-418E-AE7A-A81C99D92E18}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CocktailChooser.Tests", "CocktailChooser.Tests\CocktailChooser.Tests.csproj", "{DB7264E3-9DC0-4768-824D-B6EF36EA1077}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +69,10 @@ Global
 		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B051BA4E-93F5-418E-AE7A-A81C99D92E18}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{DB7264E3-9DC0-4768-824D-B6EF36EA1077}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB7264E3-9DC0-4768-824D-B6EF36EA1077}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB7264E3-9DC0-4768-824D-B6EF36EA1077}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB7264E3-9DC0-4768-824D-B6EF36EA1077}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

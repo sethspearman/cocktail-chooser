@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using CocktailChooser.API.Models;
 using CocktailChooser.API.DTOs;
-using Microsoft.EntityFrameworkCore;
-using AutoMapper;
+using CocktailChooser.API.Services;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CocktailChooser.API.Controllers
 {
@@ -10,40 +10,32 @@ namespace CocktailChooser.API.Controllers
     [ApiController]
     public class CocktailRecipesController : ControllerBase
     {
-        private readonly CocktailChooserContext _context;
-        private readonly IMapper _mapper;
+        private readonly ICocktailRecipeService _cocktailRecipeService;
 
-        public CocktailRecipesController(CocktailChooserContext context, IMapper mapper)
+        public CocktailRecipesController(ICocktailRecipeService cocktailRecipeService)
         {
-            _context = context;
-            _mapper = mapper;
+            _cocktailRecipeService = cocktailRecipeService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CocktailRecipeDto>>> GetCocktailRecipes()
         {
-            var cocktailRecipes = await _context.CocktailRecipes.ToListAsync();
-            return _mapper.Map<List<CocktailRecipeDto>>(cocktailRecipes);
+            var cocktailRecipes = await _cocktailRecipeService.GetAllCocktailRecipesAsync();
+            return Ok(cocktailRecipes);
         }
 
         [HttpGet("{cocktailId}")]
         public async Task<ActionResult<IEnumerable<CocktailRecipeDto>>> GetCocktailRecipesByCocktailId(int cocktailId)
         {
-            var cocktailRecipes = await _context.CocktailRecipes
-                .Where(cr => cr.CocktailId == cocktailId)
-                .ToListAsync();
-
-            return _mapper.Map<List<CocktailRecipeDto>>(cocktailRecipes);
+            var cocktailRecipes = await _cocktailRecipeService.GetCocktailRecipesByCocktailIdAsync(cocktailId);
+            return Ok(cocktailRecipes);
         }
 
         [HttpPost]
         public async Task<ActionResult<CocktailRecipeDto>> PostCocktailRecipe(CocktailRecipeDto cocktailRecipeDto)
         {
-            var cocktailRecipe = _mapper.Map<CocktailRecipe>(cocktailRecipeDto);
-            _context.CocktailRecipes.Add(cocktailRecipe);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetCocktailRecipesByCocktailId), new { cocktailId = cocktailRecipe.CocktailId }, cocktailRecipeDto);
+            var newCocktailRecipe = await _cocktailRecipeService.CreateCocktailRecipeAsync(cocktailRecipeDto);
+            return CreatedAtAction(nameof(GetCocktailRecipesByCocktailId), new { cocktailId = newCocktailRecipe.CocktailId }, newCocktailRecipe);
         }
 
         [HttpPut("{cocktailId}/{stepNumber}")]
@@ -54,23 +46,10 @@ namespace CocktailChooser.API.Controllers
                 return BadRequest();
             }
 
-            var cocktailRecipe = _mapper.Map<CocktailRecipe>(cocktailRecipeDto);
-            _context.Entry(cocktailRecipe).State = EntityState.Modified;
-
-            try
+            var result = await _cocktailRecipeService.UpdateCocktailRecipeAsync(cocktailRecipeDto);
+            if (!result)
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CocktailRecipeExists(cocktailId, stepNumber))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound();
             }
 
             return NoContent();
@@ -79,24 +58,13 @@ namespace CocktailChooser.API.Controllers
         [HttpDelete("{cocktailId}/{stepNumber}")]
         public async Task<IActionResult> DeleteCocktailRecipe(int cocktailId, int stepNumber)
         {
-            var cocktailRecipe = await _context.CocktailRecipes
-                .Where(cr => cr.CocktailId == cocktailId && cr.StepNumber == stepNumber)
-                .FirstOrDefaultAsync();
-
-            if (cocktailRecipe == null)
+            var result = await _cocktailRecipeService.DeleteCocktailRecipeAsync(cocktailId, stepNumber);
+            if (!result)
             {
                 return NotFound();
             }
 
-            _context.CocktailRecipes.Remove(cocktailRecipe);
-            await _context.SaveChangesAsync();
-
             return NoContent();
-        }
-
-        private bool CocktailRecipeExists(int cocktailId, int stepNumber)
-        {
-            return _context.CocktailRecipes.Any(e => e.CocktailId == cocktailId && e.StepNumber == stepNumber);
         }
     }
 }

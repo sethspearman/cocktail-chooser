@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using CocktailChooser.API.Models;
 using CocktailChooser.API.DTOs;
-using Microsoft.EntityFrameworkCore;
-using AutoMapper;
+using CocktailChooser.API.Services;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CocktailChooser.API.Controllers
 {
@@ -10,45 +10,36 @@ namespace CocktailChooser.API.Controllers
     [ApiController]
     public class CocktailsController : ControllerBase
     {
-        private readonly CocktailChooserContext _context;
-        private readonly IMapper _mapper;
+        private readonly ICocktailService _cocktailService;
 
-        public CocktailsController(CocktailChooserContext context, IMapper mapper)
+        public CocktailsController(ICocktailService cocktailService)
         {
-            _context = context;
-            _mapper = mapper;
+            _cocktailService = cocktailService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CocktailDto>>> GetCocktails()
         {
-            var cocktails = await _context.Cocktails.ToListAsync();
-            return _mapper.Map<List<CocktailDto>>(cocktails);
+            var cocktails = await _cocktailService.GetAllCocktailsAsync();
+            return Ok(cocktails);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<CocktailDto>> GetCocktail(int id)
         {
-            var cocktail = await _context.Cocktails.FindAsync(id);
-
+            var cocktail = await _cocktailService.GetCocktailByIdAsync(id);
             if (cocktail == null)
             {
                 return NotFound();
             }
-
-            return _mapper.Map<CocktailDto>(cocktail);
+            return Ok(cocktail);
         }
 
         [HttpPost]
         public async Task<ActionResult<CocktailDto>> PostCocktail(CocktailDto cocktailDto)
         {
-            var cocktail = _mapper.Map<Cocktail>(cocktailDto);
-            _context.Cocktails.Add(cocktail);
-            await _context.SaveChangesAsync();
-
-            cocktailDto.Id = cocktail.Id;
-
-            return CreatedAtAction(nameof(GetCocktail), new { id = cocktailDto.Id }, cocktailDto);
+            var newCocktail = await _cocktailService.CreateCocktailAsync(cocktailDto);
+            return CreatedAtAction(nameof(GetCocktail), new { id = newCocktail.Id }, newCocktail);
         }
 
         [HttpPut("{id}")]
@@ -59,23 +50,10 @@ namespace CocktailChooser.API.Controllers
                 return BadRequest();
             }
 
-            var cocktail = _mapper.Map<Cocktail>(cocktailDto);
-            _context.Entry(cocktail).State = EntityState.Modified;
-
-            try
+            var result = await _cocktailService.UpdateCocktailAsync(cocktailDto);
+            if (!result)
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CocktailExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound();
             }
 
             return NoContent();
@@ -84,21 +62,13 @@ namespace CocktailChooser.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCocktail(int id)
         {
-            var cocktail = await _context.Cocktails.FindAsync(id);
-            if (cocktail == null)
+            var result = await _cocktailService.DeleteCocktailAsync(id);
+            if (!result)
             {
                 return NotFound();
             }
 
-            _context.Cocktails.Remove(cocktail);
-            await _context.SaveChangesAsync();
-
             return NoContent();
-        }
-
-        private bool CocktailExists(int id)
-        {
-            return _context.Cocktails.Any(e => e.Id == id);
         }
     }
 }

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using CocktailChooser.API.Models;
 using CocktailChooser.API.DTOs;
-using Microsoft.EntityFrameworkCore;
-using AutoMapper;
+using CocktailChooser.API.Services;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CocktailChooser.API.Controllers
 {
@@ -10,45 +10,36 @@ namespace CocktailChooser.API.Controllers
     [ApiController]
     public class IngredientsController : ControllerBase
     {
-        private readonly CocktailChooserContext _context;
-        private readonly IMapper _mapper;
+        private readonly IIngredientService _ingredientService;
 
-        public IngredientsController(CocktailChooserContext context, IMapper mapper)
+        public IngredientsController(IIngredientService ingredientService)
         {
-            _context = context;
-            _mapper = mapper;
+            _ingredientService = ingredientService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<IngredientDto>>> GetIngredients()
         {
-            var ingredients = await _context.Ingredients.ToListAsync();
-            return _mapper.Map<List<IngredientDto>>(ingredients);
+            var ingredients = await _ingredientService.GetAllIngredientsAsync();
+            return Ok(ingredients);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<IngredientDto>> GetIngredient(int id)
         {
-            var ingredient = await _context.Ingredients.FindAsync(id);
-
+            var ingredient = await _ingredientService.GetIngredientByIdAsync(id);
             if (ingredient == null)
             {
                 return NotFound();
             }
-
-            return _mapper.Map<IngredientDto>(ingredient);
+            return Ok(ingredient);
         }
 
         [HttpPost]
         public async Task<ActionResult<IngredientDto>> PostIngredient(IngredientDto ingredientDto)
         {
-            var ingredient = _mapper.Map<Ingredient>(ingredientDto);
-            _context.Ingredients.Add(ingredient);
-            await _context.SaveChangesAsync();
-
-            ingredientDto.Id = ingredient.Id;
-
-            return CreatedAtAction(nameof(GetIngredient), new { id = ingredientDto.Id }, ingredientDto);
+            var newIngredient = await _ingredientService.CreateIngredientAsync(ingredientDto);
+            return CreatedAtAction(nameof(GetIngredient), new { id = newIngredient.Id }, newIngredient);
         }
 
         [HttpPut("{id}")]
@@ -59,23 +50,10 @@ namespace CocktailChooser.API.Controllers
                 return BadRequest();
             }
 
-            var ingredient = _mapper.Map<Ingredient>(ingredientDto);
-            _context.Entry(ingredient).State = EntityState.Modified;
-
-            try
+            var result = await _ingredientService.UpdateIngredientAsync(ingredientDto);
+            if (!result)
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!IngredientExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound();
             }
 
             return NoContent();
@@ -84,21 +62,13 @@ namespace CocktailChooser.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteIngredient(int id)
         {
-            var ingredient = await _context.Ingredients.FindAsync(id);
-            if (ingredient == null)
+            var result = await _ingredientService.DeleteIngredientAsync(id);
+            if (!result)
             {
                 return NotFound();
             }
 
-            _context.Ingredients.Remove(ingredient);
-            await _context.SaveChangesAsync();
-
             return NoContent();
-        }
-
-        private bool IngredientExists(int id)
-        {
-            return _context.Ingredients.Any(e => e.Id == id);
         }
     }
 }
