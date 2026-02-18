@@ -1,0 +1,11 @@
+{
+    "sqltools.useNodeRuntime": true,
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "cocktail-chooser",
+            "database": "${workspaceFolder:cocktail-chooser}/CocktailChooser.Data/Data/CocktailChooser.db"
+        }
+    ]
+}
