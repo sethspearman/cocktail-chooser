@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CocktailChooser.API.Services;
+using CocktailChooser.Data.Migrations;
 using CocktailChooser.Data.Repositories;
 
 public class Startup
@@ -25,13 +26,21 @@ public class Startup
         services.AddScoped<ICocktailRepository>(_ => new CocktailRepository(connectionString));
         services.AddScoped<IIngredientRepository>(_ => new IngredientRepository(connectionString));
         services.AddScoped<ICocktailRecipeRepository>(_ => new CocktailRecipeRepository(connectionString));
+        services.AddScoped<IRecipeSourceRepository>(_ => new RecipeSourceRepository(connectionString));
+        services.AddScoped<IRecipeRepository>(_ => new RecipeRepository(connectionString));
         services.AddScoped<ICocktailService, CocktailService>();
         services.AddScoped<IIngredientService, IngredientService>();
         services.AddScoped<ICocktailRecipeService, CocktailRecipeService>();
+        services.AddScoped<IRecipeSourceService, RecipeSourceService>();
+        services.AddScoped<IRecipeService, RecipeService>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        var connectionString = Configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Missing connection string: DefaultConnection");
+        SqlMigrationRunner.Run(connectionString);
+
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();

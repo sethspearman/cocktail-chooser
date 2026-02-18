@@ -57,3 +57,18 @@ Future:
 - Business logic in services.
 - Code should be testable.
 - xUnit for unit testing.
+
+## Migration Strategy
+
+- Bootstrap only:
+  - `CocktailChooser.Data/Data/Migrations/initial_schema.sql`
+  - `CocktailChooser.Data/Data/Migrations/initial_data.sql`
+- Versioned migrations:
+  - Add forward-only SQL files in `CocktailChooser.Data/Data/Migrations/Versions`
+  - Naming format: `NNN_description.sql` (example: `002_add_favorites.sql`)
+- Runtime application:
+  - API startup runs `SqlMigrationRunner` before serving requests.
+  - Runner creates/uses `SchemaMigrations` to track applied scripts and checksums.
+- Scope guidance:
+  - DDL changes go in versioned migrations (table/index/constraint changes).
+  - DML backfills and data cleanup also go in versioned migrations, in the same release where needed.

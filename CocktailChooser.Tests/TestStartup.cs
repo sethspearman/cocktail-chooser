@@ -20,7 +20,7 @@ public class TestStartup
     {
         services.AddControllers();
         var databasePath = Path.Combine(Path.GetTempPath(), "cocktailchooser-tests.db");
-        var connectionString = $"Data Source={databasePath}";
+        var connectionString = $"Data Source={databasePath};Foreign Keys=True";
 
         using (var connection = new SqliteConnection(connectionString))
         {

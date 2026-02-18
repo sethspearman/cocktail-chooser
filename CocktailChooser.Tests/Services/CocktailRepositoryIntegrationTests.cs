@@ -16,7 +16,7 @@ public class CocktailRepositoryIntegrationTests : IDisposable
     public CocktailRepositoryIntegrationTests()
     {
         _databasePath = Path.Combine(Path.GetTempPath(), $"cocktailchooser-{Guid.NewGuid():N}.db");
-        _connectionString = $"Data Source={_databasePath}";
+        _connectionString = $"Data Source={_databasePath};Foreign Keys=True";
         _repository = new CocktailRepository(_connectionString);
         InitializeDatabase();
     }

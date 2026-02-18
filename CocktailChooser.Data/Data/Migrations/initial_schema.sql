@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS Amounts (
 DROP TABLE IF EXISTS CocktailIngredients;
 
 CREATE TABLE IF NOT EXISTS CocktailIngredients (
-    CocktailId   INTEGER,
-    IngredientId INTEGER,
+    CocktailId   INTEGER NOT NULL,
+    IngredientId INTEGER NOT NULL,
     AmountId     INTEGER,
     FOREIGN KEY (
         CocktailId
@@ -35,6 +35,24 @@ CREATE TABLE IF NOT EXISTS CocktailIngredients (
         AmountId
     )
     REFERENCES Amounts (Id) 
+);
+
+CREATE INDEX IF NOT EXISTS IX_CocktailIngredients_CocktailId ON CocktailIngredients (
+    CocktailId
+);
+
+CREATE INDEX IF NOT EXISTS IX_CocktailIngredients_IngredientId ON CocktailIngredients (
+    IngredientId
+);
+
+CREATE INDEX IF NOT EXISTS IX_CocktailIngredients_AmountId ON CocktailIngredients (
+    AmountId
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS UX_CocktailIngredients_Triplet ON CocktailIngredients (
+    CocktailId,
+    IngredientId,
+    ifnull(AmountId, -1)
 );
 
 

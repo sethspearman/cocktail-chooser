@@ -11,4 +11,10 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Data/Migrations/initial_schema.sql" />
+    <EmbeddedResource Include="Data/Migrations/initial_data.sql" />
+    <EmbeddedResource Include="Data/Migrations/Versions/*.sql" />
+  </ItemGroup>
+
 </Project>
