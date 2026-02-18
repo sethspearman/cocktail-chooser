@@ -39,6 +39,7 @@ public class Startup
             app.UseSwaggerUI();
         }
 
+        app.UseRouting();
         app.UseHttpsRedirection();
         app.UseAuthorization();
         app.UseEndpoints(endpoints =>
