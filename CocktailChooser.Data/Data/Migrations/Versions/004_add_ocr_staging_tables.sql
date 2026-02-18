@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS OcrImportItems (
     OcrImportId INTEGER NOT NULL,
     ItemKey TEXT,
     RawText TEXT NOT NULL,
+    -- TODO: Keep binary OCR images/files in object storage, not SQLite; persist only a storage key/URL here.
     RawOcrJson TEXT,
+    -- TODO: Add retention/cleanup workflow for raw OCR payloads after candidate approval/publish.
     Confidence REAL,
     Status TEXT NOT NULL DEFAULT 'Pending',
     CreatedUtc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
