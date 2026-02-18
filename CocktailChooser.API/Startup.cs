@@ -28,11 +28,14 @@ public class Startup
         services.AddScoped<ICocktailRecipeRepository>(_ => new CocktailRecipeRepository(connectionString));
         services.AddScoped<IRecipeSourceRepository>(_ => new RecipeSourceRepository(connectionString));
         services.AddScoped<IRecipeRepository>(_ => new RecipeRepository(connectionString));
+        services.AddScoped<IOcrImportRepository>(_ => new OcrImportRepository(connectionString));
         services.AddScoped<ICocktailService, CocktailService>();
         services.AddScoped<IIngredientService, IngredientService>();
         services.AddScoped<ICocktailRecipeService, CocktailRecipeService>();
         services.AddScoped<IRecipeSourceService, RecipeSourceService>();
         services.AddScoped<IRecipeService, RecipeService>();
+        services.AddScoped<IOcrRecipeParser, HeuristicOcrRecipeParser>();
+        services.AddScoped<IOcrImportService, OcrImportService>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

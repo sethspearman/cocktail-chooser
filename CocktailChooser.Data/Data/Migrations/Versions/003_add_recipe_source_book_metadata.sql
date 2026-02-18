@@ -1,0 +1,13 @@
+PRAGMA foreign_keys = ON;
+BEGIN TRANSACTION;
+
+ALTER TABLE RecipeSources ADD COLUMN Publisher TEXT;
+ALTER TABLE RecipeSources ADD COLUMN PublishDate TEXT;
+ALTER TABLE RecipeSources ADD COLUMN Author TEXT;
+ALTER TABLE RecipeSources ADD COLUMN Isbn10 TEXT;
+ALTER TABLE RecipeSources ADD COLUMN Isbn13 TEXT;
+ALTER TABLE RecipeSources ADD COLUMN PurchaseUrl TEXT;
+ALTER TABLE RecipeSources ADD COLUMN Edition TEXT;
+ALTER TABLE RecipeSources ADD COLUMN Language TEXT;
+
+COMMIT;
