@@ -1,79 +1,72 @@
-﻿using AutoMapper;
-using CocktailChooser.API.DTOs;
-using CocktailChooser.API.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using CocktailChooser.API.DTOs;
+using CocktailChooser.Data.Repositories;
 
 namespace CocktailChooser.API.Services
 {
     public class IngredientService : IIngredientService
     {
-        private readonly CocktailChooserContext _context;
-        private readonly IMapper _mapper;
+        private readonly IIngredientRepository _repository;
 
-        public IngredientService(CocktailChooserContext context, IMapper mapper)
+        public IngredientService(IIngredientRepository repository)
         {
-            _context = context;
-            _mapper = mapper;
+            _repository = repository;
         }
 
         public async Task<IEnumerable<IngredientDto>> GetAllIngredientsAsync()
         {
-            var ingredients = await _context.Ingredients.ToListAsync();
-            return _mapper.Map<List<IngredientDto>>(ingredients);
+            var ingredients = await _repository.GetAllAsync();
+            return ingredients.Select(MapToDto);
         }
 
-        public async Task<IngredientDto> GetIngredientByIdAsync(int id)
+        public async Task<IngredientDto?> GetIngredientByIdAsync(int id)
         {
-            var ingredient = await _context.Ingredients.FindAsync(id);
+            var ingredient = await _repository.GetByIdAsync(id);
             if (ingredient == null)
             {
                 return null;
             }
-            return _mapper.Map<IngredientDto>(ingredient);
+
+            return MapToDto(ingredient);
         }
 
         public async Task<IngredientDto> CreateIngredientAsync(IngredientDto ingredientDto)
         {
-            var ingredient = _mapper.Map<Ingredient>(ingredientDto);
-            _context.Ingredients.Add(ingredient);
-            await _context.SaveChangesAsync();
-            return _mapper.Map<IngredientDto>(ingredient);
+            var ingredient = await _repository.CreateAsync(MapToRecord(ingredientDto));
+            return MapToDto(ingredient);
         }
 
         public async Task<bool> UpdateIngredientAsync(IngredientDto ingredientDto)
         {
-            var ingredient = _mapper.Map<Ingredient>(ingredientDto);
-            _context.Entry(ingredient).State = EntityState.Modified;
-            try
-            {
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!IngredientExists(ingredientDto.Id))
-                {
-                    return false;
-                }
-                throw;
-            }
+            return await _repository.UpdateAsync(MapToRecord(ingredientDto));
         }
 
         public async Task<bool> DeleteIngredientAsync(int id)
         {
-            var ingredient = await _context.Ingredients.FindAsync(id);
-            if (ingredient == null)
-            {
-                return false;
-            }
-            _context.Ingredients.Remove(ingredient);
-            await _context.SaveChangesAsync();
-            return true;
+            return await _repository.DeleteAsync(id);
         }
 
-        private bool IngredientExists(int id)
+        private static IngredientDto MapToDto(IngredientRecord ingredient)
         {
-            return _context.Ingredients.Any(e => e.Id == id);
+            return new IngredientDto
+            {
+                Id = ingredient.Id,
+                Name = ingredient.Name,
+                IngredientTypeId = ingredient.IngredientTypeId,
+                MixerSubtypeId = ingredient.MixerSubtypeId,
+                LongDescription = ingredient.LongDescription
+            };
+        }
+
+        private static IngredientRecord MapToRecord(IngredientDto ingredient)
+        {
+            return new IngredientRecord
+            {
+                Id = ingredient.Id,
+                Name = ingredient.Name,
+                IngredientTypeId = ingredient.IngredientTypeId,
+                MixerSubtypeId = ingredient.MixerSubtypeId,
+                LongDescription = ingredient.LongDescription
+            };
         }
     }
 }

@@ -1,92 +1,77 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
 using CocktailChooser.API.DTOs;
-using CocktailChooser.API.Models;
-using Microsoft.EntityFrameworkCore;
+using CocktailChooser.Data.Repositories;
 
 namespace CocktailChooser.API.Services
 {
     public class CocktailRecipeService : ICocktailRecipeService
     {
-        private readonly CocktailChooserContext _context;
-        private readonly IMapper _mapper;
+        private readonly ICocktailRecipeRepository _repository;
 
-        public CocktailRecipeService(CocktailChooserContext context, IMapper mapper)
+        public CocktailRecipeService(ICocktailRecipeRepository repository)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
-        public async Task<CocktailRecipeDto> GetCocktailRecipeByIdAsync(int cocktailId, int stepNumber)
+        public async Task<CocktailRecipeDto?> GetCocktailRecipeByIdAsync(int cocktailId, int stepNumber)
         {
-            var recipe = await _context.CocktailRecipes
-                .FirstOrDefaultAsync(cr => cr.CocktailId == cocktailId && cr.StepNumber == stepNumber);
+            var recipe = await _repository.GetByIdAsync(cocktailId, stepNumber);
 
             if (recipe == null)
             {
                 return null;
             }
 
-            return _mapper.Map<CocktailRecipeDto>(recipe);
+            return MapToDto(recipe);
         }
 
         public async Task<IEnumerable<CocktailRecipeDto>> GetAllCocktailRecipesAsync()
         {
-            var recipes = await _context.CocktailRecipes.ToListAsync();
-            return _mapper.Map<IEnumerable<CocktailRecipeDto>>(recipes);
+            var recipes = await _repository.GetAllAsync();
+            return recipes.Select(MapToDto);
         }
 
         public async Task<IEnumerable<CocktailRecipeDto>> GetCocktailRecipesByCocktailIdAsync(int cocktailId)
         {
-            var recipes = await _context.CocktailRecipes
-                .Where(cr => cr.CocktailId == cocktailId)
-                .ToListAsync();
-
-            return _mapper.Map<IEnumerable<CocktailRecipeDto>>(recipes);
+            var recipes = await _repository.GetByCocktailIdAsync(cocktailId);
+            return recipes.Select(MapToDto);
         }
 
         public async Task<CocktailRecipeDto> CreateCocktailRecipeAsync(CocktailRecipeDto cocktailRecipeDto)
         {
-            var recipe = _mapper.Map<CocktailRecipe>(cocktailRecipeDto);
-
-            _context.CocktailRecipes.Add(recipe);
-            await _context.SaveChangesAsync();
-
-            return _mapper.Map<CocktailRecipeDto>(recipe);
+            var recipe = await _repository.CreateAsync(MapToRecord(cocktailRecipeDto));
+            return MapToDto(recipe);
         }
 
         public async Task<bool> UpdateCocktailRecipeAsync(CocktailRecipeDto cocktailRecipeDto)
         {
-            var recipe = await _context.CocktailRecipes
-                .FirstOrDefaultAsync(cr => cr.CocktailId == cocktailRecipeDto.CocktailId && cr.StepNumber == cocktailRecipeDto.StepNumber);
-
-            if (recipe == null)
-            {
-                return false;
-            }
-
-            _mapper.Map(cocktailRecipeDto, recipe);
-            await _context.SaveChangesAsync();
-
-            return true;
+            return await _repository.UpdateAsync(MapToRecord(cocktailRecipeDto));
         }
 
         public async Task<bool> DeleteCocktailRecipeAsync(int cocktailId, int stepNumber)
         {
-            var recipe = await _context.CocktailRecipes
-                .FirstOrDefaultAsync(cr => cr.CocktailId == cocktailId && cr.StepNumber == stepNumber);
+            return await _repository.DeleteAsync(cocktailId, stepNumber);
+        }
 
-            if (recipe == null)
+        private static CocktailRecipeDto MapToDto(CocktailRecipeRecord recipe)
+        {
+            return new CocktailRecipeDto
             {
-                return false;
-            }
+                CocktailId = recipe.CocktailId,
+                StepNumber = recipe.StepNumber,
+                Instruction = recipe.Instruction
+            };
+        }
 
-            _context.CocktailRecipes.Remove(recipe);
-            await _context.SaveChangesAsync();
-
-            return true;
+        private static CocktailRecipeRecord MapToRecord(CocktailRecipeDto recipe)
+        {
+            return new CocktailRecipeRecord
+            {
+                CocktailId = recipe.CocktailId,
+                StepNumber = recipe.StepNumber,
+                Instruction = recipe.Instruction
+            };
         }
     }
 }

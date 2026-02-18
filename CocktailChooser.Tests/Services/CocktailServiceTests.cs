@@ -1,0 +1,63 @@
+using CocktailChooser.API.DTOs;
+using CocktailChooser.API.Services;
+using CocktailChooser.Data.Repositories;
+using Moq;
+
+namespace CocktailChooser.Tests.Services;
+
+public class CocktailServiceTests
+{
+    private readonly Mock<ICocktailRepository> _repositoryMock;
+    private readonly CocktailService _service;
+
+    public CocktailServiceTests()
+    {
+        _repositoryMock = new Mock<ICocktailRepository>();
+        _service = new CocktailService(_repositoryMock.Object);
+    }
+
+    [Fact]
+    public async Task GetCocktailByIdAsync_ReturnsNull_WhenNotFound()
+    {
+        _repositoryMock.Setup(r => r.GetByIdAsync(999))
+            .ReturnsAsync((CocktailRecord?)null);
+
+        var result = await _service.GetCocktailByIdAsync(999);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetCocktailByIdAsync_MapsRepositoryRecordToDto()
+    {
+        _repositoryMock.Setup(r => r.GetByIdAsync(1))
+            .ReturnsAsync(new CocktailRecord
+            {
+                Id = 1,
+                Name = "Mojito",
+                Method = "Build over ice",
+                CocktailSourceId = 2
+            });
+
+        var result = await _service.GetCocktailByIdAsync(1);
+
+        Assert.NotNull(result);
+        Assert.Equal(1, result.Id);
+        Assert.Equal("Mojito", result.Name);
+        Assert.Equal(2, result.CocktailSourceId);
+    }
+
+    [Fact]
+    public async Task UpdateCocktailAsync_DelegatesToRepository()
+    {
+        var dto = new CocktailDto { Id = 10, Name = "Negroni" };
+        _repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<CocktailRecord>()))
+            .ReturnsAsync(true);
+
+        var updated = await _service.UpdateCocktailAsync(dto);
+
+        Assert.True(updated);
+        _repositoryMock.Verify(r => r.UpdateAsync(It.Is<CocktailRecord>(c =>
+            c.Id == 10 && c.Name == "Negroni")), Times.Once);
+    }
+}

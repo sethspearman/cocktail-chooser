@@ -1,79 +1,78 @@
-﻿using AutoMapper;
-using CocktailChooser.API.DTOs;
-using CocktailChooser.API.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using CocktailChooser.API.DTOs;
+using CocktailChooser.Data.Repositories;
 
 namespace CocktailChooser.API.Services
 {
     public class CocktailService : ICocktailService
     {
-        private readonly CocktailChooserContext _context;
-        private readonly IMapper _mapper;
+        private readonly ICocktailRepository _repository;
 
-        public CocktailService(CocktailChooserContext context, IMapper mapper)
+        public CocktailService(ICocktailRepository repository)
         {
-            _context = context;
-            _mapper = mapper;
+            _repository = repository;
         }
 
         public async Task<IEnumerable<CocktailDto>> GetAllCocktailsAsync()
         {
-            var cocktails = await _context.Cocktails.ToListAsync();
-            return _mapper.Map<List<CocktailDto>>(cocktails);
+            var cocktails = await _repository.GetAllAsync();
+            return cocktails.Select(MapToDto);
         }
 
-        public async Task<CocktailDto> GetCocktailByIdAsync(int id)
+        public async Task<CocktailDto?> GetCocktailByIdAsync(int id)
         {
-            var cocktail = await _context.Cocktails.FindAsync(id);
+            var cocktail = await _repository.GetByIdAsync(id);
             if (cocktail == null)
             {
                 return null;
             }
-            return _mapper.Map<CocktailDto>(cocktail);
+
+            return MapToDto(cocktail);
         }
 
         public async Task<CocktailDto> CreateCocktailAsync(CocktailDto cocktailDto)
         {
-            var cocktail = _mapper.Map<Cocktail>(cocktailDto);
-            _context.Cocktails.Add(cocktail);
-            await _context.SaveChangesAsync();
-            return _mapper.Map<CocktailDto>(cocktail);
+            var createdCocktail = await _repository.CreateAsync(MapToRecord(cocktailDto));
+            return MapToDto(createdCocktail);
         }
 
         public async Task<bool> UpdateCocktailAsync(CocktailDto cocktailDto)
         {
-            var cocktail = _mapper.Map<Cocktail>(cocktailDto);
-            _context.Entry(cocktail).State = EntityState.Modified;
-            try
-            {
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CocktailExists(cocktailDto.Id))
-                {
-                    return false;
-                }
-                throw;
-            }
+            return await _repository.UpdateAsync(MapToRecord(cocktailDto));
         }
 
         public async Task<bool> DeleteCocktailAsync(int id)
         {
-            var cocktail = await _context.Cocktails.FindAsync(id);
-            if (cocktail == null)
-            {
-                return false;
-            }
-            _context.Cocktails.Remove(cocktail);
-            await _context.SaveChangesAsync();
-            return true;
+            return await _repository.DeleteAsync(id);
         }
 
-        private bool CocktailExists(int id)
+        private static CocktailDto MapToDto(CocktailRecord cocktail)
         {
-            return _context.Cocktails.Any(e => e.Id == id);
+            return new CocktailDto
+            {
+                Id = cocktail.Id,
+                Name = cocktail.Name,
+                Description = cocktail.Description,
+                Method = cocktail.Method,
+                GlassTypeId = cocktail.GlassTypeId,
+                TimePeriodId = cocktail.TimePeriodId,
+                IsPopular = cocktail.IsPopular,
+                CocktailSourceId = cocktail.CocktailSourceId
+            };
+        }
+
+        private static CocktailRecord MapToRecord(CocktailDto cocktail)
+        {
+            return new CocktailRecord
+            {
+                Id = cocktail.Id,
+                Name = cocktail.Name,
+                Description = cocktail.Description,
+                Method = cocktail.Method,
+                GlassTypeId = cocktail.GlassTypeId,
+                TimePeriodId = cocktail.TimePeriodId,
+                IsPopular = cocktail.IsPopular,
+                CocktailSourceId = cocktail.CocktailSourceId
+            };
         }
     }
 }

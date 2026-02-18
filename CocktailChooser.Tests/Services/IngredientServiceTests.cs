@@ -1,139 +1,59 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using AutoMapper;
 using CocktailChooser.API.DTOs;
 using CocktailChooser.API.Services;
+using CocktailChooser.Data.Repositories;
 using Moq;
-using Xunit;
+
+namespace CocktailChooser.Tests.Services;
 
 public class IngredientServiceTests
 {
-    private readonly Mock<IIngredientService> _mockService;
-    private readonly IMapper _mapper;
+    private readonly Mock<IIngredientRepository> _repositoryMock;
+    private readonly IngredientService _service;
 
     public IngredientServiceTests()
     {
-        _mockService = new Mock<IIngredientService>();
-
-        var mockMapper = new MapperConfiguration(cfg =>
-        {
-            cfg.AddProfile(new CocktailChooser.API.Mappings.MappingProfile());
-        });
-        _mapper = mockMapper.CreateMapper();
+        _repositoryMock = new Mock<IIngredientRepository>();
+        _service = new IngredientService(_repositoryMock.Object);
     }
 
     [Fact]
-    public async Task GetAllIngredientsAsync_ReturnsListOfIngredients()
+    public async Task GetIngredientByIdAsync_ReturnsNull_WhenMissing()
     {
-        // Arrange
-        var ingredients = new List<IngredientDto>
-        {
-            new IngredientDto { Id = 1, Name = "Vodka" },
-            new IngredientDto { Id = 2, Name = "Gin" }
-        };
+        _repositoryMock.Setup(r => r.GetByIdAsync(404))
+            .ReturnsAsync((IngredientRecord?)null);
 
-        _mockService.Setup(s => s.GetAllIngredientsAsync())
-            .ReturnsAsync(ingredients);
+        var result = await _service.GetIngredientByIdAsync(404);
 
-        // Act
-        var result = await _mockService.Object.GetAllIngredientsAsync();
-
-        // Assert
-        Assert.Equal(2, result.Count());
-        Assert.Equal("Vodka", result.First().Name);
-    }
-
-    [Fact]
-    public async Task GetIngredientByIdAsync_ReturnsIngredient_WhenIngredientExists()
-    {
-        // Arrange
-        var ingredient = new IngredientDto { Id = 1, Name = "Vodka" };
-        _mockService.Setup(s => s.GetIngredientByIdAsync(1))
-            .ReturnsAsync(ingredient);
-
-        // Act
-        var result = await _mockService.Object.GetIngredientByIdAsync(1);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal("Vodka", result.Name);
-    }
-
-    [Fact]
-    public async Task GetIngredientByIdAsync_ReturnsNull_WhenIngredientDoesNotExist()
-    {
-        // Arrange
-        _mockService.Setup(s => s.GetIngredientByIdAsync(1))
-            .ReturnsAsync((IngredientDto)null);
-
-        // Act
-        var result = await _mockService.Object.GetIngredientByIdAsync(1);
-
-        // Assert
         Assert.Null(result);
     }
 
     [Fact]
-    public async Task CreateIngredientAsync_AddsIngredientToDatabase()
+    public async Task CreateIngredientAsync_ReturnsMappedDto()
     {
-        // Arrange
-        var ingredientDto = new IngredientDto { Name = "Vodka" };
-        var createdIngredientDto = new IngredientDto { Id = 1, Name = "Vodka" };
+        _repositoryMock.Setup(r => r.CreateAsync(It.IsAny<IngredientRecord>()))
+            .ReturnsAsync(new IngredientRecord
+            {
+                Id = 7,
+                Name = "Lime Juice",
+                IngredientTypeId = 2
+            });
 
-        _mockService.Setup(s => s.CreateIngredientAsync(ingredientDto))
-            .ReturnsAsync(createdIngredientDto);
+        var result = await _service.CreateIngredientAsync(new IngredientDto { Name = "Lime Juice" });
 
-        // Act
-        var result = await _mockService.Object.CreateIngredientAsync(ingredientDto);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal("Vodka", result.Name);
-        Assert.NotEqual(0, result.Id);
+        Assert.Equal(7, result.Id);
+        Assert.Equal("Lime Juice", result.Name);
+        Assert.Equal(2, result.IngredientTypeId);
     }
 
     [Fact]
-    public async Task UpdateIngredientAsync_ReturnsTrue_WhenIngredientIsUpdated()
+    public async Task UpdateIngredientAsync_DelegatesToRepository()
     {
-        // Arrange
-        var ingredientDto = new IngredientDto { Id = 1, Name = "Vodka" };
-
-        _mockService.Setup(s => s.UpdateIngredientAsync(ingredientDto))
+        _repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<IngredientRecord>()))
             .ReturnsAsync(true);
 
-        // Act
-        var result = await _mockService.Object.UpdateIngredientAsync(ingredientDto);
+        var updated = await _service.UpdateIngredientAsync(new IngredientDto { Id = 3, Name = "Gin" });
 
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task DeleteIngredientAsync_ReturnsTrue_WhenIngredientIsDeleted()
-    {
-        // Arrange
-        _mockService.Setup(s => s.DeleteIngredientAsync(1))
-            .ReturnsAsync(true);
-
-        // Act
-        var result = await _mockService.Object.DeleteIngredientAsync(1);
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task DeleteIngredientAsync_ReturnsFalse_WhenIngredientDoesNotExist()
-    {
-        // Arrange
-        _mockService.Setup(s => s.DeleteIngredientAsync(1))
-            .ReturnsAsync(false);
-
-        // Act
-        var result = await _mockService.Object.DeleteIngredientAsync(1);
-
-        // Assert
-        Assert.False(result);
+        Assert.True(updated);
+        _repositoryMock.Verify(r => r.UpdateAsync(It.Is<IngredientRecord>(i => i.Id == 3 && i.Name == "Gin")), Times.Once);
     }
 }

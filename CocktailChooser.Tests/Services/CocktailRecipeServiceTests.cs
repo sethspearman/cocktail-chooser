@@ -1,143 +1,55 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using AutoMapper;
 using CocktailChooser.API.DTOs;
 using CocktailChooser.API.Services;
+using CocktailChooser.Data.Repositories;
 using Moq;
-using Xunit;
 
 public class CocktailRecipeServiceTests
 {
-    private readonly Mock<ICocktailRecipeService> _mockService;
-    private readonly IMapper _mapper;
+    private readonly Mock<ICocktailRecipeRepository> _repositoryMock;
+    private readonly CocktailRecipeService _service;
 
     public CocktailRecipeServiceTests()
     {
-        _mockService = new Mock<ICocktailRecipeService>();
-
-        var mockMapper = new MapperConfiguration(cfg =>
-        {
-            cfg.AddProfile(new CocktailChooser.API.Mappings.MappingProfile());
-        });
-        _mapper = mockMapper.CreateMapper();
+        _repositoryMock = new Mock<ICocktailRecipeRepository>();
+        _service = new CocktailRecipeService(_repositoryMock.Object);
     }
 
     [Fact]
-    public async Task GetAllCocktailRecipesAsync_ReturnsListOfCocktailRecipes()
+    public async Task GetCocktailRecipeByIdAsync_ReturnsNull_WhenMissing()
     {
-        // Arrange
-        var cocktailRecipes = new List<CocktailRecipeDto>
-        {
-            new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" },
-            new CocktailRecipeDto { CocktailId = 1, StepNumber = 2, Instruction = "Pour vodka" }
-        };
+        _repositoryMock.Setup(r => r.GetByIdAsync(1, 2))
+            .ReturnsAsync((CocktailRecipeRecord?)null);
 
-        _mockService.Setup(s => s.GetAllCocktailRecipesAsync())
-            .ReturnsAsync(cocktailRecipes);
+        var result = await _service.GetCocktailRecipeByIdAsync(1, 2);
 
-        // Act
-        var result = await _mockService.Object.GetAllCocktailRecipesAsync();
-
-        // Assert
-        Assert.Equal(2, result.Count());
-        Assert.Equal("Add ice", result.First().Instruction);
+        Assert.Null(result);
     }
 
     [Fact]
-    public async Task GetCocktailRecipesByCocktailIdAsync_ReturnsRecipes_WhenRecipesExist()
+    public async Task GetCocktailRecipesByCocktailIdAsync_ReturnsMappedDtos()
     {
-        // Arrange
-        var cocktailRecipes = new List<CocktailRecipeDto>
-        {
-            new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" },
-            new CocktailRecipeDto { CocktailId = 1, StepNumber = 2, Instruction = "Pour vodka" }
-        };
+        _repositoryMock.Setup(r => r.GetByCocktailIdAsync(5))
+            .ReturnsAsync(new[]
+            {
+                new CocktailRecipeRecord { CocktailId = 5, StepNumber = 1, Instruction = "Add ice" },
+                new CocktailRecipeRecord { CocktailId = 5, StepNumber = 2, Instruction = "Stir" }
+            });
 
-        _mockService.Setup(s => s.GetCocktailRecipesByCocktailIdAsync(1))
-            .ReturnsAsync(cocktailRecipes);
+        var result = (await _service.GetCocktailRecipesByCocktailIdAsync(5)).ToList();
 
-        // Act
-        var result = await _mockService.Object.GetCocktailRecipesByCocktailIdAsync(1);
-
-        // Assert
-        Assert.Equal(2, result.Count());
-        Assert.Equal("Add ice", result.First().Instruction);
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Add ice", result[0].Instruction);
     }
 
     [Fact]
-    public async Task GetCocktailRecipesByCocktailIdAsync_ReturnsEmptyList_WhenRecipesDoNotExist()
+    public async Task DeleteCocktailRecipeAsync_DelegatesToRepository()
     {
-        // Arrange
-        _mockService.Setup(s => s.GetCocktailRecipesByCocktailIdAsync(1))
-            .ReturnsAsync(new List<CocktailRecipeDto>());
-
-        // Act
-        var result = await _mockService.Object.GetCocktailRecipesByCocktailIdAsync(1);
-
-        // Assert
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task CreateCocktailRecipeAsync_AddsRecipeToDatabase()
-    {
-        // Arrange
-        var cocktailRecipeDto = new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" };
-        var createdCocktailRecipeDto = new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" };
-
-        _mockService.Setup(s => s.CreateCocktailRecipeAsync(cocktailRecipeDto))
-            .ReturnsAsync(createdCocktailRecipeDto);
-
-        // Act
-        var result = await _mockService.Object.CreateCocktailRecipeAsync(cocktailRecipeDto);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal("Add ice", result.Instruction);
-    }
-
-    [Fact]
-    public async Task UpdateCocktailRecipeAsync_ReturnsTrue_WhenRecipeIsUpdated()
-    {
-        // Arrange
-        var cocktailRecipeDto = new CocktailRecipeDto { CocktailId = 1, StepNumber = 1, Instruction = "Add ice" };
-
-        _mockService.Setup(s => s.UpdateCocktailRecipeAsync(cocktailRecipeDto))
+        _repositoryMock.Setup(r => r.DeleteAsync(2, 3))
             .ReturnsAsync(true);
 
-        // Act
-        var result = await _mockService.Object.UpdateCocktailRecipeAsync(cocktailRecipeDto);
+        var deleted = await _service.DeleteCocktailRecipeAsync(2, 3);
 
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task DeleteCocktailRecipeAsync_ReturnsTrue_WhenRecipeIsDeleted()
-    {
-        // Arrange
-        _mockService.Setup(s => s.DeleteCocktailRecipeAsync(1, 1))
-            .ReturnsAsync(true);
-
-        // Act
-        var result = await _mockService.Object.DeleteCocktailRecipeAsync(1, 1);
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task DeleteCocktailRecipeAsync_ReturnsFalse_WhenRecipeDoesNotExist()
-    {
-        // Arrange
-        _mockService.Setup(s => s.DeleteCocktailRecipeAsync(1, 1))
-            .ReturnsAsync(false);
-
-        // Act
-        var result = await _mockService.Object.DeleteCocktailRecipeAsync(1, 1);
-
-        // Assert
-        Assert.False(result);
+        Assert.True(deleted);
+        _repositoryMock.Verify(r => r.DeleteAsync(2, 3), Times.Once);
     }
 }

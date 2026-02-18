@@ -2,10 +2,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using CocktailChooser.API.Mappings;
-using CocktailChooser.API.Models;
 using CocktailChooser.API.Services;
-using Microsoft.EntityFrameworkCore;
+using CocktailChooser.Data.Repositories;
 
 public class Startup
 {
@@ -18,23 +16,15 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-
-        //if (environment == "Test")
-        //{
-            services.AddDbContext<CocktailChooserContext>(options =>
-                options.UseInMemoryDatabase("TestDatabase"));
-        //}
-        //else
-        //{
-        //    services.AddDbContext<CocktailChooserContext>(options =>
-        //        options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
-        //}
+        var connectionString = Configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Missing connection string: DefaultConnection");
 
         services.AddControllers();
-        services.AddAutoMapper(typeof(MappingProfile));
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
+        services.AddScoped<ICocktailRepository>(_ => new CocktailRepository(connectionString));
+        services.AddScoped<IIngredientRepository>(_ => new IngredientRepository(connectionString));
+        services.AddScoped<ICocktailRecipeRepository>(_ => new CocktailRecipeRepository(connectionString));
         services.AddScoped<ICocktailService, CocktailService>();
         services.AddScoped<IIngredientService, IngredientService>();
         services.AddScoped<ICocktailRecipeService, CocktailRecipeService>();
