@@ -5,6 +5,7 @@ import re
 import sqlite3
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Optional
 
 DEFAULT_DB = "CocktailChooser.Data/Data/CocktailChooser.db"
@@ -36,6 +37,7 @@ class ParsedStep:
 class ParsedRecipe:
     cocktail_name: str
     source_recipe_name: Optional[str]
+    cocktail_time_period: Optional[str]
     method_text: Optional[str]
     parser_version: str
     confidence: Optional[float]
@@ -77,6 +79,30 @@ class OcrWorker:
             )
             conn.commit()
             print(f"Created item id={cur.lastrowid}")
+
+    def add_items_from_folder(self, import_id: int, folder: str, confidence: Optional[float]):
+        folder_path = Path(folder)
+        if not folder_path.exists() or not folder_path.is_dir():
+            raise RuntimeError(f"Folder not found: {folder}")
+
+        jpg_files = sorted(folder_path.glob("*.jpg"))
+        if not jpg_files:
+            raise RuntimeError(f"No .jpg files found in folder: {folder}")
+
+        created = 0
+        with self._conn() as conn:
+            for jpg in jpg_files:
+                conn.execute(
+                    """
+                    INSERT INTO OcrImportItems (OcrImportId, ItemKey, RawText, RawOcrJson, Confidence, Status)
+                    VALUES (?, ?, '', NULL, ?, 'Pending')
+                    """,
+                    (import_id, str(jpg), confidence),
+                )
+                created += 1
+            conn.commit()
+
+        print(f"Added {created} item(s) from {folder}")
 
     def run_pending(self, import_id: Optional[int], ocr_cmd_template: Optional[str]):
         with self._conn() as conn:
@@ -129,7 +155,7 @@ class OcrWorker:
         with self._conn() as conn:
             candidates = conn.execute(
                 """
-                SELECT Id, CocktailName, SourceRecipeName, MethodText, ParserVersion, Confidence, ParseWarnings
+                SELECT Id, CocktailName, SourceRecipeName, ParsedTimePeriod, MethodText, ParserVersion, Confidence, ParseWarnings
                 FROM OcrRecipeCandidates
                 WHERE OcrImportItemId = ?
                 ORDER BY Id
@@ -145,6 +171,8 @@ class OcrWorker:
                 print(f"\nCandidate {c['Id']}: {c['CocktailName']}")
                 if c["SourceRecipeName"]:
                     print(f"  Source name: {c['SourceRecipeName']}")
+                if c["ParsedTimePeriod"]:
+                    print(f"  Time period: {c['ParsedTimePeriod']}")
                 if c["Confidence"] is not None:
                     print(f"  Confidence: {c['Confidence']}")
                 if c["ParseWarnings"]:
@@ -176,6 +204,63 @@ class OcrWorker:
                 for step in steps:
                     print(f"    {step['StepNumber']}. {step['Instruction']}")
 
+    def list_import(self, import_id: int, include_candidates: bool):
+        with self._conn() as conn:
+            imp = conn.execute(
+                """
+                SELECT Id, RecipeSourceId, ImportName, ImportType, Status, CreatedUtc
+                FROM OcrImports
+                WHERE Id = ?
+                """,
+                (import_id,),
+            ).fetchone()
+            if not imp:
+                print(f"Import {import_id} not found.")
+                return
+
+            print(
+                f"Import {imp['Id']}: {imp['ImportName']} "
+                f"(type={imp['ImportType']}, source={imp['RecipeSourceId']}, status={imp['Status']})"
+            )
+            print(f"Created: {imp['CreatedUtc']}")
+
+            items = conn.execute(
+                """
+                SELECT Id, ItemKey, Status, Confidence
+                FROM OcrImportItems
+                WHERE OcrImportId = ?
+                ORDER BY Id
+                """,
+                (import_id,),
+            ).fetchall()
+
+            if not items:
+                print("No items found.")
+                return
+
+            print(f"Items ({len(items)}):")
+            for item in items:
+                print(
+                    f"  Item {item['Id']}: status={item['Status']}, "
+                    f"key={item['ItemKey']}, confidence={item['Confidence']}"
+                )
+                if include_candidates:
+                    candidates = conn.execute(
+                        """
+                        SELECT Id, CocktailName, ParsedTimePeriod, Status, Confidence
+                        FROM OcrRecipeCandidates
+                        WHERE OcrImportItemId = ?
+                        ORDER BY Id
+                        """,
+                        (item["Id"],),
+                    ).fetchall()
+                    for c in candidates:
+                        period = f", period={c['ParsedTimePeriod']}" if c["ParsedTimePeriod"] else ""
+                        print(
+                            f"    Candidate {c['Id']}: {c['CocktailName']} "
+                            f"(status={c['Status']}, confidence={c['Confidence']}{period})"
+                        )
+
     def publish_candidate(
         self,
         candidate_id: int,
@@ -192,6 +277,7 @@ class OcrWorker:
                     c.OcrImportItemId,
                     c.CocktailName,
                     c.SourceRecipeName,
+                    c.ParsedTimePeriod,
                     c.MethodText,
                     c.Status,
                     i.OcrImportId,
@@ -224,6 +310,7 @@ class OcrWorker:
             conn.execute("BEGIN")
             try:
                 cocktail_id = self._resolve_or_create_cocktail(cur, cocktail_name, create_cocktail)
+                self._apply_time_period(cur, cocktail_id, candidate["ParsedTimePeriod"])
                 recipe_id = self._upsert_recipe(
                     cur=cur,
                     cocktail_id=cocktail_id,
@@ -250,6 +337,33 @@ class OcrWorker:
                 raise
 
             print(f"Published candidate {candidate_id} -> recipe {recipe_id} (cocktail {cocktail_id})")
+
+    def _apply_time_period(self, cur: sqlite3.Cursor, cocktail_id: int, parsed_time_period: Optional[str]):
+        if not parsed_time_period:
+            return
+
+        lookup = normalize_period_name(parsed_time_period)
+        if not lookup:
+            return
+
+        period = cur.execute(
+            """
+            SELECT Id
+            FROM CocktailTimePeriods
+            WHERE lower(replace(Name, ' ', '')) = lower(?)
+            ORDER BY Id
+            LIMIT 1
+            """,
+            (lookup,),
+        ).fetchone()
+
+        if not period:
+            return
+
+        cur.execute(
+            "UPDATE Cocktails SET TimePeriodId = ? WHERE Id = ?",
+            (period["Id"], cocktail_id),
+        )
 
     def _resolve_or_create_cocktail(self, cur: sqlite3.Cursor, cocktail_name: str, create_cocktail: bool) -> int:
         row = cur.execute(
@@ -445,14 +559,57 @@ def parse_recipe_text(raw_text: str) -> List[ParsedRecipe]:
     lines = [ln.strip() for ln in raw_text.replace("\r\n", "\n").split("\n") if ln.strip()]
     if not lines:
         return []
+    sections = split_recipe_sections(lines)
+    return [parse_recipe_section(section) for section in sections]
 
+
+def split_recipe_sections(lines: List[str]) -> List[List[str]]:
+    ingredient_markers = [
+        idx for idx, line in enumerate(lines)
+        if line.lower() in {"ingredients", "ingredient", "ingredients:"}
+    ]
+
+    if len(ingredient_markers) <= 1:
+        return [lines]
+
+    def title_index_for_marker(marker_idx: int) -> int:
+        if marker_idx >= 2 and looks_like_time_period(lines[marker_idx - 1]):
+            return marker_idx - 2
+        if marker_idx >= 1:
+            return marker_idx - 1
+        return marker_idx
+
+    sections: List[List[str]] = []
+    for i, marker_idx in enumerate(ingredient_markers):
+        section_start = title_index_for_marker(marker_idx)
+        if i + 1 < len(ingredient_markers):
+            next_start = title_index_for_marker(ingredient_markers[i + 1])
+            section_end = max(next_start, marker_idx + 1)
+        else:
+            section_end = len(lines)
+
+        section_lines = lines[section_start:section_end]
+        if not section_lines:
+            section_lines = [f"Recipe {i + 1}", "Ingredients"]
+        sections.append(section_lines)
+
+    return sections
+
+
+def parse_recipe_section(lines: List[str]) -> ParsedRecipe:
     title = lines[0]
+    time_period = None
+    idx = 1
+    if len(lines) > 1 and looks_like_time_period(lines[1]):
+        time_period = lines[1]
+        idx = 2
+
     ingredient_lines: List[str] = []
     method_lines: List[str] = []
     warnings: List[str] = []
 
     mode = "unknown"
-    for line in lines[1:]:
+    for line in lines[idx:]:
         lower = line.lower()
         if lower in {"ingredients", "ingredient", "ingredients:"}:
             mode = "ingredients"
@@ -479,18 +636,17 @@ def parse_recipe_text(raw_text: str) -> List[ParsedRecipe]:
     ingredients = [parse_ingredient_line(line, idx + 1) for idx, line in enumerate(ingredient_lines)]
     steps = parse_steps(method_lines)
 
-    return [
-        ParsedRecipe(
-            cocktail_name=title,
-            source_recipe_name=title,
-            method_text=" ".join(method_lines) if method_lines else None,
-            parser_version="heuristic-v1",
-            confidence=0.6,
-            parse_warnings=" | ".join(warnings) if warnings else None,
-            ingredients=ingredients,
-            steps=steps,
-        )
-    ]
+    return ParsedRecipe(
+        cocktail_name=title,
+        source_recipe_name=title,
+        cocktail_time_period=time_period,
+        method_text=" ".join(method_lines) if method_lines else None,
+        parser_version="heuristic-v1",
+        confidence=0.6,
+        parse_warnings=" | ".join(warnings) if warnings else None,
+        ingredients=ingredients,
+        steps=steps,
+    )
 
 
 def looks_like_ingredient(line: str) -> bool:
@@ -522,6 +678,29 @@ def parse_ingredient_line(line: str, sort_order: int) -> ParsedIngredient:
     )
 
 
+def looks_like_time_period(line: str) -> bool:
+    normalized = normalize_period_name(line)
+    if not normalized:
+        return False
+
+    known = {
+        "preprohibition",
+        "prohibition",
+        "postprohibition",
+        "modern",
+        "vintage",
+        "contemporary",
+        "classic",
+        "goldenage",
+        "tiki",
+    }
+    return normalized in known or "period" in line.lower() or "era" in line.lower()
+
+
+def normalize_period_name(value: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", value.lower())
+
+
 def parse_steps(method_lines: List[str]) -> List[ParsedStep]:
     if not method_lines:
         return []
@@ -545,13 +724,14 @@ def replace_candidates(conn: sqlite3.Connection, item_id: int, parsed_recipes: L
         cur.execute(
             """
             INSERT INTO OcrRecipeCandidates
-            (OcrImportItemId, CocktailName, SourceRecipeName, MethodText, ParserVersion, Confidence, Status, ParseWarnings)
-            VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?)
+            (OcrImportItemId, CocktailName, SourceRecipeName, ParsedTimePeriod, MethodText, ParserVersion, Confidence, Status, ParseWarnings)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)
             """,
             (
                 item_id,
                 recipe.cocktail_name,
                 recipe.source_recipe_name,
+                recipe.cocktail_time_period,
                 recipe.method_text,
                 recipe.parser_version,
                 recipe.confidence,
@@ -609,6 +789,11 @@ def build_parser() -> argparse.ArgumentParser:
     add_item.add_argument("--raw-json")
     add_item.add_argument("--confidence", type=float)
 
+    add_items = sub.add_parser("add-items", help="Add all .jpg files from a folder as OCR items")
+    add_items.add_argument("--import-id", type=int, required=True)
+    add_items.add_argument("--folder", required=True, help="Folder containing .jpg files")
+    add_items.add_argument("--confidence", type=float)
+
     run_pending = sub.add_parser("run-pending", help="Parse all pending OCR items")
     run_pending.add_argument("--import-id", type=int)
     run_pending.add_argument(
@@ -618,6 +803,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     show_candidates = sub.add_parser("show-candidates", help="Show parsed candidates for an item")
     show_candidates.add_argument("--item-id", type=int, required=True)
+
+    list_import = sub.add_parser("list-import", help="List OCR import items and optional candidate ids")
+    list_import.add_argument("--import-id", type=int, required=True)
+    list_import.add_argument(
+        "--include-candidates",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include candidate ids/names under each import item (default: true).",
+    )
 
     publish_candidate = sub.add_parser(
         "publish-candidate",
@@ -655,10 +849,14 @@ def main():
             worker.create_import(args.source_id, args.name, args.type, args.file, args.notes)
         elif args.command == "add-item":
             worker.add_item(args.import_id, args.item_key, args.text, args.raw_json, args.confidence)
+        elif args.command == "add-items":
+            worker.add_items_from_folder(args.import_id, args.folder, args.confidence)
         elif args.command == "run-pending":
             worker.run_pending(args.import_id, args.ocr_cmd)
         elif args.command == "show-candidates":
             worker.show_candidates(args.item_id)
+        elif args.command == "list-import":
+            worker.list_import(args.import_id, args.include_candidates)
         elif args.command == "publish-candidate":
             worker.publish_candidate(
                 candidate_id=args.candidate_id,

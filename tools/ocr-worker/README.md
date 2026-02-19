@@ -53,6 +53,14 @@ python3 tools/ocr-worker/ocr_worker.py add-item \
   --text ""
 ```
 
+### 3b) Bulk-add all `.jpg` files from a folder (no `--text` needed)
+
+```bash
+python3 tools/ocr-worker/ocr_worker.py add-items \
+  --import-id 1 \
+  --folder "/path/to/scans"
+```
+
 ### 4) Process pending items
 
 Text-only mode (uses existing `RawText`):
@@ -77,6 +85,18 @@ python3 tools/ocr-worker/ocr_worker.py run-pending \
 python3 tools/ocr-worker/ocr_worker.py show-candidates --item-id 5
 ```
 
+### 5b) List all items/candidates in an import (ID helper)
+
+```bash
+python3 tools/ocr-worker/ocr_worker.py list-import --import-id 1
+```
+
+Hide candidate rows if you only want item status:
+
+```bash
+python3 tools/ocr-worker/ocr_worker.py list-import --import-id 1 --no-include-candidates
+```
+
 ### 6) Publish an approved candidate into final recipe tables
 
 Default behavior requires candidate status = `Approved` (or `Published`) and will create missing cocktails/ingredients.
@@ -97,6 +117,8 @@ python3 tools/ocr-worker/ocr_worker.py publish-candidate \
 
 - This is a starter heuristic parser; expect manual review/editing.
 - `run-pending` is idempotent for candidate rows per item; each run replaces prior candidates for that item.
+- Parser now captures a likely `CocktailTimePeriod` line when present directly under cocktail title.
+- Parser can split multiple recipes from one OCR text when repeated `Ingredients` section headers are present.
 - Keep source media in filesystem/object storage; DB should store references and extracted text.
 
 ## Next steps
