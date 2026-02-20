@@ -3,7 +3,7 @@ namespace CocktailChooser.Data.Repositories;
 public class OcrImportRecord
 {
     public int Id { get; set; }
-    public int RecipeSourceId { get; set; }
+    public int CocktailSourceId { get; set; }
     public string ImportName { get; set; } = string.Empty;
     public string ImportType { get; set; } = string.Empty;
     public string? FileName { get; set; }

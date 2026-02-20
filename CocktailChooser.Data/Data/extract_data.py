@@ -25,7 +25,7 @@ SELECT
 FROM Cocktails c
 LEFT JOIN GlassTypes gt ON c.GlassTypeId = gt.Id
 LEFT JOIN CocktailTimePeriods ctp ON c.TimePeriodId = ctp.Id
-LEFT JOIN CocktailSource cs ON c.CocktailSourceID = cs.Id
+LEFT JOIN CocktailSource cs ON c.CocktailSourceId = cs.Id
 LEFT JOIN CocktailIngredients ci ON c.Id = ci.CocktailId
 LEFT JOIN Ingredients i ON ci.IngredientId = i.Id
 LEFT JOIN IngredientTypes it ON i.IngredientTypeId = it.Id

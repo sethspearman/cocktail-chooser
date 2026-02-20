@@ -1,16 +1,6 @@
 # cocktail-chooser
-Cocktail Chooser repositorya## Technical Stack
 
-- .NET 8 WebAPI
-- SQLite (default database)
-- Dapper (preferred ORM)
-- VueJS frontend (TypeScript preferred)
-- MAUI planned for mobile app version
-
-Architecture preferences:
-- Constructor injection
-- Repository pattern when appropriate
-- Clean separation between API and data layer
+Cocktail Chooser repository.
 
 ## Technical Stack
 
@@ -40,14 +30,21 @@ Future:
 
 ## Database Notes
 
-- Cocktails table includes:
-  - Id
-  - Name
-  - Method (full instruction string)
-  - TimePeriodId
+- Canonical tables are `Cocktail*` (no `Recipe*` tables after migrations).
+- `Cocktails` contains merged cocktail + recipe metadata fields.
+- `CocktailSource` contains source metadata fields previously stored on `RecipeSources`.
+- `CocktailIngredients` contains merged ingredient-link fields (including sort order).
+- `CocktailSteps` stores individual instructions per cocktail.
+- `GlassTypes` supports optional image URL metadata via `ImageUrl`.
+- OCR staging tables remain separate (`Ocr*`) and reference `CocktailSource`.
 
-- CocktailSteps table stores individual steps.
-- Ingredients normalized into separate table.
+### Bootstrap Seed Policy
+
+- Bootstrap (`initial_data.sql`) does not seed:
+  - `Cocktails`
+  - `CocktailIngredients`
+  - `CocktailSteps`
+- These are intended to be populated via OCR/import workflows.
 
 ## Coding Principles
 

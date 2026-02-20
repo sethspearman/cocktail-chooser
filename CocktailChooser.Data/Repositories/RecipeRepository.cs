@@ -5,21 +5,6 @@ namespace CocktailChooser.Data.Repositories;
 
 public class RecipeRepository : IRecipeRepository
 {
-    private const string SelectColumns = """
-        Id,
-        CocktailId,
-        RecipeSourceId,
-        SourceRecipeName,
-        AttributionText,
-        SourceUrl,
-        Method,
-        FlavorProfile,
-        Notes,
-        IsUserSubmitted,
-        CreatedUtc,
-        UpdatedUtc
-        """;
-
     private readonly string _connectionString;
 
     public RecipeRepository(string connectionString)
@@ -29,39 +14,11 @@ public class RecipeRepository : IRecipeRepository
 
     public async Task<IEnumerable<RecipeRecord>> GetAllAsync()
     {
-        const string sql = $"SELECT {SelectColumns} FROM Recipes ORDER BY CocktailId, RecipeSourceId, SourceRecipeName;";
-        await using var connection = new SqliteConnection(_connectionString);
-        return await connection.QueryAsync<RecipeRecord>(sql);
-    }
-
-    public async Task<RecipeRecord?> GetByIdAsync(int id)
-    {
-        const string sql = $"SELECT {SelectColumns} FROM Recipes WHERE Id = @Id;";
-        await using var connection = new SqliteConnection(_connectionString);
-        return await connection.QuerySingleOrDefaultAsync<RecipeRecord>(sql, new { Id = id });
-    }
-
-    public async Task<IEnumerable<RecipeRecord>> GetByCocktailIdAsync(int cocktailId)
-    {
-        const string sql = $"SELECT {SelectColumns} FROM Recipes WHERE CocktailId = @CocktailId ORDER BY RecipeSourceId, SourceRecipeName;";
-        await using var connection = new SqliteConnection(_connectionString);
-        return await connection.QueryAsync<RecipeRecord>(sql, new { CocktailId = cocktailId });
-    }
-
-    public async Task<IEnumerable<RecipeRecord>> GetBySourceIdAsync(int recipeSourceId)
-    {
-        const string sql = $"SELECT {SelectColumns} FROM Recipes WHERE RecipeSourceId = @RecipeSourceId ORDER BY CocktailId, SourceRecipeName;";
-        await using var connection = new SqliteConnection(_connectionString);
-        return await connection.QueryAsync<RecipeRecord>(sql, new { RecipeSourceId = recipeSourceId });
-    }
-
-    public async Task<IEnumerable<RecipeRecord>> SearchAsync(int? cocktailId, int? recipeSourceId)
-    {
         const string sql = """
             SELECT
                 Id,
-                CocktailId,
-                RecipeSourceId,
+                Id AS CocktailId,
+                CocktailSourceId AS RecipeSourceId,
                 SourceRecipeName,
                 AttributionText,
                 SourceUrl,
@@ -71,10 +28,104 @@ public class RecipeRepository : IRecipeRepository
                 IsUserSubmitted,
                 CreatedUtc,
                 UpdatedUtc
-            FROM Recipes
-            WHERE (@CocktailId IS NULL OR CocktailId = @CocktailId)
-              AND (@RecipeSourceId IS NULL OR RecipeSourceId = @RecipeSourceId)
-            ORDER BY CocktailId, RecipeSourceId, SourceRecipeName;
+            FROM Cocktails
+            ORDER BY Id;
+            """;
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.QueryAsync<RecipeRecord>(sql);
+    }
+
+    public async Task<RecipeRecord?> GetByIdAsync(int id)
+    {
+        const string sql = """
+            SELECT
+                Id,
+                Id AS CocktailId,
+                CocktailSourceId AS RecipeSourceId,
+                SourceRecipeName,
+                AttributionText,
+                SourceUrl,
+                Method,
+                FlavorProfile,
+                Notes,
+                IsUserSubmitted,
+                CreatedUtc,
+                UpdatedUtc
+            FROM Cocktails
+            WHERE Id = @Id;
+            """;
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.QuerySingleOrDefaultAsync<RecipeRecord>(sql, new { Id = id });
+    }
+
+    public async Task<IEnumerable<RecipeRecord>> GetByCocktailIdAsync(int cocktailId)
+    {
+        const string sql = """
+            SELECT
+                Id,
+                Id AS CocktailId,
+                CocktailSourceId AS RecipeSourceId,
+                SourceRecipeName,
+                AttributionText,
+                SourceUrl,
+                Method,
+                FlavorProfile,
+                Notes,
+                IsUserSubmitted,
+                CreatedUtc,
+                UpdatedUtc
+            FROM Cocktails
+            WHERE Id = @CocktailId
+            ORDER BY Id;
+            """;
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.QueryAsync<RecipeRecord>(sql, new { CocktailId = cocktailId });
+    }
+
+    public async Task<IEnumerable<RecipeRecord>> GetBySourceIdAsync(int recipeSourceId)
+    {
+        const string sql = """
+            SELECT
+                Id,
+                Id AS CocktailId,
+                CocktailSourceId AS RecipeSourceId,
+                SourceRecipeName,
+                AttributionText,
+                SourceUrl,
+                Method,
+                FlavorProfile,
+                Notes,
+                IsUserSubmitted,
+                CreatedUtc,
+                UpdatedUtc
+            FROM Cocktails
+            WHERE CocktailSourceId = @RecipeSourceId
+            ORDER BY Id;
+            """;
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.QueryAsync<RecipeRecord>(sql, new { RecipeSourceId = recipeSourceId });
+    }
+
+    public async Task<IEnumerable<RecipeRecord>> SearchAsync(int? cocktailId, int? recipeSourceId)
+    {
+        const string sql = """
+            SELECT
+                Id,
+                Id AS CocktailId,
+                CocktailSourceId AS RecipeSourceId,
+                SourceRecipeName,
+                AttributionText,
+                SourceUrl,
+                Method,
+                FlavorProfile,
+                Notes,
+                IsUserSubmitted,
+                CreatedUtc,
+                UpdatedUtc
+            FROM Cocktails
+            WHERE (@CocktailId IS NULL OR Id = @CocktailId)
+              AND (@RecipeSourceId IS NULL OR CocktailSourceId = @RecipeSourceId)
+            ORDER BY Id;
             """;
 
         await using var connection = new SqliteConnection(_connectionString);
@@ -88,10 +139,14 @@ public class RecipeRepository : IRecipeRepository
     public async Task<RecipeRecord> CreateAsync(RecipeRecord recipe)
     {
         const string sql = """
-            INSERT INTO Recipes
+            INSERT INTO Cocktails
             (
-                CocktailId,
-                RecipeSourceId,
+                Name,
+                Description,
+                GlassTypeId,
+                TimePeriodId,
+                IsPopular,
+                CocktailSourceId,
                 SourceRecipeName,
                 AttributionText,
                 SourceUrl,
@@ -99,11 +154,16 @@ public class RecipeRepository : IRecipeRepository
                 FlavorProfile,
                 Notes,
                 IsUserSubmitted,
+                CreatedUtc,
                 UpdatedUtc
             )
             VALUES
             (
-                @CocktailId,
+                COALESCE(@SourceRecipeName, 'Unnamed Cocktail'),
+                NULL,
+                NULL,
+                NULL,
+                0,
                 @RecipeSourceId,
                 @SourceRecipeName,
                 @AttributionText,
@@ -112,6 +172,7 @@ public class RecipeRepository : IRecipeRepository
                 @FlavorProfile,
                 @Notes,
                 @IsUserSubmitted,
+                COALESCE(@CreatedUtc, @UpdatedUtc),
                 @UpdatedUtc
             );
             SELECT last_insert_rowid();
@@ -125,10 +186,9 @@ public class RecipeRepository : IRecipeRepository
     public async Task<bool> UpdateAsync(RecipeRecord recipe)
     {
         const string sql = """
-            UPDATE Recipes
+            UPDATE Cocktails
             SET
-                CocktailId = @CocktailId,
-                RecipeSourceId = @RecipeSourceId,
+                CocktailSourceId = @RecipeSourceId,
                 SourceRecipeName = @SourceRecipeName,
                 AttributionText = @AttributionText,
                 SourceUrl = @SourceUrl,
@@ -137,7 +197,7 @@ public class RecipeRepository : IRecipeRepository
                 Notes = @Notes,
                 IsUserSubmitted = @IsUserSubmitted,
                 UpdatedUtc = @UpdatedUtc
-            WHERE Id = @Id;
+            WHERE Id = @CocktailId;
             """;
 
         await using var connection = new SqliteConnection(_connectionString);
@@ -147,7 +207,7 @@ public class RecipeRepository : IRecipeRepository
 
     public async Task<bool> DeleteAsync(int id)
     {
-        const string sql = "DELETE FROM Recipes WHERE Id = @Id;";
+        const string sql = "DELETE FROM Cocktails WHERE Id = @Id;";
         await using var connection = new SqliteConnection(_connectionString);
         var rows = await connection.ExecuteAsync(sql, new { Id = id });
         return rows > 0;

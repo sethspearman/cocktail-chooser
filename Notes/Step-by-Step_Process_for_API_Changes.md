@@ -1,5 +1,11 @@
 # Step-by-Step Process for API Changes
 
+## Current Schema Convention
+
+- Use `Cocktail*` table naming as the canonical schema.
+- Do not introduce new `Recipe*` tables.
+- Use `CocktailSteps` for step-by-step instructions.
+
 1. **Update Models and DTOs**:
     - Modify or add new properties to your models in the `Models` folder.
     - Update or create new DTOs in the `DTOs` folder to reflect changes in your models.

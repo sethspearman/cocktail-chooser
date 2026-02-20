@@ -13,7 +13,7 @@ public class CocktailRepository : ICocktailRepository
         GlassTypeId,
         TimePeriodId,
         IsPopular,
-        CocktailSourceID AS CocktailSourceId
+        CocktailSourceId
         """;
 
     private readonly string _connectionString;
@@ -48,7 +48,7 @@ public class CocktailRepository : ICocktailRepository
                 GlassTypeId,
                 TimePeriodId,
                 IsPopular,
-                CocktailSourceID
+                CocktailSourceId
             )
             VALUES
             (
@@ -79,7 +79,7 @@ public class CocktailRepository : ICocktailRepository
                 GlassTypeId = @GlassTypeId,
                 TimePeriodId = @TimePeriodId,
                 IsPopular = @IsPopular,
-                CocktailSourceID = @CocktailSourceId
+                CocktailSourceId = @CocktailSourceId
             WHERE Id = @Id;
             """;
 

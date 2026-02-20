@@ -33,14 +33,14 @@ public class RecipeSourceRepository : IRecipeSourceRepository
 
     public async Task<IEnumerable<RecipeSourceRecord>> GetAllAsync()
     {
-        const string sql = $"SELECT {SelectColumns} FROM RecipeSources ORDER BY Name;";
+        const string sql = $"SELECT {SelectColumns} FROM CocktailSource ORDER BY Name;";
         await using var connection = new SqliteConnection(_connectionString);
         return await connection.QueryAsync<RecipeSourceRecord>(sql);
     }
 
     public async Task<RecipeSourceRecord?> GetByIdAsync(int id)
     {
-        const string sql = $"SELECT {SelectColumns} FROM RecipeSources WHERE Id = @Id;";
+        const string sql = $"SELECT {SelectColumns} FROM CocktailSource WHERE Id = @Id;";
         await using var connection = new SqliteConnection(_connectionString);
         return await connection.QuerySingleOrDefaultAsync<RecipeSourceRecord>(sql, new { Id = id });
     }
@@ -50,8 +50,8 @@ public class RecipeSourceRepository : IRecipeSourceRepository
         const string sql = """
             SELECT EXISTS (
                 SELECT 1
-                FROM Recipes
-                WHERE RecipeSourceId = @Id
+                FROM Cocktails
+                WHERE CocktailSourceId = @Id
             );
             """;
 
@@ -62,7 +62,7 @@ public class RecipeSourceRepository : IRecipeSourceRepository
     public async Task<RecipeSourceRecord> CreateAsync(RecipeSourceRecord source)
     {
         const string sql = """
-            INSERT INTO RecipeSources
+            INSERT INTO CocktailSource
             (
                 Name,
                 SourceType,
@@ -107,7 +107,7 @@ public class RecipeSourceRepository : IRecipeSourceRepository
     public async Task<bool> UpdateAsync(RecipeSourceRecord source)
     {
         const string sql = """
-            UPDATE RecipeSources
+            UPDATE CocktailSource
             SET
                 Name = @Name,
                 SourceType = @SourceType,
@@ -133,7 +133,7 @@ public class RecipeSourceRepository : IRecipeSourceRepository
 
     public async Task<bool> DeleteAsync(int id)
     {
-        const string sql = "DELETE FROM RecipeSources WHERE Id = @Id;";
+        const string sql = "DELETE FROM CocktailSource WHERE Id = @Id;";
         await using var connection = new SqliteConnection(_connectionString);
         var rows = await connection.ExecuteAsync(sql, new { Id = id });
         return rows > 0;

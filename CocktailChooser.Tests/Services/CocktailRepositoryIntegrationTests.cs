@@ -76,7 +76,7 @@ public class CocktailRepositoryIntegrationTests : IDisposable
                 GlassTypeId INTEGER,
                 TimePeriodId INTEGER,
                 IsPopular INTEGER DEFAULT 0,
-                CocktailSourceID INTEGER
+                CocktailSourceId INTEGER
             );
             """);
     }

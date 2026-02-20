@@ -16,7 +16,7 @@ public class CocktailRecipeRepository : ICocktailRecipeRepository
     {
         const string sql = """
             SELECT CocktailId, StepNumber, Instruction
-            FROM CocktailRecipes
+            FROM CocktailSteps
             ORDER BY CocktailId, StepNumber;
             """;
 
@@ -28,7 +28,7 @@ public class CocktailRecipeRepository : ICocktailRecipeRepository
     {
         const string sql = """
             SELECT CocktailId, StepNumber, Instruction
-            FROM CocktailRecipes
+            FROM CocktailSteps
             WHERE CocktailId = @CocktailId
             ORDER BY StepNumber;
             """;
@@ -41,7 +41,7 @@ public class CocktailRecipeRepository : ICocktailRecipeRepository
     {
         const string sql = """
             SELECT CocktailId, StepNumber, Instruction
-            FROM CocktailRecipes
+            FROM CocktailSteps
             WHERE CocktailId = @CocktailId AND StepNumber = @StepNumber;
             """;
 
@@ -56,7 +56,7 @@ public class CocktailRecipeRepository : ICocktailRecipeRepository
     public async Task<CocktailRecipeRecord> CreateAsync(CocktailRecipeRecord recipe)
     {
         const string sql = """
-            INSERT INTO CocktailRecipes (CocktailId, StepNumber, Instruction)
+            INSERT INTO CocktailSteps (CocktailId, StepNumber, Instruction)
             VALUES (@CocktailId, @StepNumber, @Instruction);
             """;
 
@@ -68,7 +68,7 @@ public class CocktailRecipeRepository : ICocktailRecipeRepository
     public async Task<bool> UpdateAsync(CocktailRecipeRecord recipe)
     {
         const string sql = """
-            UPDATE CocktailRecipes
+            UPDATE CocktailSteps
             SET Instruction = @Instruction
             WHERE CocktailId = @CocktailId AND StepNumber = @StepNumber;
             """;
@@ -81,7 +81,7 @@ public class CocktailRecipeRepository : ICocktailRecipeRepository
     public async Task<bool> DeleteAsync(int cocktailId, int stepNumber)
     {
         const string sql = """
-            DELETE FROM CocktailRecipes
+            DELETE FROM CocktailSteps
             WHERE CocktailId = @CocktailId AND StepNumber = @StepNumber;
             """;
 

@@ -3,7 +3,7 @@ namespace CocktailChooser.API.DTOs;
 public class OcrImportDto
 {
     public int Id { get; set; }
-    public int RecipeSourceId { get; set; }
+    public int CocktailSourceId { get; set; }
     public string ImportName { get; set; } = null!;
     public string ImportType { get; set; } = null!;
     public string? FileName { get; set; }

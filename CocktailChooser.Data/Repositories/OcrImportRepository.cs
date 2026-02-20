@@ -17,7 +17,7 @@ public class OcrImportRepository : IOcrImportRepository
         const string sql = """
             SELECT
                 Id,
-                RecipeSourceId,
+                CocktailSourceId,
                 ImportName,
                 ImportType,
                 FileName,
@@ -59,7 +59,7 @@ public class OcrImportRepository : IOcrImportRepository
         const string sql = """
             INSERT INTO OcrImports
             (
-                RecipeSourceId,
+                CocktailSourceId,
                 ImportName,
                 ImportType,
                 FileName,
@@ -68,7 +68,7 @@ public class OcrImportRepository : IOcrImportRepository
             )
             VALUES
             (
-                @RecipeSourceId,
+                @CocktailSourceId,
                 @ImportName,
                 @ImportType,
                 @FileName,

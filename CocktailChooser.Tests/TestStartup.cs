@@ -33,7 +33,7 @@ public class TestStartup
                     GlassTypeId INTEGER,
                     TimePeriodId INTEGER,
                     IsPopular INTEGER DEFAULT 0,
-                    CocktailSourceID INTEGER
+                    CocktailSourceId INTEGER
                 );
                 CREATE TABLE IF NOT EXISTS Ingredients (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,7 +42,7 @@ public class TestStartup
                     MixerSubtypeId INTEGER,
                     LongDescription TEXT
                 );
-                CREATE TABLE IF NOT EXISTS CocktailRecipes (
+                CREATE TABLE IF NOT EXISTS CocktailSteps (
                     CocktailId INTEGER NOT NULL,
                     StepNumber INTEGER NOT NULL,
                     Instruction TEXT,

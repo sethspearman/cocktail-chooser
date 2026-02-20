@@ -18,7 +18,7 @@ public class OcrImportService : IOcrImportService
     {
         var record = new OcrImportRecord
         {
-            RecipeSourceId = createDto.RecipeSourceId,
+            CocktailSourceId = createDto.CocktailSourceId,
             ImportName = createDto.ImportName,
             ImportType = createDto.ImportType,
             FileName = createDto.FileName,
@@ -127,7 +127,7 @@ public class OcrImportService : IOcrImportService
         return new OcrImportDto
         {
             Id = record.Id,
-            RecipeSourceId = record.RecipeSourceId,
+            CocktailSourceId = record.CocktailSourceId,
             ImportName = record.ImportName,
             ImportType = record.ImportType,
             FileName = record.FileName,
