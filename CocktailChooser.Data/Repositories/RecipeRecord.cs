@@ -9,6 +9,7 @@ public class RecipeRecord
     public string? AttributionText { get; set; }
     public string? SourceUrl { get; set; }
     public string? Method { get; set; }
+    public string? FlavorProfile { get; set; }
     public string? Notes { get; set; }
     public int IsUserSubmitted { get; set; }
     public string? CreatedUtc { get; set; }

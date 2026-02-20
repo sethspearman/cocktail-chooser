@@ -13,6 +13,7 @@ public class RecipeRepository : IRecipeRepository
         AttributionText,
         SourceUrl,
         Method,
+        FlavorProfile,
         Notes,
         IsUserSubmitted,
         CreatedUtc,
@@ -65,6 +66,7 @@ public class RecipeRepository : IRecipeRepository
                 AttributionText,
                 SourceUrl,
                 Method,
+                FlavorProfile,
                 Notes,
                 IsUserSubmitted,
                 CreatedUtc,
@@ -94,6 +96,7 @@ public class RecipeRepository : IRecipeRepository
                 AttributionText,
                 SourceUrl,
                 Method,
+                FlavorProfile,
                 Notes,
                 IsUserSubmitted,
                 UpdatedUtc
@@ -106,6 +109,7 @@ public class RecipeRepository : IRecipeRepository
                 @AttributionText,
                 @SourceUrl,
                 @Method,
+                @FlavorProfile,
                 @Notes,
                 @IsUserSubmitted,
                 @UpdatedUtc
@@ -129,6 +133,7 @@ public class RecipeRepository : IRecipeRepository
                 AttributionText = @AttributionText,
                 SourceUrl = @SourceUrl,
                 Method = @Method,
+                FlavorProfile = @FlavorProfile,
                 Notes = @Notes,
                 IsUserSubmitted = @IsUserSubmitted,
                 UpdatedUtc = @UpdatedUtc

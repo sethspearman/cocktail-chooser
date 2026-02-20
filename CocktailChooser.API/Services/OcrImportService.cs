@@ -86,7 +86,8 @@ public class OcrImportService : IOcrImportService
         var ingredientTasks = candidates.Select(c => _repository.GetIngredientCandidatesByRecipeCandidateIdAsync(c.Id)).ToList();
         var stepTasks = candidates.Select(c => _repository.GetStepCandidatesByRecipeCandidateIdAsync(c.Id)).ToList();
 
-        await Task.WhenAll(ingredientTasks.Concat(stepTasks));
+        await Task.WhenAll(ingredientTasks);
+        await Task.WhenAll(stepTasks);
 
         var ingredientLookup = candidates
             .Select((candidate, idx) => new

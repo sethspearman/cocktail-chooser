@@ -25,6 +25,26 @@ This worker operates on the existing staging tables:
 Default DB path:
 `CocktailChooser.Data/Data/CocktailChooser.db`
 
+## Review/Edit UI (recommended)
+
+Run a local browser-based editor for OCR candidates:
+
+```bash
+python3 tools/ocr-worker/ocr_review_ui.py \
+  --db /mnt/c/_CODE/cocktail-chooser/CocktailChooser.Data/Data/CocktailChooser.db \
+  --port 8765
+```
+
+Then open:
+`http://127.0.0.1:8765`
+
+Features:
+- Browse imports -> items -> candidates
+- Edit candidate fields (`CocktailName`, `SourceRecipeName`, `ParsedTimePeriod`, `MethodText`, status/warnings/confidence)
+- Edit ingredient rows and step rows directly in tables
+- Save writes back to OCR staging tables in one transaction
+- Use `publish-candidate` CLI command after edits to push into final recipe tables
+
 ### 1) Create an OCR import batch
 
 ```bash
@@ -118,6 +138,7 @@ python3 tools/ocr-worker/ocr_worker.py publish-candidate \
 - This is a starter heuristic parser; expect manual review/editing.
 - `run-pending` is idempotent for candidate rows per item; each run replaces prior candidates for that item.
 - Parser now captures a likely `CocktailTimePeriod` line when present directly under cocktail title.
+- Parser now captures a likely flavor descriptor line (stored as `ParsedFlavorProfile`) when present near the title.
 - Parser can split multiple recipes from one OCR text when repeated `Ingredients` section headers are present.
 - Keep source media in filesystem/object storage; DB should store references and extracted text.
 

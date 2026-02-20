@@ -38,6 +38,7 @@ class ParsedRecipe:
     cocktail_name: str
     source_recipe_name: Optional[str]
     cocktail_time_period: Optional[str]
+    flavor_profile: Optional[str]
     method_text: Optional[str]
     parser_version: str
     confidence: Optional[float]
@@ -155,7 +156,7 @@ class OcrWorker:
         with self._conn() as conn:
             candidates = conn.execute(
                 """
-                SELECT Id, CocktailName, SourceRecipeName, ParsedTimePeriod, MethodText, ParserVersion, Confidence, ParseWarnings
+                SELECT Id, CocktailName, SourceRecipeName, ParsedTimePeriod, ParsedFlavorProfile, MethodText, ParserVersion, Confidence, ParseWarnings
                 FROM OcrRecipeCandidates
                 WHERE OcrImportItemId = ?
                 ORDER BY Id
@@ -173,6 +174,8 @@ class OcrWorker:
                     print(f"  Source name: {c['SourceRecipeName']}")
                 if c["ParsedTimePeriod"]:
                     print(f"  Time period: {c['ParsedTimePeriod']}")
+                if c["ParsedFlavorProfile"]:
+                    print(f"  Flavor profile: {c['ParsedFlavorProfile']}")
                 if c["Confidence"] is not None:
                     print(f"  Confidence: {c['Confidence']}")
                 if c["ParseWarnings"]:
@@ -247,7 +250,7 @@ class OcrWorker:
                 if include_candidates:
                     candidates = conn.execute(
                         """
-                        SELECT Id, CocktailName, ParsedTimePeriod, Status, Confidence
+                        SELECT Id, CocktailName, ParsedTimePeriod, ParsedFlavorProfile, Status, Confidence
                         FROM OcrRecipeCandidates
                         WHERE OcrImportItemId = ?
                         ORDER BY Id
@@ -256,9 +259,10 @@ class OcrWorker:
                     ).fetchall()
                     for c in candidates:
                         period = f", period={c['ParsedTimePeriod']}" if c["ParsedTimePeriod"] else ""
+                        flavor = f", flavor={c['ParsedFlavorProfile']}" if c["ParsedFlavorProfile"] else ""
                         print(
                             f"    Candidate {c['Id']}: {c['CocktailName']} "
-                            f"(status={c['Status']}, confidence={c['Confidence']}{period})"
+                            f"(status={c['Status']}, confidence={c['Confidence']}{period}{flavor})"
                         )
 
     def publish_candidate(
@@ -278,6 +282,7 @@ class OcrWorker:
                     c.CocktailName,
                     c.SourceRecipeName,
                     c.ParsedTimePeriod,
+                    c.ParsedFlavorProfile,
                     c.MethodText,
                     c.Status,
                     i.OcrImportId,
@@ -317,6 +322,7 @@ class OcrWorker:
                     recipe_source_id=recipe_source_id,
                     source_recipe_name=source_recipe_name,
                     method_text=candidate["MethodText"],
+                    flavor_profile=candidate["ParsedFlavorProfile"],
                 )
 
                 cur.execute("DELETE FROM RecipeIngredients WHERE RecipeId = ?", (recipe_id,))
@@ -395,6 +401,7 @@ class OcrWorker:
         recipe_source_id: int,
         source_recipe_name: str,
         method_text: Optional[str],
+        flavor_profile: Optional[str],
     ) -> int:
         existing = cur.execute(
             """
@@ -415,10 +422,11 @@ class OcrWorker:
                 """
                 UPDATE Recipes
                 SET Method = ?,
+                    FlavorProfile = ?,
                     UpdatedUtc = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
                 WHERE Id = ?
                 """,
-                (method_text, recipe_id),
+                (method_text, flavor_profile, recipe_id),
             )
             return recipe_id
 
@@ -432,6 +440,7 @@ class OcrWorker:
                 AttributionText,
                 SourceUrl,
                 Method,
+                FlavorProfile,
                 Notes,
                 IsUserSubmitted,
                 UpdatedUtc
@@ -445,6 +454,7 @@ class OcrWorker:
                 NULL,
                 ?,
                 ?,
+                ?,
                 0,
                 strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
             )
@@ -454,6 +464,7 @@ class OcrWorker:
                 recipe_source_id,
                 source_recipe_name,
                 method_text,
+                flavor_profile,
                 f"Published from OCR candidate {source_recipe_name}",
             ),
         )
@@ -599,9 +610,16 @@ def split_recipe_sections(lines: List[str]) -> List[List[str]]:
 def parse_recipe_section(lines: List[str]) -> ParsedRecipe:
     title = lines[0]
     time_period = None
+    flavor_profile = None
     idx = 1
     if len(lines) > 1 and looks_like_time_period(lines[1]):
         time_period = lines[1]
+        idx = 2
+        if len(lines) > 2 and looks_like_flavor_profile(lines[2]):
+            flavor_profile = lines[2]
+            idx = 3
+    elif len(lines) > 1 and looks_like_flavor_profile(lines[1]):
+        flavor_profile = lines[1]
         idx = 2
 
     ingredient_lines: List[str] = []
@@ -640,6 +658,7 @@ def parse_recipe_section(lines: List[str]) -> ParsedRecipe:
         cocktail_name=title,
         source_recipe_name=title,
         cocktail_time_period=time_period,
+        flavor_profile=flavor_profile,
         method_text=" ".join(method_lines) if method_lines else None,
         parser_version="heuristic-v1",
         confidence=0.6,
@@ -701,6 +720,32 @@ def normalize_period_name(value: str) -> str:
     return re.sub(r"[^a-z0-9]", "", value.lower())
 
 
+def looks_like_flavor_profile(line: str) -> bool:
+    lower = line.lower()
+    if " and " in lower and any(word in lower for word in ["sweet", "sour", "bitter", "strong", "light", "dry"]):
+        return True
+    profile_words = {
+        "sweet",
+        "sour",
+        "bitter",
+        "strong",
+        "light",
+        "dry",
+        "fruity",
+        "herbal",
+        "smoky",
+        "spicy",
+        "refreshing",
+        "blend",
+        "spirit-forward",
+    }
+    tokens = re.findall(r"[a-zA-Z\\-]+", lower)
+    if not tokens:
+        return False
+    hits = sum(1 for t in tokens if t in profile_words)
+    return hits >= 1 and len(tokens) <= 8
+
+
 def parse_steps(method_lines: List[str]) -> List[ParsedStep]:
     if not method_lines:
         return []
@@ -724,14 +769,15 @@ def replace_candidates(conn: sqlite3.Connection, item_id: int, parsed_recipes: L
         cur.execute(
             """
             INSERT INTO OcrRecipeCandidates
-            (OcrImportItemId, CocktailName, SourceRecipeName, ParsedTimePeriod, MethodText, ParserVersion, Confidence, Status, ParseWarnings)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)
+            (OcrImportItemId, CocktailName, SourceRecipeName, ParsedTimePeriod, ParsedFlavorProfile, MethodText, ParserVersion, Confidence, Status, ParseWarnings)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)
             """,
             (
                 item_id,
                 recipe.cocktail_name,
                 recipe.source_recipe_name,
                 recipe.cocktail_time_period,
+                recipe.flavor_profile,
                 recipe.method_text,
                 recipe.parser_version,
                 recipe.confidence,
