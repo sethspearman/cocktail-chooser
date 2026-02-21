@@ -11,6 +11,8 @@ public partial class CocktailIngredient
 
     public int? AmountId { get; set; }
 
+    public string? AmountText { get; set; }
+
     public virtual Amount? Amount { get; set; }
 
     public virtual Cocktail? Cocktail { get; set; }
