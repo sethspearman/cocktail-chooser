@@ -35,7 +35,8 @@ public class IngredientServiceTests
             {
                 Id = 7,
                 Name = "Lime Juice",
-                IngredientTypeId = 2
+                IngredientTypeId = 2,
+                PrimarySpirit = "Rum"
             });
 
         var result = await _service.CreateIngredientAsync(new IngredientDto { Name = "Lime Juice" });
@@ -43,6 +44,7 @@ public class IngredientServiceTests
         Assert.Equal(7, result.Id);
         Assert.Equal("Lime Juice", result.Name);
         Assert.Equal(2, result.IngredientTypeId);
+        Assert.Equal("Rum", result.PrimarySpirit);
     }
 
     [Fact]

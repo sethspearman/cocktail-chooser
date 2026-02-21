@@ -6,5 +6,6 @@ public class IngredientRecord
     public string Name { get; set; } = string.Empty;
     public int? IngredientTypeId { get; set; }
     public int? MixerSubtypeId { get; set; }
+    public string? PrimarySpirit { get; set; }
     public string? LongDescription { get; set; }
 }

@@ -20,6 +20,7 @@ public class IngredientRepository : IIngredientRepository
                 Name,
                 IngredientTypeId,
                 MixerSubtypeId,
+                PrimarySpirit,
                 LongDescription
             FROM Ingredients
             ORDER BY Name;
@@ -37,6 +38,7 @@ public class IngredientRepository : IIngredientRepository
                 Name,
                 IngredientTypeId,
                 MixerSubtypeId,
+                PrimarySpirit,
                 LongDescription
             FROM Ingredients
             WHERE Id = @Id;
@@ -54,6 +56,7 @@ public class IngredientRepository : IIngredientRepository
                 Name,
                 IngredientTypeId,
                 MixerSubtypeId,
+                PrimarySpirit,
                 LongDescription
             )
             VALUES
@@ -61,6 +64,7 @@ public class IngredientRepository : IIngredientRepository
                 @Name,
                 @IngredientTypeId,
                 @MixerSubtypeId,
+                @PrimarySpirit,
                 @LongDescription
             );
             SELECT last_insert_rowid();
@@ -79,6 +83,7 @@ public class IngredientRepository : IIngredientRepository
                 Name = @Name,
                 IngredientTypeId = @IngredientTypeId,
                 MixerSubtypeId = @MixerSubtypeId,
+                PrimarySpirit = @PrimarySpirit,
                 LongDescription = @LongDescription
             WHERE Id = @Id;
             """;

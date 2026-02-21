@@ -53,6 +53,7 @@ namespace CocktailChooser.API.Services
                 Name = ingredient.Name,
                 IngredientTypeId = ingredient.IngredientTypeId,
                 MixerSubtypeId = ingredient.MixerSubtypeId,
+                PrimarySpirit = ingredient.PrimarySpirit,
                 LongDescription = ingredient.LongDescription
             };
         }
@@ -65,6 +66,7 @@ namespace CocktailChooser.API.Services
                 Name = ingredient.Name,
                 IngredientTypeId = ingredient.IngredientTypeId,
                 MixerSubtypeId = ingredient.MixerSubtypeId,
+                PrimarySpirit = ingredient.PrimarySpirit,
                 LongDescription = ingredient.LongDescription
             };
         }

@@ -29,11 +29,19 @@ public class Startup
         services.AddScoped<IRecipeSourceRepository>(_ => new RecipeSourceRepository(connectionString));
         services.AddScoped<IRecipeRepository>(_ => new RecipeRepository(connectionString));
         services.AddScoped<IOcrImportRepository>(_ => new OcrImportRepository(connectionString));
+        services.AddScoped<IUserRepository>(_ => new UserRepository(connectionString));
+        services.AddScoped<IUserIngredientRepository>(_ => new UserIngredientRepository(connectionString));
+        services.AddScoped<ICocktailTryLogRepository>(_ => new CocktailTryLogRepository(connectionString));
+        services.AddScoped<ICocktailGroupingRepository>(_ => new CocktailGroupingRepository(connectionString));
         services.AddScoped<ICocktailService, CocktailService>();
         services.AddScoped<IIngredientService, IngredientService>();
         services.AddScoped<ICocktailRecipeService, CocktailRecipeService>();
         services.AddScoped<IRecipeSourceService, RecipeSourceService>();
         services.AddScoped<IRecipeService, RecipeService>();
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IUserInventoryService, UserInventoryService>();
+        services.AddScoped<ICocktailTryLogService, CocktailTryLogService>();
+        services.AddScoped<ICocktailGroupingService, CocktailGroupingService>();
         services.AddScoped<IOcrRecipeParser, HeuristicOcrRecipeParser>();
         services.AddScoped<IOcrImportService, OcrImportService>();
     }
