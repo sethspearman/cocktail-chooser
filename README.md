@@ -69,3 +69,46 @@ Future:
 - Scope guidance:
   - DDL changes go in versioned migrations (table/index/constraint changes).
   - DML backfills and data cleanup also go in versioned migrations, in the same release where needed.
+
+## Web UI Quick Start
+
+### 1. Run the API
+
+From repo root:
+
+```bash
+./tools/dotnet run --project CocktailChooser.API
+```
+
+The API runs on `http://localhost:5190` in development (see `CocktailChooser.API/Properties/launchSettings.json`).
+Migrations are applied automatically on startup.
+
+### 2. Run the Vue frontend
+
+In a second terminal:
+
+```bash
+cd cocktailchooser-frontend
+npm install
+npm run serve
+```
+
+Open: `http://localhost:8080`
+
+### 3. Frontend/API wiring
+
+- Dev mode uses proxy config in `cocktailchooser-frontend/vue.config.js`:
+  - `/api/*` -> `http://localhost:5190`
+- Optional override:
+  - set `VUE_APP_API_BASE_URL` (for non-local API targets)
+
+### 4. MVP screens now available
+
+- Cocktails list with search + `PrimarySpirit` filter
+- My Bar inventory management per user
+- “What Can I Drink” matching from inventory
+- Cocktail detail with:
+  - ingredients + steps
+  - groupings
+  - missing ingredients
+  - try logs (rating/comment/date)
