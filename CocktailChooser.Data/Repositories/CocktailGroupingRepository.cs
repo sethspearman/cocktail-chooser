@@ -25,6 +25,19 @@ public class CocktailGroupingRepository : ICocktailGroupingRepository
         return await connection.QueryAsync<CocktailGroupingLinkRecord>(sql, new { GroupingName = groupingName });
     }
 
+    public async Task<IEnumerable<CocktailGroupingLinkRecord>> GetByCocktailIdAsync(int cocktailId)
+    {
+        const string sql = """
+            SELECT CocktailId, CocktailSourceId, GroupingName
+            FROM CocktailGroupingLinks
+            WHERE CocktailId = @CocktailId
+            ORDER BY GroupingName, CocktailSourceId;
+            """;
+
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.QueryAsync<CocktailGroupingLinkRecord>(sql, new { CocktailId = cocktailId });
+    }
+
     public async Task<IEnumerable<CocktailGroupingCocktailRecord>> GetCocktailsByGroupingNameAsync(string groupingName)
     {
         const string sql = """

@@ -25,6 +25,7 @@ public class Startup
         services.AddSwaggerGen();
         services.AddScoped<ICocktailRepository>(_ => new CocktailRepository(connectionString));
         services.AddScoped<IIngredientRepository>(_ => new IngredientRepository(connectionString));
+        services.AddScoped<ICocktailIngredientRepository>(_ => new CocktailIngredientRepository(connectionString));
         services.AddScoped<ICocktailRecipeRepository>(_ => new CocktailRecipeRepository(connectionString));
         services.AddScoped<IRecipeSourceRepository>(_ => new RecipeSourceRepository(connectionString));
         services.AddScoped<IRecipeRepository>(_ => new RecipeRepository(connectionString));
@@ -35,6 +36,7 @@ public class Startup
         services.AddScoped<ICocktailGroupingRepository>(_ => new CocktailGroupingRepository(connectionString));
         services.AddScoped<ICocktailService, CocktailService>();
         services.AddScoped<IIngredientService, IngredientService>();
+        services.AddScoped<ICocktailIngredientService, CocktailIngredientService>();
         services.AddScoped<ICocktailRecipeService, CocktailRecipeService>();
         services.AddScoped<IRecipeSourceService, RecipeSourceService>();
         services.AddScoped<IRecipeService, RecipeService>();

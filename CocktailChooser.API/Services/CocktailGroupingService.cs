@@ -18,6 +18,12 @@ public class CocktailGroupingService : ICocktailGroupingService
         return rows.Select(MapLinkToDto);
     }
 
+    public async Task<IEnumerable<CocktailGroupingLinkDto>> GetLinksByCocktailIdAsync(int cocktailId)
+    {
+        var rows = await _repository.GetByCocktailIdAsync(cocktailId);
+        return rows.Select(MapLinkToDto);
+    }
+
     public async Task<IEnumerable<CocktailGroupingCocktailDto>> GetCocktailsByGroupingNameAsync(string groupingName)
     {
         var rows = await _repository.GetCocktailsByGroupingNameAsync(groupingName);

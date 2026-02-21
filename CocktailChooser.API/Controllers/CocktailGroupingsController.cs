@@ -27,6 +27,13 @@ public class CocktailGroupingsController : ControllerBase
         return Ok(links);
     }
 
+    [HttpGet("by-cocktail/{cocktailId:int}")]
+    public async Task<ActionResult<IEnumerable<CocktailGroupingLinkDto>>> GetLinksByCocktailId(int cocktailId)
+    {
+        var links = await _service.GetLinksByCocktailIdAsync(cocktailId);
+        return Ok(links);
+    }
+
     [HttpGet("{groupingName}/cocktails")]
     public async Task<ActionResult<IEnumerable<CocktailGroupingCocktailDto>>> GetCocktailsByGroupingName(string groupingName)
     {
