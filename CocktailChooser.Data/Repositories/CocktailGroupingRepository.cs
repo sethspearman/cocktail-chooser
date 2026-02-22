@@ -12,6 +12,18 @@ public class CocktailGroupingRepository : ICocktailGroupingRepository
         _connectionString = connectionString;
     }
 
+    public async Task<IEnumerable<string>> GetGroupingNamesAsync()
+    {
+        const string sql = """
+            SELECT DISTINCT GroupingName
+            FROM CocktailGroupingLinks
+            ORDER BY GroupingName;
+            """;
+
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.QueryAsync<string>(sql);
+    }
+
     public async Task<IEnumerable<CocktailGroupingLinkRecord>> GetByGroupingNameAsync(string groupingName)
     {
         const string sql = """
@@ -88,6 +100,26 @@ public class CocktailGroupingRepository : ICocktailGroupingRepository
             CocktailSourceId = cocktailSourceId,
             GroupingName = groupingName,
             NewGroupingName = newGroupingName
+        });
+
+        return rows > 0;
+    }
+
+    public async Task<bool> DeleteAsync(int cocktailId, int cocktailSourceId, string groupingName)
+    {
+        const string sql = """
+            DELETE FROM CocktailGroupingLinks
+            WHERE CocktailId = @CocktailId
+              AND CocktailSourceId = @CocktailSourceId
+              AND GroupingName = @GroupingName;
+            """;
+
+        await using var connection = new SqliteConnection(_connectionString);
+        var rows = await connection.ExecuteAsync(sql, new
+        {
+            CocktailId = cocktailId,
+            CocktailSourceId = cocktailSourceId,
+            GroupingName = groupingName
         });
 
         return rows > 0;

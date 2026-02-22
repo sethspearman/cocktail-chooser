@@ -15,6 +15,13 @@ public class CocktailGroupingsController : ControllerBase
         _service = service;
     }
 
+    [HttpGet("names")]
+    public async Task<ActionResult<IEnumerable<string>>> GetGroupingNames()
+    {
+        var names = await _service.GetGroupingNamesAsync();
+        return Ok(names);
+    }
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CocktailGroupingLinkDto>>> GetLinks([FromQuery] string groupingName)
     {
@@ -53,6 +60,26 @@ public class CocktailGroupingsController : ControllerBase
     {
         var updated = await _service.RenameLinkAsync(renameDto);
         if (!updated)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> DeleteLink(
+        [FromQuery] int cocktailId,
+        [FromQuery] int cocktailSourceId,
+        [FromQuery] string groupingName)
+    {
+        if (string.IsNullOrWhiteSpace(groupingName))
+        {
+            return BadRequest("groupingName is required.");
+        }
+
+        var deleted = await _service.DeleteLinkAsync(cocktailId, cocktailSourceId, groupingName);
+        if (!deleted)
         {
             return NotFound();
         }

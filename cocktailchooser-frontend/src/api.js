@@ -65,6 +65,35 @@ export async function getCocktailGroupingsByCocktail(cocktailId) {
   return data;
 }
 
+export async function getCocktailGroupingNames() {
+  const { data } = await api.get('/cocktailgroupings/names');
+  return data;
+}
+
+export async function upsertCocktailGrouping(payload) {
+  const { data } = await api.post('/cocktailgroupings', payload);
+  return data;
+}
+
+export async function renameCocktailGrouping(payload) {
+  await api.put('/cocktailgroupings/rename', payload);
+}
+
+export async function getCocktailsByGroupingName(groupingName) {
+  const { data } = await api.get(`/cocktailgroupings/${encodeURIComponent(groupingName)}/cocktails`);
+  return data;
+}
+
+export async function deleteCocktailGrouping(cocktailId, cocktailSourceId, groupingName) {
+  await api.delete('/cocktailgroupings', {
+    params: {
+      cocktailId,
+      cocktailSourceId,
+      groupingName
+    }
+  });
+}
+
 export async function getCocktailSources() {
   const { data } = await api.get('/recipesources');
   return data;

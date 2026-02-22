@@ -12,6 +12,11 @@ public class CocktailGroupingService : ICocktailGroupingService
         _repository = repository;
     }
 
+    public async Task<IEnumerable<string>> GetGroupingNamesAsync()
+    {
+        return await _repository.GetGroupingNamesAsync();
+    }
+
     public async Task<IEnumerable<CocktailGroupingLinkDto>> GetLinksByGroupingNameAsync(string groupingName)
     {
         var rows = await _repository.GetByGroupingNameAsync(groupingName);
@@ -43,6 +48,11 @@ public class CocktailGroupingService : ICocktailGroupingService
             renameDto.CocktailSourceId,
             renameDto.GroupingName,
             renameDto.NewGroupingName);
+    }
+
+    public async Task<bool> DeleteLinkAsync(int cocktailId, int cocktailSourceId, string groupingName)
+    {
+        return await _repository.DeleteAsync(cocktailId, cocktailSourceId, groupingName);
     }
 
     private static CocktailGroupingLinkDto MapLinkToDto(CocktailGroupingLinkRecord row)
