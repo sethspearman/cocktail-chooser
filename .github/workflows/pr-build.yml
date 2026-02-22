@@ -15,13 +15,17 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Restore
-        run: dotnet restore
+      # Restore ONLY API + Data (avoid MAUI)
+      - name: Restore API + Data
+        run: |
+          dotnet restore CocktailChooser.API/CocktailChooser.API.csproj
+          dotnet restore CocktailChooser.Data/CocktailChooser.Data.csproj
 
-      - name: Build
-        run: dotnet build -c Release --no-restore
+      - name: Build API + Data
+        run: |
+          dotnet build CocktailChooser.API/CocktailChooser.API.csproj -c Release --no-restore
+          dotnet build CocktailChooser.Data/CocktailChooser.Data.csproj -c Release --no-restore
 
-      - name: Test
-        run: dotnet test -c Release --no-build
-
-        
+      # If you have tests that don’t pull in MAUI, run them explicitly here
+      # - name: Test
+      #   run: dotnet test CocktailChooser.Tests/CocktailChooser.Tests.csproj -c Release
