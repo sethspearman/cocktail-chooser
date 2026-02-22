@@ -1,0 +1,31 @@
+name: PR Build
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # Restore ONLY API + Data (avoid MAUI)
+      - name: Restore API + Data
+        run: |
+          dotnet restore CocktailChooser.API/CocktailChooser.API.csproj
+          dotnet restore CocktailChooser.Data/CocktailChooser.Data.csproj
+
+      - name: Build API + Data
+        run: |
+          dotnet build CocktailChooser.API/CocktailChooser.API.csproj -c Release --no-restore
+          dotnet build CocktailChooser.Data/CocktailChooser.Data.csproj -c Release --no-restore
+
+      # If you have tests that don’t pull in MAUI, run them explicitly here
+      # - name: Test
+      #   run: dotnet test CocktailChooser.Tests/CocktailChooser.Tests.csproj -c Release
