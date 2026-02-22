@@ -143,43 +143,6 @@
         </div>
 
         <div>
-          <h3>Groupings</h3>
-          <ul>
-            <li v-for="link in selectedCocktailGroupings" :key="`grp-${link.cocktailSourceId}-${link.groupingName}`">
-              <button class="link-btn" @click="loadGroupingResults(link.groupingName)">{{ link.groupingName }}</button>
-              <button class="delete-btn" @click="deleteGroupingLink(link)">Delete</button>
-            </li>
-          </ul>
-          <div class="grouping-form">
-            <h4>Add Grouping Link</h4>
-            <select v-model.number="groupingDraft.cocktailSourceId">
-              <option :value="null">Select source</option>
-              <option v-for="source in sources" :key="`src-${source.id}`" :value="source.id">
-                {{ source.name }}
-              </option>
-            </select>
-            <input
-              v-model.trim="groupingDraft.groupingName"
-              list="grouping-name-options"
-              placeholder="Grouping name (e.g., Gin and Tonics)" />
-            <datalist id="grouping-name-options">
-              <option v-for="name in groupingNames" :key="`name-${name}`" :value="name" />
-            </datalist>
-            <button @click="addGroupingLink">Add Link</button>
-          </div>
-          <div class="grouping-form">
-            <h4>Rename Grouping Link</h4>
-            <select v-model.number="renameDraft.cocktailSourceId">
-              <option :value="null">Select source</option>
-              <option v-for="source in sources" :key="`rename-src-${source.id}`" :value="source.id">
-                {{ source.name }}
-              </option>
-            </select>
-            <input v-model.trim="renameDraft.groupingName" placeholder="Current grouping name" />
-            <input v-model.trim="renameDraft.newGroupingName" placeholder="New grouping name" />
-            <button @click="renameGroupingLink">Rename Link</button>
-          </div>
-
           <h3>Log This Cocktail</h3>
           <div class="log-form">
             <select v-model.number="newLog.rating">
@@ -203,39 +166,14 @@
       </div>
     </section>
 
-    <section class="panel" style="margin-top: 1rem;">
-      <div class="panel-title">Browse Groupings</div>
-      <div class="toolbar">
-        <input
-          v-model.trim="groupingQuery"
-          list="grouping-query-options"
-          placeholder="Grouping name (e.g., Gin and Tonics)" />
-        <datalist id="grouping-query-options">
-          <option v-for="name in groupingNames" :key="`query-name-${name}`" :value="name" />
-        </datalist>
-        <button @click="searchGroupingCocktails">Search Group</button>
-      </div>
-      <div v-if="groupingCocktails.length === 0" class="empty">No grouping results loaded yet.</div>
-      <ul v-else class="match-list">
-        <li v-for="row in groupingCocktails" :key="`group-row-${row.cocktailId}-${row.cocktailSourceId}`">
-          <button @click="selectCocktail(row.cocktailId)">{{ row.cocktailName }}</button>
-          <span class="subtle"> · {{ row.groupingName }} · {{ row.cocktailSourceName }}</span>
-        </li>
-      </ul>
-    </section>
-
     <p v-if="error" class="error">{{ error }}</p>
   </div>
 </template>
 
 <script>
 import {
-  deleteCocktailGrouping,
   createCocktailTryLog,
   createUser,
-  getCocktailGroupingNames,
-  getCocktailsByGroupingName,
-  getCocktailGroupingsByCocktail,
   getCocktailIngredients,
   getCocktailSources,
   getCocktailSteps,
@@ -245,8 +183,6 @@ import {
   getIngredients,
   getUserInventory,
   getUsers,
-  renameCocktailGrouping,
-  upsertCocktailGrouping,
   upsertUserInventory
 } from './api';
 
@@ -267,15 +203,11 @@ export default {
 
       selectedCocktailSteps: [],
       selectedCocktailLogs: [],
-      selectedCocktailGroupings: [],
-      groupingCocktails: [],
-      groupingNames: [],
 
       cocktailSearch: '',
       ingredientSearch: '',
       selectedSpirit: '',
       inventorySpiritFilter: '',
-      groupingQuery: '',
       makeableTriedFilter: 'all',
 
       newUser: {
@@ -286,15 +218,6 @@ export default {
         rating: null,
         comment: '',
         triedOnLocal: ''
-      },
-      groupingDraft: {
-        cocktailSourceId: null,
-        groupingName: ''
-      },
-      renameDraft: {
-        cocktailSourceId: null,
-        groupingName: '',
-        newGroupingName: ''
       },
 
       userSuccessMessage: '',
@@ -480,8 +403,7 @@ export default {
     async loadInitialData() {
       this.error = '';
       try {
-        const [groupingNames, cocktails, ingredients, cocktailIngredients, users, sources] = await Promise.all([
-          getCocktailGroupingNames(),
+        const [cocktails, ingredients, cocktailIngredients, users, sources] = await Promise.all([
           getCocktails(),
           getIngredients(),
           getCocktailIngredients(),
@@ -489,7 +411,6 @@ export default {
           getCocktailSources()
         ]);
 
-        this.groupingNames = groupingNames;
         this.cocktails = cocktails;
         this.ingredients = ingredients;
         this.cocktailIngredients = cocktailIngredients;
@@ -618,91 +539,13 @@ export default {
       }
 
       try {
-        const [steps, logs, groupings] = await Promise.all([
+        const [steps, logs] = await Promise.all([
           getCocktailSteps(this.selectedCocktailId),
-          getCocktailTryLogs(this.selectedCocktailId, this.selectedUserId || null),
-          getCocktailGroupingsByCocktail(this.selectedCocktailId)
+          getCocktailTryLogs(this.selectedCocktailId, this.selectedUserId || null)
         ]);
 
         this.selectedCocktailSteps = steps;
         this.selectedCocktailLogs = logs;
-        this.selectedCocktailGroupings = groupings;
-
-        this.groupingDraft.cocktailSourceId = this.selectedCocktail?.cocktailSourceId || null;
-        this.renameDraft.cocktailSourceId = this.selectedCocktail?.cocktailSourceId || null;
-      } catch (err) {
-        this.error = this.extractError(err);
-      }
-    },
-    async addGroupingLink() {
-      if (!this.selectedCocktailId || !this.groupingDraft.cocktailSourceId || !this.groupingDraft.groupingName) {
-        return;
-      }
-
-      try {
-        await upsertCocktailGrouping({
-          cocktailId: this.selectedCocktailId,
-          cocktailSourceId: this.groupingDraft.cocktailSourceId,
-          groupingName: this.groupingDraft.groupingName
-        });
-        await this.refreshGroupingNames();
-        this.groupingDraft.groupingName = '';
-        await this.loadCocktailDetail();
-      } catch (err) {
-        this.error = this.extractError(err);
-      }
-    },
-    async renameGroupingLink() {
-      if (
-        !this.selectedCocktailId
-        || !this.renameDraft.cocktailSourceId
-        || !this.renameDraft.groupingName
-        || !this.renameDraft.newGroupingName
-      ) {
-        return;
-      }
-
-      try {
-        await renameCocktailGrouping({
-          cocktailId: this.selectedCocktailId,
-          cocktailSourceId: this.renameDraft.cocktailSourceId,
-          groupingName: this.renameDraft.groupingName,
-          newGroupingName: this.renameDraft.newGroupingName
-        });
-        await this.refreshGroupingNames();
-        this.renameDraft.groupingName = '';
-        this.renameDraft.newGroupingName = '';
-        await this.loadCocktailDetail();
-      } catch (err) {
-        this.error = this.extractError(err);
-      }
-    },
-    async deleteGroupingLink(link) {
-      try {
-        await deleteCocktailGrouping(link.cocktailId, link.cocktailSourceId, link.groupingName);
-        await this.refreshGroupingNames();
-        await this.loadCocktailDetail();
-        if (this.groupingQuery === link.groupingName) {
-          await this.loadGroupingResults(this.groupingQuery);
-        }
-      } catch (err) {
-        this.error = this.extractError(err);
-      }
-    },
-    async refreshGroupingNames() {
-      this.groupingNames = await getCocktailGroupingNames();
-    },
-    async searchGroupingCocktails() {
-      if (!this.groupingQuery) {
-        return;
-      }
-
-      await this.loadGroupingResults(this.groupingQuery);
-    },
-    async loadGroupingResults(groupingName) {
-      try {
-        this.groupingQuery = groupingName;
-        this.groupingCocktails = await getCocktailsByGroupingName(groupingName);
       } catch (err) {
         this.error = this.extractError(err);
       }
@@ -977,32 +820,6 @@ button:disabled {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-}
-
-.grouping-form {
-  margin-bottom: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.grouping-form h4 {
-  margin: 0.25rem 0 0;
-  font-size: 0.9rem;
-}
-
-.link-btn {
-  border: none;
-  background: transparent;
-  color: #0b5a85;
-  padding: 0;
-}
-
-.delete-btn {
-  margin-left: 0.5rem;
-  background: #feecef;
-  color: #9b1030;
-  border-color: #f4c5d0;
 }
 
 .log-form {
