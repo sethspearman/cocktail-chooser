@@ -55,6 +55,11 @@ export async function getCocktailTryLogs(cocktailId, userId) {
   return data;
 }
 
+export async function getUserCocktailTryLogs(userId) {
+  const { data } = await api.get('/cocktailtrylogs', { params: { userId } });
+  return data;
+}
+
 export async function createCocktailTryLog(payload) {
   const { data } = await api.post('/cocktailtrylogs', payload);
   return data;

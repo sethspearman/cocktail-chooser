@@ -1,5 +1,24 @@
 <template>
   <div class="app-shell">
+    <section class="info-bar">
+      <div class="info-chip">
+        <span class="label">You Can Make</span>
+        <strong>{{ makeableCocktails.length }}</strong>
+      </div>
+      <div class="info-chip">
+        <span class="label">Filtered Matches</span>
+        <strong>{{ filteredMakeableCocktails.length }}</strong>
+      </div>
+      <div class="info-chip wide-chip">
+        <span class="label">Last Tried</span>
+        <strong>{{ lastTriedSummary }}</strong>
+      </div>
+      <div class="info-chip wide-chip">
+        <span class="label">Next Ingredient</span>
+        <strong>{{ nextIngredientRecommendationSummary }}</strong>
+      </div>
+    </section>
+
     <header class="hero">
       <h1>Cocktail Chooser</h1>
       <p>Track your bar, discover what you can make, and log what you try.</p>
@@ -73,11 +92,21 @@
 
       <article class="panel wide">
         <div class="panel-title">What Can I Drink</div>
+        <div class="toolbar">
+          <select v-model="makeableTriedFilter">
+            <option value="all">All makeable</option>
+            <option value="untried">Only untried</option>
+          </select>
+          <button :disabled="filteredMakeableCocktails.length === 0" @click="pickRandomMakeableCocktail">
+            Random Pick From Filtered List
+          </button>
+        </div>
         <div v-if="!selectedUserId" class="empty">Select a user to compute matches.</div>
-        <div v-else-if="makeableCocktails.length === 0" class="empty">No full matches yet. Add more ingredients in My Bar.</div>
+        <div v-else-if="filteredMakeableCocktails.length === 0" class="empty">No full matches for the current filters. Try another spirit or add more ingredients.</div>
         <ul v-else class="match-list">
-          <li v-for="cocktail in makeableCocktails" :key="`match-${cocktail.id}`">
+          <li v-for="cocktail in filteredMakeableCocktails" :key="`match-${cocktail.id}`">
             <button @click="selectCocktail(cocktail.id)">{{ cocktail.name }}</button>
+            <span v-if="hasTriedCocktail(cocktail.id)" class="tried-pill" title="Tried / logged">Tried</span>
           </li>
         </ul>
       </article>
@@ -211,6 +240,7 @@ import {
   getCocktailSources,
   getCocktailSteps,
   getCocktailTryLogs,
+  getUserCocktailTryLogs,
   getCocktails,
   getIngredients,
   getUserInventory,
@@ -230,6 +260,7 @@ export default {
       users: [],
       inventory: [],
       sources: [],
+      userCocktailLogs: [],
 
       selectedUserId: 0,
       selectedCocktailId: 0,
@@ -245,6 +276,7 @@ export default {
       selectedSpirit: '',
       inventorySpiritFilter: '',
       groupingQuery: '',
+      makeableTriedFilter: 'all',
 
       newUser: {
         displayName: '',
@@ -331,6 +363,23 @@ export default {
 
       return this.cocktails.filter((c) => this.canMakeById(c.id));
     },
+    filteredMakeableCocktails() {
+      return this.makeableCocktails.filter((cocktail) => {
+        if (this.selectedSpirit) {
+          const rows = this.cocktailIngredientsByCocktail[cocktail.id] || [];
+          const matchesSpirit = rows.some((row) => row.primarySpirit === this.selectedSpirit);
+          if (!matchesSpirit) {
+            return false;
+          }
+        }
+
+        if (this.makeableTriedFilter === 'untried' && this.hasTriedCocktail(cocktail.id)) {
+          return false;
+        }
+
+        return true;
+      });
+    },
     selectedCocktailIngredients() {
       return this.cocktailIngredientsByCocktail[this.selectedCocktailId] || [];
     },
@@ -340,6 +389,78 @@ export default {
       }
 
       return this.getMissingIngredients(this.selectedCocktailId);
+    },
+    lastTriedLog() {
+      if (!this.userCocktailLogs.length) {
+        return null;
+      }
+
+      return [...this.userCocktailLogs]
+        .sort((a, b) => new Date(b.triedOnUtc || b.createdUtc || 0) - new Date(a.triedOnUtc || a.createdUtc || 0))[0];
+    },
+    lastTriedSummary() {
+      if (!this.selectedUserId) {
+        return 'Select a user';
+      }
+
+      if (!this.lastTriedLog) {
+        return 'No cocktail logs yet';
+      }
+
+      const cocktailName = this.cocktailById[this.lastTriedLog.cocktailId]?.name || `Cocktail #${this.lastTriedLog.cocktailId}`;
+      const date = this.formatDate(this.lastTriedLog.triedOnUtc || this.lastTriedLog.createdUtc);
+      return `${cocktailName} (${date})`;
+    },
+    triedCocktailIdSet() {
+      return new Set(this.userCocktailLogs.map((log) => log.cocktailId));
+    },
+    nextIngredientRecommendation() {
+      if (!this.selectedUserId) {
+        return null;
+      }
+
+      const unlockCounts = new Map();
+
+      this.cocktails.forEach((cocktail) => {
+        if (this.canMakeById(cocktail.id)) {
+          return;
+        }
+
+        const missing = this.getMissingIngredients(cocktail.id);
+        if (missing.length !== 1) {
+          return;
+        }
+
+        const ingredient = missing[0];
+        unlockCounts.set(ingredient.id, {
+          ingredient,
+          count: (unlockCounts.get(ingredient.id)?.count || 0) + 1
+        });
+      });
+
+      if (unlockCounts.size === 0) {
+        return null;
+      }
+
+      return [...unlockCounts.values()].sort((a, b) => {
+        if (b.count !== a.count) {
+          return b.count - a.count;
+        }
+
+        return a.ingredient.name.localeCompare(b.ingredient.name);
+      })[0];
+    },
+    nextIngredientRecommendationSummary() {
+      if (!this.selectedUserId) {
+        return 'Select a user';
+      }
+
+      if (!this.nextIngredientRecommendation) {
+        return 'No single-ingredient unlock recommendation yet';
+      }
+
+      const { ingredient, count } = this.nextIngredientRecommendation;
+      return `${ingredient.name} (+${count} cocktails)`;
     },
     canCreateUser() {
       return this.newUser.displayName.trim().length > 0;
@@ -378,6 +499,7 @@ export default {
         if (users.length) {
           this.selectedUserId = users[0].id;
           await this.loadInventory();
+          await this.loadUserCocktailLogs();
         }
       } catch (err) {
         this.error = this.extractError(err);
@@ -411,6 +533,7 @@ export default {
     },
     async handleUserChange() {
       await this.loadInventory();
+      await this.loadUserCocktailLogs();
       if (this.selectedCocktailId) {
         await this.loadCocktailDetail();
       }
@@ -427,8 +550,23 @@ export default {
         this.error = this.extractError(err);
       }
     },
+    async loadUserCocktailLogs() {
+      this.userCocktailLogs = [];
+      if (!this.selectedUserId) {
+        return;
+      }
+
+      try {
+        this.userCocktailLogs = await getUserCocktailTryLogs(this.selectedUserId);
+      } catch (err) {
+        this.error = this.extractError(err);
+      }
+    },
     isIngredientInStock(ingredientId) {
       return this.inventory.some((x) => x.ingredientId === ingredientId && x.isInStock);
+    },
+    hasTriedCocktail(cocktailId) {
+      return this.triedCocktailIdSet.has(cocktailId);
     },
     async toggleIngredientStock(ingredientId, isInStock) {
       if (!this.selectedUserId) {
@@ -464,6 +602,15 @@ export default {
     async selectCocktail(cocktailId) {
       this.selectedCocktailId = cocktailId;
       await this.loadCocktailDetail();
+    },
+    async pickRandomMakeableCocktail() {
+      if (this.filteredMakeableCocktails.length === 0) {
+        return;
+      }
+
+      const index = Math.floor(Math.random() * this.filteredMakeableCocktails.length);
+      const cocktail = this.filteredMakeableCocktails[index];
+      await this.selectCocktail(cocktail.id);
     },
     async loadCocktailDetail() {
       if (!this.selectedCocktailId) {
@@ -582,6 +729,7 @@ export default {
         this.newLog.comment = '';
         this.newLog.triedOnLocal = '';
 
+        await this.loadUserCocktailLogs();
         await this.loadCocktailDetail();
       } catch (err) {
         this.error = this.extractError(err);
@@ -633,6 +781,45 @@ body {
   max-width: 1280px;
   margin: 0 auto;
   padding: 1.25rem;
+}
+
+.info-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding: 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.info-chip {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.info-chip .label {
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.info-chip strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hero {
@@ -736,6 +923,16 @@ button:disabled {
   font-size: 0.75rem;
 }
 
+.tried-pill {
+  margin-left: 0.4rem;
+  background: #eef2ff;
+  color: #2f3ea8;
+  border: 1px solid #cfd7ff;
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.72rem;
+}
+
 .inventory-row {
   display: flex;
   gap: 0.5rem;
@@ -831,6 +1028,11 @@ button:disabled {
 }
 
 @media (max-width: 900px) {
+  .info-bar {
+    grid-template-columns: 1fr;
+    position: static;
+  }
+
   .grid,
   .detail-grid {
     grid-template-columns: 1fr;
