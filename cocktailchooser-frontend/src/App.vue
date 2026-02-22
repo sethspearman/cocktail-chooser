@@ -7,6 +7,7 @@
 
     <section class="panel">
       <div class="panel-title">User</div>
+      <div class="subheading">Create User</div>
       <div class="user-row">
         <select v-model.number="selectedUserId" @change="handleUserChange">
           <option :value="0">Select a user</option>
@@ -15,10 +16,12 @@
           </option>
         </select>
 
-        <input v-model.trim="newUser.displayName" placeholder="Display name" />
+        <input v-model.trim="newUser.displayName" placeholder="Display name (required)" />
         <input v-model.trim="newUser.email" placeholder="Email (optional)" />
-        <button @click="createUserAndSelect">Add User</button>
+        <button :disabled="!canCreateUser" @click="createUserAndSelect">Add User</button>
       </div>
+      <p v-if="userValidationMessage" class="subtle">{{ userValidationMessage }}</p>
+      <p v-if="userSuccessMessage" class="success">{{ userSuccessMessage }}</p>
     </section>
 
     <section class="grid">
@@ -262,6 +265,7 @@ export default {
         newGroupingName: ''
       },
 
+      userSuccessMessage: '',
       error: ''
     };
   },
@@ -336,6 +340,16 @@ export default {
       }
 
       return this.getMissingIngredients(this.selectedCocktailId);
+    },
+    canCreateUser() {
+      return this.newUser.displayName.trim().length > 0;
+    },
+    userValidationMessage() {
+      if (this.canCreateUser) {
+        return '';
+      }
+
+      return 'Enter a display name to create a user.';
     }
   },
   async created() {
@@ -371,6 +385,7 @@ export default {
     },
     async createUserAndSelect() {
       if (!this.newUser.displayName) {
+        this.error = 'Display name is required.';
         return;
       }
 
@@ -385,6 +400,10 @@ export default {
         this.selectedUserId = user.id;
         this.newUser.displayName = '';
         this.newUser.email = '';
+        this.userSuccessMessage = `User "${user.displayName}" created and selected.`;
+        setTimeout(() => {
+          this.userSuccessMessage = '';
+        }, 2500);
         await this.loadInventory();
       } catch (err) {
         this.error = this.extractError(err);
@@ -654,6 +673,14 @@ body {
   margin-bottom: 0.6rem;
 }
 
+.subheading {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
 .user-row,
 .toolbar {
   display: flex;
@@ -794,6 +821,12 @@ button:disabled {
 .error {
   color: #8c1028;
   margin-top: 1rem;
+  font-weight: 600;
+}
+
+.success {
+  color: #0d5a42;
+  margin-top: 0.4rem;
   font-weight: 600;
 }
 
