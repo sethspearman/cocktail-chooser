@@ -1,0 +1,8 @@
+PRAGMA foreign_keys = ON;
+BEGIN TRANSACTION;
+
+ALTER TABLE Users ADD COLUMN PasswordHash TEXT;
+ALTER TABLE Users ADD COLUMN PasswordSalt TEXT;
+ALTER TABLE Users ADD COLUMN PasswordIterations INTEGER;
+
+COMMIT;

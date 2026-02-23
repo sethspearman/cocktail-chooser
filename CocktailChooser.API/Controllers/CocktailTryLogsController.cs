@@ -1,3 +1,4 @@
+using CocktailChooser.API.Auth;
 using CocktailChooser.API.DTOs;
 using CocktailChooser.API.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -9,10 +10,12 @@ namespace CocktailChooser.API.Controllers;
 public class CocktailTryLogsController : ControllerBase
 {
     private readonly ICocktailTryLogService _service;
+    private readonly ICurrentUserContext _currentUserContext;
 
-    public CocktailTryLogsController(ICocktailTryLogService service)
+    public CocktailTryLogsController(ICocktailTryLogService service, ICurrentUserContext currentUserContext)
     {
         _service = service;
+        _currentUserContext = currentUserContext;
     }
 
     [HttpGet]
@@ -20,6 +23,11 @@ public class CocktailTryLogsController : ControllerBase
         [FromQuery] int? cocktailId,
         [FromQuery] int? userId)
     {
+        if (userId.HasValue && !IsAuthorizedUser(userId.Value))
+        {
+            return Unauthorized();
+        }
+
         if (cocktailId.HasValue)
         {
             var logsByCocktail = await _service.GetCocktailTryLogsByCocktailIdAsync(cocktailId.Value, userId);
@@ -44,12 +52,22 @@ public class CocktailTryLogsController : ControllerBase
             return NotFound();
         }
 
+        if (!IsAuthorizedUser(log.UserId))
+        {
+            return Unauthorized();
+        }
+
         return Ok(log);
     }
 
     [HttpPost]
     public async Task<ActionResult<CocktailTryLogDto>> PostCocktailTryLog(CocktailTryLogDto logDto)
     {
+        if (!IsAuthorizedUser(logDto.UserId))
+        {
+            return Unauthorized();
+        }
+
         var created = await _service.CreateCocktailTryLogAsync(logDto);
         return CreatedAtAction(nameof(GetCocktailTryLog), new { id = created.Id }, created);
     }
@@ -57,9 +75,25 @@ public class CocktailTryLogsController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> PutCocktailTryLog(int id, CocktailTryLogDto logDto)
     {
+        if (!IsAuthorizedUser(logDto.UserId))
+        {
+            return Unauthorized();
+        }
+
         if (id != logDto.Id)
         {
             return BadRequest();
+        }
+
+        var existing = await _service.GetCocktailTryLogByIdAsync(id);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        if (!IsAuthorizedUser(existing.UserId))
+        {
+            return Unauthorized();
         }
 
         var updated = await _service.UpdateCocktailTryLogAsync(logDto);
@@ -74,6 +108,17 @@ public class CocktailTryLogsController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteCocktailTryLog(int id)
     {
+        var existing = await _service.GetCocktailTryLogByIdAsync(id);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        if (!IsAuthorizedUser(existing.UserId))
+        {
+            return Unauthorized();
+        }
+
         var deleted = await _service.DeleteCocktailTryLogAsync(id);
         if (!deleted)
         {
@@ -81,5 +126,10 @@ public class CocktailTryLogsController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    private bool IsAuthorizedUser(int userId)
+    {
+        return _currentUserContext.UserId.HasValue && _currentUserContext.UserId.Value == userId;
     }
 }
