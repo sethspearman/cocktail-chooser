@@ -112,7 +112,10 @@
     </section>
 
     <section class="panel detail" v-if="selectedCocktail">
-      <div class="panel-title">{{ selectedCocktail.name }}</div>
+      <div class="detail-header">
+        <div class="panel-title">{{ selectedCocktail.name }}</div>
+        <button type="button" class="menu-button" @click="openRecipeModal">Print</button>
+      </div>
       <p class="subtle">Source: {{ sourceNameFor(selectedCocktail.cocktailSourceId) }}</p>
 
       <div class="missing-panel">
@@ -166,6 +169,59 @@
     </section>
 
     <p v-if="error" class="error">{{ error }}</p>
+
+    <div
+      v-if="activeModal === 'recipe' && selectedCocktail"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="recipe-modal-title"
+      @click.self="closeActiveModal">
+      <div class="modal-card modal-card-xl">
+        <div class="modal-header">
+          <h2 id="recipe-modal-title">{{ selectedCocktail.name }}</h2>
+          <div class="menu-actions">
+            <button type="button" class="menu-button" @click="printSelectedRecipe">Print</button>
+            <button type="button" class="menu-button" @click="closeActiveModal">Close</button>
+          </div>
+        </div>
+
+        <div ref="recipePrintContent" class="recipe-print-content">
+          <p class="subtle">Source: {{ sourceNameFor(selectedCocktail.cocktailSourceId) }}</p>
+
+          <div class="missing-panel">
+            <strong>Missing Ingredients:</strong>
+            <span v-if="missingIngredientsForSelected.length === 0" class="pill">You have everything</span>
+            <ul v-else>
+              <li v-for="ingredient in missingIngredientsForSelected" :key="`print-missing-${ingredient.id}`">
+                {{ ingredient.name }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="detail-grid recipe-modal-grid">
+            <div>
+              <h3>Ingredients</h3>
+              <ul>
+                <li v-for="item in selectedCocktailIngredients" :key="`print-ing-${item.id}`">
+                  {{ item.ingredientName }}
+                  <span v-if="item.amountText" class="subtle">({{ item.amountText }})</span>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3>Steps</h3>
+              <ol>
+                <li v-for="step in selectedCocktailSteps" :key="`print-step-${step.stepNumber}`">
+                  {{ step.instruction }}
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div
       v-if="activeModal === 'account'"
@@ -699,6 +755,14 @@ export default {
       this.accountMenuOpen = false;
       this.activeModal = 'mybar';
     },
+    openRecipeModal() {
+      if (!this.selectedCocktail) {
+        return;
+      }
+
+      this.accountMenuOpen = false;
+      this.activeModal = 'recipe';
+    },
     closeActiveModal() {
       this.activeModal = '';
     },
@@ -776,6 +840,7 @@ export default {
     async selectCocktail(cocktailId) {
       this.selectedCocktailId = cocktailId;
       await this.loadCocktailDetail();
+      this.openRecipeModal();
     },
     async pickRandomMakeableCocktail() {
       if (this.filteredMakeableCocktails.length === 0) {
@@ -841,6 +906,53 @@ export default {
       }
 
       return new Date(utc).toLocaleString();
+    },
+    printSelectedRecipe() {
+      if (!this.selectedCocktail || !this.$refs.recipePrintContent) {
+        return;
+      }
+
+      const printWindow = window.open('', '_blank', 'width=900,height=700');
+      if (!printWindow) {
+        this.error = 'Unable to open print window. Please allow pop-ups and try again.';
+        return;
+      }
+
+      const recipeHtml = this.$refs.recipePrintContent.innerHTML;
+      const title = this.selectedCocktail.name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+      try {
+        printWindow.document.open();
+        printWindow.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>${title}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
+      h1, h2, h3 { margin: 0 0 10px; }
+      h1 { font-size: 24px; }
+      .subtle { color: #555; }
+      .missing-panel { border: 1px dashed #bbb; border-radius: 8px; padding: 10px; margin: 12px 0 16px; }
+      .pill { display: inline-block; border: 1px solid #9bcfb8; background: #e7f7ef; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+      .recipe-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      ul, ol { margin-top: 8px; }
+      @media print { body { margin: 0.4in; } }
+    </style>
+  </head>
+  <body>
+    <h1>${title}</h1>
+    <div>${recipeHtml}</div>
+  </body>
+</html>`);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.addEventListener('load', () => {
+          printWindow.print();
+        }, { once: true });
+      } catch (err) {
+        this.error = 'Unable to prepare print preview window.';
+      }
     },
     extractError(err) {
       if (typeof err?.response?.data === 'string') {
@@ -1273,6 +1385,17 @@ button:disabled {
   margin-top: 1rem;
 }
 
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.detail-header .panel-title {
+  margin-bottom: 0;
+}
+
 .missing-panel {
   background: #fff;
   border: 1px dashed var(--line);
@@ -1290,6 +1413,14 @@ button:disabled {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
+}
+
+.recipe-modal-grid {
+  margin-top: 0.3rem;
+}
+
+.recipe-print-content h3 {
+  margin: 0 0 0.35rem;
 }
 
 .log-form {
