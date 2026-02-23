@@ -21,7 +21,7 @@
 
     <header class="hero">
       <h1>Cocktail Chooser</h1>
-      <p>Track your bar, discover what you can make, and log what you try.</p>
+      <p>Track what's in your bar, discover what you can make, and log what you try.</p>
     </header>
 
     <section class="panel">
