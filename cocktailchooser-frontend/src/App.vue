@@ -1,5 +1,38 @@
 <template>
   <div class="app-shell">
+    <div class="top-nav-row">
+      <div class="app-menu" :class="{ open: accountMenuOpen }">
+        <button
+          class="menu-trigger"
+          type="button"
+          aria-label="Open navigation menu"
+          @click="toggleAccountMenu">
+          <span class="hamburger-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+          <span class="menu-trigger-text">Menu</span>
+        </button>
+
+        <div v-if="accountMenuOpen" class="app-menu-dropdown">
+          <div class="menu-user-summary">
+            <span class="user-icon">{{ currentUser ? currentUser.displayName.slice(0, 1).toUpperCase() : 'U' }}</span>
+            <div>
+              <strong>{{ currentUser ? currentUser.displayName : 'Guest' }}</strong>
+              <div class="subtle">{{ currentUser ? 'Signed in' : 'Sign in or create an account' }}</div>
+            </div>
+          </div>
+          <div class="menu-actions">
+            <button type="button" class="menu-button" @click="openAccountModal(currentUser ? 'overview' : 'login')">
+              {{ currentUser ? 'Account' : 'Log In / Create Account' }}
+            </button>
+            <button type="button" class="menu-button" @click="openMyBarModal">My Bar Checklist</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <section class="info-bar">
       <div class="info-chip">
         <span class="label">You Can Make</span>
@@ -19,65 +52,25 @@
       </div>
     </section>
 
+    <div class="my-bar-inline-hint">
+      <span class="inline-hint-text">{{ myBarGuidanceMessage }}</span>
+      <button type="button" class="inline-link-button" @click="openMyBarModal">
+        {{ selectedUserId ? 'Update My Bar!' : 'Open My Bar!' }}
+      </button>
+      <button
+        v-if="!selectedUserId"
+        type="button"
+        class="inline-link-button secondary-link"
+        @click="openAccountModal('login')">
+        Log in
+      </button>
+    </div>
+
     <header class="hero">
       <div class="hero-top">
         <div>
           <h1>Cocktail Chooser</h1>
           <p>Track what's in your bar, discover what you can make, and log what you try.</p>
-        </div>
-
-        <div class="account-menu" :class="{ open: accountMenuOpen }">
-          <button
-            class="account-trigger"
-            type="button"
-            aria-label="Account menu"
-            @click="toggleAccountMenu">
-            <span class="user-icon">{{ currentUser ? currentUser.displayName.slice(0, 1).toUpperCase() : 'U' }}</span>
-            <span class="account-trigger-text">
-              {{ currentUser ? currentUser.displayName : 'Account' }}
-            </span>
-          </button>
-
-          <div v-if="accountMenuOpen" class="account-dropdown">
-            <template v-if="currentUser">
-              <div class="account-summary">
-                <strong>{{ currentUser.displayName }}</strong>
-                <span v-if="currentUser.email" class="subtle">{{ currentUser.email }}</span>
-              </div>
-              <div class="menu-actions">
-                <button type="button" class="menu-button" @click="showNotImplementedModal('Change Password')">Change Password</button>
-                <button type="button" class="menu-button" @click="logout">Log Out</button>
-              </div>
-            </template>
-
-            <template v-else>
-              <div class="menu-actions">
-                <button type="button" class="menu-button" @click="openAccountView('login')">Log In</button>
-                <button type="button" class="menu-button" @click="openAccountView('register')">Create Account</button>
-              </div>
-
-              <div v-if="accountMenuView === 'login'" class="account-pane">
-                <div class="subheading">Log In</div>
-                <div class="auth-stack">
-                  <input v-model.trim="loginForm.email" type="email" placeholder="Email" />
-                  <input v-model="loginForm.password" type="password" placeholder="Password" />
-                  <button :disabled="!canLogin" @click="loginUser">Log In</button>
-                </div>
-              </div>
-
-              <div v-if="accountMenuView === 'register'" class="account-pane">
-                <div class="subheading">Create Account</div>
-                <div class="auth-stack">
-                  <input v-model.trim="registerForm.displayName" placeholder="Display name" />
-                  <input v-model.trim="registerForm.email" type="email" placeholder="Email" />
-                  <input v-model="registerForm.password" type="password" placeholder="Password (8+ chars)" />
-                  <button :disabled="!canRegister" @click="registerUser">Create Account</button>
-                </div>
-              </div>
-
-              <p v-if="authValidationMessage" class="subtle account-help">{{ authValidationMessage }}</p>
-            </template>
-          </div>
         </div>
       </div>
     </header>
@@ -105,30 +98,6 @@
             <span v-if="canMakeById(cocktail.id)" class="pill">Can make</span>
           </button>
         </div>
-      </article>
-
-      <article class="panel">
-        <div class="panel-title">My Bar</div>
-        <div v-if="!selectedUserId" class="empty">Log in to manage your inventory.</div>
-        <template v-else>
-          <div class="toolbar">
-            <input v-model.trim="ingredientSearch" placeholder="Search ingredients" />
-            <select v-model="inventorySpiritFilter">
-              <option value="">All</option>
-              <option v-for="spirit in spirits" :key="`inv-${spirit}`" :value="spirit">{{ spirit }}</option>
-            </select>
-          </div>
-          <div class="inventory">
-            <label v-for="ingredient in filteredInventoryIngredients" :key="ingredient.id" class="inventory-row">
-              <input
-                type="checkbox"
-                :checked="isIngredientInStock(ingredient.id)"
-                @change="toggleIngredientStock(ingredient.id, $event.target.checked)" />
-              <span>{{ ingredient.name }}</span>
-              <small v-if="ingredient.primarySpirit">{{ ingredient.primarySpirit }}</small>
-            </label>
-          </div>
-        </template>
       </article>
 
       <article class="panel wide">
@@ -208,6 +177,103 @@
     </section>
 
     <p v-if="error" class="error">{{ error }}</p>
+
+    <div
+      v-if="activeModal === 'account'"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="account-modal-title"
+      @click.self="closeActiveModal">
+      <div class="modal-card modal-card-wide">
+        <div class="modal-header">
+          <h2 id="account-modal-title">Account</h2>
+          <button type="button" class="menu-button" @click="closeActiveModal">Close</button>
+        </div>
+
+        <template v-if="currentUser">
+          <div class="account-summary">
+            <strong>{{ currentUser.displayName }}</strong>
+            <span v-if="currentUser.email" class="subtle">{{ currentUser.email }}</span>
+          </div>
+          <div class="menu-actions">
+            <button type="button" class="menu-button" @click="showNotImplementedModal('Change Password')">Change Password</button>
+            <button type="button" class="menu-button" @click="logout">Log Out</button>
+          </div>
+        </template>
+
+        <template v-else>
+          <div class="menu-actions">
+            <button type="button" class="menu-button" @click="openAccountView('login')">Log In</button>
+            <button type="button" class="menu-button" @click="openAccountView('register')">Create Account</button>
+          </div>
+
+          <div v-if="accountMenuView === 'login'" class="account-pane">
+            <div class="subheading">Log In</div>
+            <div class="auth-stack">
+              <input v-model.trim="loginForm.email" type="email" placeholder="Email" />
+              <input v-model="loginForm.password" type="password" placeholder="Password" />
+              <button :disabled="!canLogin" @click="loginUser">Log In</button>
+            </div>
+          </div>
+
+          <div v-if="accountMenuView === 'register'" class="account-pane">
+            <div class="subheading">Create Account</div>
+            <div class="auth-stack">
+              <input v-model.trim="registerForm.displayName" placeholder="Display name" />
+              <input v-model.trim="registerForm.email" type="email" placeholder="Email" />
+              <input v-model="registerForm.password" type="password" placeholder="Password (8+ chars)" />
+              <button :disabled="!canRegister" @click="registerUser">Create Account</button>
+            </div>
+          </div>
+
+          <p v-if="authValidationMessage" class="subtle account-help">{{ authValidationMessage }}</p>
+        </template>
+      </div>
+    </div>
+
+    <div
+      v-if="activeModal === 'mybar'"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-bar-modal-title"
+      @click.self="closeActiveModal">
+      <div class="modal-card modal-card-xl">
+        <div class="modal-header">
+          <h2 id="my-bar-modal-title">My Bar Checklist</h2>
+          <button type="button" class="menu-button" @click="closeActiveModal">Close</button>
+        </div>
+        <p class="subtle">
+          {{ selectedUserId ? myBarGuidanceMessage : 'Log in to update your ingredients and unlock cocktail matches.' }}
+        </p>
+        <template v-if="selectedUserId">
+          <div class="toolbar">
+            <input v-model.trim="ingredientSearch" placeholder="Search ingredients" />
+            <select v-model="inventorySpiritFilter">
+              <option value="">All</option>
+              <option v-for="spirit in spirits" :key="`inv-${spirit}`" :value="spirit">{{ spirit }}</option>
+            </select>
+          </div>
+          <div class="inventory modal-inventory">
+            <label v-for="ingredient in filteredInventoryIngredients" :key="ingredient.id" class="inventory-row">
+              <input
+                type="checkbox"
+                :checked="isIngredientInStock(ingredient.id)"
+                @change="toggleIngredientStock(ingredient.id, $event.target.checked)" />
+              <span>{{ ingredient.name }}</span>
+              <small v-if="ingredient.primarySpirit">{{ ingredient.primarySpirit }}</small>
+            </label>
+          </div>
+        </template>
+        <template v-else>
+          <div class="menu-actions">
+            <button type="button" @click="openAccountModal('login')">Log In</button>
+            <button type="button" class="menu-button" @click="openAccountModal('register')">Create Account</button>
+          </div>
+        </template>
+      </div>
+    </div>
 
     <div
       v-if="notImplementedModalOpen"
@@ -292,6 +358,7 @@ export default {
       error: '',
       accountMenuOpen: false,
       accountMenuView: '',
+      activeModal: '',
       notImplementedModalOpen: false,
       notImplementedFeatureName: 'This feature'
     };
@@ -471,6 +538,22 @@ export default {
       }
 
       return 'Log in with email/password, or create an account with a display name, email, and password.';
+    },
+    myBarGuidanceMessage() {
+      if (!this.selectedUserId) {
+        return 'To see the cocktails you can make, add ingredients in My Bar from the Menu.';
+      }
+
+      if (this.inventoryInStockSet.size === 0) {
+        return 'To see the cocktails you can make, add ingredients in My Bar from the Menu.';
+      }
+
+      if (this.nextIngredientRecommendation) {
+        const { ingredient, count } = this.nextIngredientRecommendation;
+        return `Update your My Bar ingredients from the menu.  Adding ${ingredient.name} will add ${count} cocktails.`;
+      }
+
+      return 'Update your My Bar ingredients from the Menu.';
     }
   },
   async created() {
@@ -548,6 +631,7 @@ export default {
       this.selectedUserId = user.id;
       this.accountMenuOpen = false;
       this.accountMenuView = '';
+      this.activeModal = '';
       if (message) {
         this.userSuccessMessage = message;
         setTimeout(() => {
@@ -567,6 +651,7 @@ export default {
       this.selectedUserId = 0;
       this.accountMenuOpen = false;
       this.accountMenuView = '';
+      this.activeModal = '';
       this.inventory = [];
       this.userCocktailLogs = [];
       this.userSuccessMessage = 'Logged out.';
@@ -586,11 +671,27 @@ export default {
     openAccountView(view) {
       this.accountMenuView = view;
     },
+    openAccountModal(defaultView = 'overview') {
+      this.accountMenuOpen = false;
+      this.activeModal = 'account';
+      this.accountMenuView = this.currentUser ? defaultView : (defaultView || 'login');
+      if (!this.currentUser && this.accountMenuView === 'overview') {
+        this.accountMenuView = 'login';
+      }
+    },
+    openMyBarModal() {
+      this.accountMenuOpen = false;
+      this.activeModal = 'mybar';
+    },
+    closeActiveModal() {
+      this.activeModal = '';
+    },
     showNotImplementedModal(featureName) {
       this.notImplementedFeatureName = featureName || 'This feature';
       this.notImplementedModalOpen = true;
       this.accountMenuOpen = false;
       this.accountMenuView = '';
+      this.activeModal = '';
     },
     closeNotImplementedModal() {
       this.notImplementedModalOpen = false;
@@ -766,6 +867,12 @@ body {
   padding: 1.25rem;
 }
 
+.top-nav-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 0.45rem;
+}
+
 .info-bar {
   position: sticky;
   top: 0;
@@ -809,11 +916,38 @@ body {
   margin-bottom: 1rem;
 }
 
-.hero-top {
+.my-bar-inline-hint {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin: -0.15rem 0 0.7rem;
+  padding: 0 0.15rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.inline-hint-text {
+  white-space: pre-wrap;
+  margin-right: 0.8rem;
+}
+
+.inline-link-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #0b5a85;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  border-radius: 0;
+}
+
+.secondary-link {
+  color: var(--accent);
+}
+
+.hero-top {
+  display: block;
 }
 
 .hero h1 {
@@ -889,25 +1023,22 @@ button:disabled {
   margin: -0.35rem 0 0.85rem;
 }
 
-.account-menu {
+.app-menu {
   position: relative;
   flex-shrink: 0;
 }
 
-.account-trigger {
+.menu-trigger {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   background: rgba(255, 255, 255, 0.92);
   border-radius: 999px;
-  padding: 0.35rem 0.55rem 0.35rem 0.35rem;
+  padding: 0.4rem 0.65rem;
 }
 
-.account-trigger-text {
-  max-width: 10rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.menu-trigger-text {
+  font-weight: 600;
 }
 
 .user-icon {
@@ -922,7 +1053,22 @@ button:disabled {
   color: var(--accent);
 }
 
-.account-dropdown {
+.hamburger-icon {
+  width: 1.15rem;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.hamburger-icon span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: #27424f;
+}
+
+.app-menu-dropdown {
   position: absolute;
   right: 0;
   top: calc(100% + 0.4rem);
@@ -933,6 +1079,13 @@ button:disabled {
   box-shadow: 0 12px 30px rgba(21, 37, 48, 0.12);
   padding: 0.75rem;
   z-index: 20;
+}
+
+.menu-user-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.65rem;
 }
 
 .account-summary {
@@ -988,6 +1141,14 @@ button:disabled {
   padding: 1rem;
 }
 
+.modal-card-wide {
+  width: min(34rem, 100%);
+}
+
+.modal-card-xl {
+  width: min(44rem, 100%);
+}
+
 .modal-card h2 {
   margin: 0 0 0.4rem;
   font-family: 'Fraunces', serif;
@@ -1002,6 +1163,22 @@ button:disabled {
   display: flex;
   justify-content: flex-end;
   margin-top: 0.75rem;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.modal-inventory {
+  max-height: min(65vh, 34rem);
 }
 
 .list,
@@ -1123,8 +1300,7 @@ button:disabled {
 
 @media (max-width: 900px) {
   .info-bar {
-    grid-template-columns: 1fr;
-    position: static;
+    display: none;
   }
 
   .grid,
@@ -1133,16 +1309,18 @@ button:disabled {
   }
 
   .hero-top {
-    flex-direction: column;
-    align-items: stretch;
+    display: block;
   }
 
-  .account-trigger {
-    width: 100%;
+  .my-bar-inline-hint {
+    align-items: flex-start;
+  }
+
+  .menu-trigger {
     justify-content: flex-start;
   }
 
-  .account-dropdown {
+  .app-menu-dropdown {
     left: 0;
     right: auto;
     width: 100%;
