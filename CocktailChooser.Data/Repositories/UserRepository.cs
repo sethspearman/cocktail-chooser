@@ -14,23 +14,44 @@ public class UserRepository : IUserRepository
 
     public async Task<IEnumerable<UserRecord>> GetAllAsync()
     {
-        const string sql = "SELECT Id, DisplayName, Email, CreatedUtc, UpdatedUtc FROM Users ORDER BY DisplayName;";
+        const string sql = """
+            SELECT Id, DisplayName, Email, PasswordHash, PasswordSalt, PasswordIterations, CreatedUtc, UpdatedUtc
+            FROM Users
+            ORDER BY DisplayName;
+            """;
         await using var connection = new SqliteConnection(_connectionString);
         return await connection.QueryAsync<UserRecord>(sql);
     }
 
     public async Task<UserRecord?> GetByIdAsync(int id)
     {
-        const string sql = "SELECT Id, DisplayName, Email, CreatedUtc, UpdatedUtc FROM Users WHERE Id = @Id;";
+        const string sql = """
+            SELECT Id, DisplayName, Email, PasswordHash, PasswordSalt, PasswordIterations, CreatedUtc, UpdatedUtc
+            FROM Users
+            WHERE Id = @Id;
+            """;
         await using var connection = new SqliteConnection(_connectionString);
         return await connection.QuerySingleOrDefaultAsync<UserRecord>(sql, new { Id = id });
+    }
+
+    public async Task<UserRecord?> GetByEmailAsync(string email)
+    {
+        const string sql = """
+            SELECT Id, DisplayName, Email, PasswordHash, PasswordSalt, PasswordIterations, CreatedUtc, UpdatedUtc
+            FROM Users
+            WHERE Email IS NOT NULL
+              AND lower(Email) = lower(@Email)
+            LIMIT 1;
+            """;
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.QuerySingleOrDefaultAsync<UserRecord>(sql, new { Email = email });
     }
 
     public async Task<UserRecord> CreateAsync(UserRecord user)
     {
         const string sql = """
-            INSERT INTO Users (DisplayName, Email, CreatedUtc, UpdatedUtc)
-            VALUES (@DisplayName, @Email, @CreatedUtc, @UpdatedUtc);
+            INSERT INTO Users (DisplayName, Email, PasswordHash, PasswordSalt, PasswordIterations, CreatedUtc, UpdatedUtc)
+            VALUES (@DisplayName, @Email, @PasswordHash, @PasswordSalt, @PasswordIterations, @CreatedUtc, @UpdatedUtc);
             SELECT last_insert_rowid();
             """;
 
@@ -46,6 +67,9 @@ public class UserRepository : IUserRepository
             SET
                 DisplayName = @DisplayName,
                 Email = @Email,
+                PasswordHash = @PasswordHash,
+                PasswordSalt = @PasswordSalt,
+                PasswordIterations = @PasswordIterations,
                 UpdatedUtc = @UpdatedUtc
             WHERE Id = @Id;
             """;

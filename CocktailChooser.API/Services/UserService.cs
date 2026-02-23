@@ -37,7 +37,17 @@ public class UserService : IUserService
 
     public async Task<bool> UpdateUserAsync(UserDto userDto)
     {
+        var existing = await _repository.GetByIdAsync(userDto.Id);
+        if (existing == null)
+        {
+            return false;
+        }
+
         var record = MapToRecord(userDto);
+        record.PasswordHash = existing.PasswordHash;
+        record.PasswordSalt = existing.PasswordSalt;
+        record.PasswordIterations = existing.PasswordIterations;
+        record.CreatedUtc = existing.CreatedUtc;
         record.UpdatedUtc = DateTime.UtcNow.ToString("O");
         return await _repository.UpdateAsync(record);
     }

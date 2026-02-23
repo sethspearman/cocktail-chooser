@@ -20,28 +20,69 @@
     </section>
 
     <header class="hero">
-      <h1>Cocktail Chooser</h1>
-      <p>Track what's in your bar, discover what you can make, and log what you try.</p>
+      <div class="hero-top">
+        <div>
+          <h1>Cocktail Chooser</h1>
+          <p>Track what's in your bar, discover what you can make, and log what you try.</p>
+        </div>
+
+        <div class="account-menu" :class="{ open: accountMenuOpen }">
+          <button
+            class="account-trigger"
+            type="button"
+            aria-label="Account menu"
+            @click="toggleAccountMenu">
+            <span class="user-icon">{{ currentUser ? currentUser.displayName.slice(0, 1).toUpperCase() : 'U' }}</span>
+            <span class="account-trigger-text">
+              {{ currentUser ? currentUser.displayName : 'Account' }}
+            </span>
+          </button>
+
+          <div v-if="accountMenuOpen" class="account-dropdown">
+            <template v-if="currentUser">
+              <div class="account-summary">
+                <strong>{{ currentUser.displayName }}</strong>
+                <span v-if="currentUser.email" class="subtle">{{ currentUser.email }}</span>
+              </div>
+              <div class="menu-actions">
+                <button type="button" class="menu-button" @click="showNotImplementedModal('Change Password')">Change Password</button>
+                <button type="button" class="menu-button" @click="logout">Log Out</button>
+              </div>
+            </template>
+
+            <template v-else>
+              <div class="menu-actions">
+                <button type="button" class="menu-button" @click="openAccountView('login')">Log In</button>
+                <button type="button" class="menu-button" @click="openAccountView('register')">Create Account</button>
+              </div>
+
+              <div v-if="accountMenuView === 'login'" class="account-pane">
+                <div class="subheading">Log In</div>
+                <div class="auth-stack">
+                  <input v-model.trim="loginForm.email" type="email" placeholder="Email" />
+                  <input v-model="loginForm.password" type="password" placeholder="Password" />
+                  <button :disabled="!canLogin" @click="loginUser">Log In</button>
+                </div>
+              </div>
+
+              <div v-if="accountMenuView === 'register'" class="account-pane">
+                <div class="subheading">Create Account</div>
+                <div class="auth-stack">
+                  <input v-model.trim="registerForm.displayName" placeholder="Display name" />
+                  <input v-model.trim="registerForm.email" type="email" placeholder="Email" />
+                  <input v-model="registerForm.password" type="password" placeholder="Password (8+ chars)" />
+                  <button :disabled="!canRegister" @click="registerUser">Create Account</button>
+                </div>
+              </div>
+
+              <p v-if="authValidationMessage" class="subtle account-help">{{ authValidationMessage }}</p>
+            </template>
+          </div>
+        </div>
+      </div>
     </header>
 
-    <section class="panel">
-      <div class="panel-title">User</div>
-      <div class="subheading">Create User</div>
-      <div class="user-row">
-        <select v-model.number="selectedUserId" @change="handleUserChange">
-          <option :value="0">Select a user</option>
-          <option v-for="user in users" :key="user.id" :value="user.id">
-            {{ user.displayName }}
-          </option>
-        </select>
-
-        <input v-model.trim="newUser.displayName" placeholder="Display name (required)" />
-        <input v-model.trim="newUser.email" placeholder="Email (optional)" />
-        <button :disabled="!canCreateUser" @click="createUserAndSelect">Add User</button>
-      </div>
-      <p v-if="userValidationMessage" class="subtle">{{ userValidationMessage }}</p>
-      <p v-if="userSuccessMessage" class="success">{{ userSuccessMessage }}</p>
-    </section>
+    <p v-if="userSuccessMessage" class="success floating-message">{{ userSuccessMessage }}</p>
 
     <section class="grid">
       <article class="panel">
@@ -68,7 +109,7 @@
 
       <article class="panel">
         <div class="panel-title">My Bar</div>
-        <div v-if="!selectedUserId" class="empty">Select a user to manage inventory.</div>
+        <div v-if="!selectedUserId" class="empty">Log in to manage your inventory.</div>
         <template v-else>
           <div class="toolbar">
             <input v-model.trim="ingredientSearch" placeholder="Search ingredients" />
@@ -101,7 +142,7 @@
             Random Pick From Filtered List
           </button>
         </div>
-        <div v-if="!selectedUserId" class="empty">Select a user to compute matches.</div>
+        <div v-if="!selectedUserId" class="empty">Log in to compute matches for your bar.</div>
         <div v-else-if="filteredMakeableCocktails.length === 0" class="empty">No full matches for the current filters. Try another spirit or add more ingredients.</div>
         <ul v-else class="match-list">
           <li v-for="cocktail in filteredMakeableCocktails" :key="`match-${cocktail.id}`">
@@ -167,22 +208,44 @@
     </section>
 
     <p v-if="error" class="error">{{ error }}</p>
+
+    <div
+      v-if="notImplementedModalOpen"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="not-implemented-title"
+      @click.self="closeNotImplementedModal">
+      <div class="modal-card">
+        <h2 id="not-implemented-title">Coming Soon</h2>
+        <p>
+          {{ notImplementedFeatureName }} is not implemented yet, but the menu item is in place so it is easy to add later.
+        </p>
+        <p class="subtle">You can add it to the issue list and keep moving.</p>
+        <div class="modal-actions">
+          <button type="button" @click="closeNotImplementedModal">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import {
   createCocktailTryLog,
-  createUser,
   getCocktailIngredients,
   getCocktailSources,
   getCocktailSteps,
+  getCurrentUser,
   getCocktailTryLogs,
   getUserCocktailTryLogs,
   getCocktails,
   getIngredients,
   getUserInventory,
-  getUsers,
+  getStoredAuthToken,
+  login,
+  register,
+  setAuthToken,
   upsertUserInventory
 } from './api';
 
@@ -193,10 +256,10 @@ export default {
       cocktails: [],
       ingredients: [],
       cocktailIngredients: [],
-      users: [],
       inventory: [],
       sources: [],
       userCocktailLogs: [],
+      currentUser: null,
 
       selectedUserId: 0,
       selectedCocktailId: 0,
@@ -210,9 +273,14 @@ export default {
       inventorySpiritFilter: '',
       makeableTriedFilter: 'all',
 
-      newUser: {
+      loginForm: {
+        email: '',
+        password: ''
+      },
+      registerForm: {
         displayName: '',
-        email: ''
+        email: '',
+        password: ''
       },
       newLog: {
         rating: null,
@@ -221,7 +289,11 @@ export default {
       },
 
       userSuccessMessage: '',
-      error: ''
+      error: '',
+      accountMenuOpen: false,
+      accountMenuView: '',
+      notImplementedModalOpen: false,
+      notImplementedFeatureName: 'This feature'
     };
   },
   computed: {
@@ -323,7 +395,7 @@ export default {
     },
     lastTriedSummary() {
       if (!this.selectedUserId) {
-        return 'Select a user';
+        return 'Log in';
       }
 
       if (!this.lastTriedLog) {
@@ -375,7 +447,7 @@ export default {
     },
     nextIngredientRecommendationSummary() {
       if (!this.selectedUserId) {
-        return 'Select a user';
+        return 'Log in';
       }
 
       if (!this.nextIngredientRecommendation) {
@@ -385,15 +457,20 @@ export default {
       const { ingredient, count } = this.nextIngredientRecommendation;
       return `${ingredient.name} (+${count} cocktails)`;
     },
-    canCreateUser() {
-      return this.newUser.displayName.trim().length > 0;
+    canLogin() {
+      return this.loginForm.email.trim().length > 0 && this.loginForm.password.length > 0;
     },
-    userValidationMessage() {
-      if (this.canCreateUser) {
+    canRegister() {
+      return this.registerForm.displayName.trim().length > 0
+        && this.registerForm.email.trim().length > 0
+        && this.registerForm.password.length >= 8;
+    },
+    authValidationMessage() {
+      if (this.currentUser) {
         return '';
       }
 
-      return 'Enter a display name to create a user.';
+      return 'Log in with email/password, or create an account with a display name, email, and password.';
     }
   },
   async created() {
@@ -403,61 +480,120 @@ export default {
     async loadInitialData() {
       this.error = '';
       try {
-        const [cocktails, ingredients, cocktailIngredients, users, sources] = await Promise.all([
+        const [cocktails, ingredients, cocktailIngredients, sources] = await Promise.all([
           getCocktails(),
           getIngredients(),
           getCocktailIngredients(),
-          getUsers(),
           getCocktailSources()
         ]);
 
         this.cocktails = cocktails;
         this.ingredients = ingredients;
         this.cocktailIngredients = cocktailIngredients;
-        this.users = users;
         this.sources = sources;
-
-        if (users.length) {
-          this.selectedUserId = users[0].id;
-          await this.loadInventory();
-          await this.loadUserCocktailLogs();
-        }
+        await this.restoreSession();
       } catch (err) {
         this.error = this.extractError(err);
       }
     },
-    async createUserAndSelect() {
-      if (!this.newUser.displayName) {
-        this.error = 'Display name is required.';
+    async restoreSession() {
+      if (!getStoredAuthToken()) {
         return;
       }
 
+      try {
+        const user = await getCurrentUser();
+        await this.applyAuthenticatedUser(user, { message: '' });
+      } catch (err) {
+        setAuthToken('');
+        this.currentUser = null;
+        this.selectedUserId = 0;
+      }
+    },
+    async loginUser() {
       this.error = '';
       try {
-        const user = await createUser({
-          displayName: this.newUser.displayName,
-          email: this.newUser.email || null
+        const result = await login({
+          email: this.loginForm.email,
+          password: this.loginForm.password
         });
-
-        this.users.push(user);
-        this.selectedUserId = user.id;
-        this.newUser.displayName = '';
-        this.newUser.email = '';
-        this.userSuccessMessage = `User "${user.displayName}" created and selected.`;
-        setTimeout(() => {
-          this.userSuccessMessage = '';
-        }, 2500);
-        await this.loadInventory();
+        await this.applyAuthenticatedUser(result.user, { token: result.token, message: `Welcome back, ${result.user.displayName}.` });
+        this.loginForm.password = '';
       } catch (err) {
         this.error = this.extractError(err);
       }
     },
-    async handleUserChange() {
+    async registerUser() {
+      this.error = '';
+      try {
+        const result = await register({
+          displayName: this.registerForm.displayName,
+          email: this.registerForm.email,
+          password: this.registerForm.password
+        });
+        await this.applyAuthenticatedUser(result.user, { token: result.token, message: `Account created for ${result.user.displayName}.` });
+        this.registerForm.displayName = '';
+        this.registerForm.email = '';
+        this.registerForm.password = '';
+      } catch (err) {
+        this.error = this.extractError(err);
+      }
+    },
+    async applyAuthenticatedUser(user, { token = '', message = '' } = {}) {
+      if (token) {
+        setAuthToken(token);
+      }
+
+      this.currentUser = user;
+      this.selectedUserId = user.id;
+      this.accountMenuOpen = false;
+      this.accountMenuView = '';
+      if (message) {
+        this.userSuccessMessage = message;
+        setTimeout(() => {
+          this.userSuccessMessage = '';
+        }, 2500);
+      }
+
       await this.loadInventory();
       await this.loadUserCocktailLogs();
       if (this.selectedCocktailId) {
         await this.loadCocktailDetail();
       }
+    },
+    async logout() {
+      setAuthToken('');
+      this.currentUser = null;
+      this.selectedUserId = 0;
+      this.accountMenuOpen = false;
+      this.accountMenuView = '';
+      this.inventory = [];
+      this.userCocktailLogs = [];
+      this.userSuccessMessage = 'Logged out.';
+      if (this.selectedCocktailId) {
+        await this.loadCocktailDetail();
+      }
+      setTimeout(() => {
+        this.userSuccessMessage = '';
+      }, 2500);
+    },
+    toggleAccountMenu() {
+      this.accountMenuOpen = !this.accountMenuOpen;
+      if (this.accountMenuOpen && !this.accountMenuView) {
+        this.accountMenuView = this.currentUser ? '' : 'login';
+      }
+    },
+    openAccountView(view) {
+      this.accountMenuView = view;
+    },
+    showNotImplementedModal(featureName) {
+      this.notImplementedFeatureName = featureName || 'This feature';
+      this.notImplementedModalOpen = true;
+      this.accountMenuOpen = false;
+      this.accountMenuView = '';
+    },
+    closeNotImplementedModal() {
+      this.notImplementedModalOpen = false;
     },
     async loadInventory() {
       this.inventory = [];
@@ -590,6 +726,10 @@ export default {
       return new Date(utc).toLocaleString();
     },
     extractError(err) {
+      if (typeof err?.response?.data === 'string') {
+        return err.response.data;
+      }
+
       return err?.response?.data?.message || err?.message || 'Request failed';
     }
   }
@@ -669,6 +809,13 @@ body {
   margin-bottom: 1rem;
 }
 
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
 .hero h1 {
   font-family: 'Fraunces', serif;
   margin: 0;
@@ -736,6 +883,125 @@ button {
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.floating-message {
+  margin: -0.35rem 0 0.85rem;
+}
+
+.account-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  padding: 0.35rem 0.55rem 0.35rem 0.35rem;
+}
+
+.account-trigger-text {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-icon {
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.account-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  width: min(24rem, 92vw);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(21, 37, 48, 0.12);
+  padding: 0.75rem;
+  z-index: 20;
+}
+
+.account-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 0.6rem;
+}
+
+.menu-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.menu-button {
+  background: #fff;
+}
+
+.account-pane {
+  margin-top: 0.6rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--line);
+}
+
+.auth-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.account-help {
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 28, 36, 0.42);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 40;
+}
+
+.modal-card {
+  width: min(28rem, 100%);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 18px 42px rgba(21, 37, 48, 0.18);
+  padding: 1rem;
+}
+
+.modal-card h2 {
+  margin: 0 0 0.4rem;
+  font-family: 'Fraunces', serif;
+  font-size: 1.25rem;
+}
+
+.modal-card p {
+  margin: 0.35rem 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
 }
 
 .list,
@@ -864,6 +1130,22 @@ button:disabled {
   .grid,
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hero-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .account-trigger {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .account-dropdown {
+    left: 0;
+    right: auto;
+    width: 100%;
   }
 
   .match-list {

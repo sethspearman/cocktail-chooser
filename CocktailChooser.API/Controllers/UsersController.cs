@@ -1,3 +1,4 @@
+using CocktailChooser.API.Auth;
 using CocktailChooser.API.DTOs;
 using CocktailChooser.API.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -9,22 +10,39 @@ namespace CocktailChooser.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly ICurrentUserContext _currentUserContext;
 
-    public UsersController(IUserService userService)
+    public UsersController(IUserService userService, ICurrentUserContext currentUserContext)
     {
         _userService = userService;
+        _currentUserContext = currentUserContext;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
     {
-        var users = await _userService.GetAllUsersAsync();
-        return Ok(users);
+        if (!_currentUserContext.UserId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        var user = await _userService.GetUserByIdAsync(_currentUserContext.UserId.Value);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(new[] { user });
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<UserDto>> GetUser(int id)
     {
+        if (!IsAuthorizedUser(id))
+        {
+            return Unauthorized();
+        }
+
         var user = await _userService.GetUserByIdAsync(id);
         if (user == null)
         {
@@ -35,15 +53,19 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<UserDto>> PostUser(UserDto userDto)
+    public ActionResult<UserDto> PostUser(UserDto userDto)
     {
-        var created = await _userService.CreateUserAsync(userDto);
-        return CreatedAtAction(nameof(GetUser), new { id = created.Id }, created);
+        return BadRequest("Use /api/auth/register to create an account.");
     }
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> PutUser(int id, UserDto userDto)
     {
+        if (!IsAuthorizedUser(id))
+        {
+            return Unauthorized();
+        }
+
         if (id != userDto.Id)
         {
             return BadRequest();
@@ -61,6 +83,11 @@ public class UsersController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
+        if (!IsAuthorizedUser(id))
+        {
+            return Unauthorized();
+        }
+
         var deleted = await _userService.DeleteUserAsync(id);
         if (!deleted)
         {
@@ -68,5 +95,10 @@ public class UsersController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    private bool IsAuthorizedUser(int userId)
+    {
+        return _currentUserContext.UserId.HasValue && _currentUserContext.UserId.Value == userId;
     }
 }
