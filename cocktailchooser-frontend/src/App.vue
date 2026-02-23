@@ -27,6 +27,7 @@
             <button type="button" class="menu-button" @click="openAccountModal(currentUser ? 'overview' : 'login')">
               {{ currentUser ? 'Account' : 'Log In / Create Account' }}
             </button>
+            <button type="button" class="menu-button" @click="openAddCocktailModal">Add Cocktail</button>
             <button type="button" class="menu-button" @click="openMyBarModal">My Bar Checklist</button>
           </div>
         </div>
@@ -224,6 +225,41 @@
     </div>
 
     <div
+      v-if="activeModal === 'addCocktail'"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-cocktail-modal-title"
+      @click.self="closeActiveModal">
+      <div class="modal-card modal-card-wide">
+        <div class="modal-header">
+          <h2 id="add-cocktail-modal-title">Add Cocktail</h2>
+          <button type="button" class="menu-button" @click="closeActiveModal">Close</button>
+        </div>
+
+        <div class="auth-stack">
+          <input v-model.trim="newCocktailForm.name" placeholder="Cocktail name" />
+          <textarea v-model.trim="newCocktailForm.description" placeholder="Description (optional)"></textarea>
+          <textarea v-model.trim="newCocktailForm.method" placeholder="Method / notes (optional)"></textarea>
+          <select v-model.number="newCocktailForm.cocktailSourceId">
+            <option :value="0">Select source</option>
+            <option v-for="source in sources" :key="`src-${source.id}`" :value="source.id">
+              {{ source.name }}
+            </option>
+          </select>
+          <div class="menu-actions">
+            <button type="button" :disabled="!canCreateCocktailEntry" @click="submitNewCocktail">Save Cocktail</button>
+            <button type="button" class="menu-button" @click="closeActiveModal">Cancel</button>
+          </div>
+        </div>
+
+        <p class="subtle account-help">
+          Defaults to <strong>My Cocktails</strong> when available, but you can choose another source.
+        </p>
+      </div>
+    </div>
+
+    <div
       v-if="activeModal === 'account'"
       class="modal-backdrop"
       role="dialog"
@@ -343,6 +379,7 @@
 
 <script>
 import {
+  createCocktail,
   createCocktailTryLog,
   getCocktailIngredients,
   getCocktailSources,
@@ -393,6 +430,12 @@ export default {
         displayName: '',
         email: '',
         password: ''
+      },
+      newCocktailForm: {
+        name: '',
+        description: '',
+        method: '',
+        cocktailSourceId: 0
       },
       newLog: {
         rating: null,
@@ -604,6 +647,14 @@ export default {
         && this.registerForm.email.trim().length > 0
         && this.registerForm.password.length >= 8;
     },
+    preferredMyCocktailsSourceId() {
+      const exact = this.sources.find((s) => (s.name || '').toLowerCase() === 'my cocktails');
+      const fuzzy = this.sources.find((s) => (s.name || '').toLowerCase().includes('my cocktail'));
+      return exact?.id || fuzzy?.id || this.sources[0]?.id || 0;
+    },
+    canCreateCocktailEntry() {
+      return this.newCocktailForm.name.trim().length > 0 && Number(this.newCocktailForm.cocktailSourceId) > 0;
+    },
     authValidationMessage() {
       if (this.currentUser) {
         return '';
@@ -755,6 +806,11 @@ export default {
       this.accountMenuOpen = false;
       this.activeModal = 'mybar';
     },
+    openAddCocktailModal() {
+      this.accountMenuOpen = false;
+      this.initializeNewCocktailForm();
+      this.activeModal = 'addCocktail';
+    },
     openRecipeModal() {
       if (!this.selectedCocktail) {
         return;
@@ -765,6 +821,42 @@ export default {
     },
     closeActiveModal() {
       this.activeModal = '';
+    },
+    initializeNewCocktailForm() {
+      this.newCocktailForm.name = '';
+      this.newCocktailForm.description = '';
+      this.newCocktailForm.method = '';
+      this.newCocktailForm.cocktailSourceId = this.preferredMyCocktailsSourceId;
+    },
+    async submitNewCocktail() {
+      if (!this.canCreateCocktailEntry) {
+        return;
+      }
+
+      this.error = '';
+      try {
+        const created = await createCocktail({
+          id: 0,
+          name: this.newCocktailForm.name,
+          description: this.newCocktailForm.description || null,
+          method: this.newCocktailForm.method || null,
+          glassTypeId: null,
+          timePeriodId: null,
+          isPopular: 0,
+          cocktailSourceId: Number(this.newCocktailForm.cocktailSourceId)
+        });
+
+        this.cocktails.push(created);
+        this.cocktails.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        this.userSuccessMessage = `Cocktail "${created.name}" added.`;
+        this.activeModal = '';
+        await this.selectCocktail(created.id);
+        setTimeout(() => {
+          this.userSuccessMessage = '';
+        }, 2500);
+      } catch (err) {
+        this.error = this.extractError(err);
+      }
     },
     showNotImplementedModal(featureName) {
       this.notImplementedFeatureName = featureName || 'This feature';

@@ -38,6 +38,11 @@ export async function getCocktails() {
   return data;
 }
 
+export async function createCocktail(payload) {
+  const { data } = await api.post('/cocktails', payload);
+  return data;
+}
+
 export async function getIngredients() {
   const { data } = await api.get('/ingredients');
   return data;
