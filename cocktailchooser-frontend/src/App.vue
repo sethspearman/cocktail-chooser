@@ -788,8 +788,18 @@ button:disabled {
 }
 
 .match-list {
-  margin: 0;
-  padding-left: 1rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  column-width: 18rem;
+  column-gap: 1rem;
+}
+
+.match-list li {
+  break-inside: avoid;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.35rem;
 }
 
 .match-list button {
@@ -797,6 +807,7 @@ button:disabled {
   background: transparent;
   color: #0b5a85;
   padding: 0;
+  text-align: left;
 }
 
 .detail {
@@ -853,6 +864,11 @@ button:disabled {
   .grid,
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .match-list {
+    column-width: auto;
+    column-count: 1;
   }
 }
 </style>
