@@ -1,5 +1,38 @@
 <template>
   <div class="app-shell">
+    <div class="top-nav-row">
+      <div class="app-menu" :class="{ open: accountMenuOpen }">
+        <button
+          class="menu-trigger"
+          type="button"
+          aria-label="Open navigation menu"
+          @click="toggleAccountMenu">
+          <span class="hamburger-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+          <span class="menu-trigger-text">Menu</span>
+        </button>
+
+        <div v-if="accountMenuOpen" class="app-menu-dropdown">
+          <div class="menu-user-summary">
+            <span class="user-icon">{{ currentUser ? currentUser.displayName.slice(0, 1).toUpperCase() : 'U' }}</span>
+            <div>
+              <strong>{{ currentUser ? currentUser.displayName : 'Guest' }}</strong>
+              <div class="subtle">{{ currentUser ? 'Signed in' : 'Sign in or create an account' }}</div>
+            </div>
+          </div>
+          <div class="menu-actions">
+            <button type="button" class="menu-button" @click="openAccountModal(currentUser ? 'overview' : 'login')">
+              {{ currentUser ? 'Account' : 'Log In / Create Account' }}
+            </button>
+            <button type="button" class="menu-button" @click="openMyBarModal">My Bar Checklist</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <section class="info-bar">
       <div class="info-chip">
         <span class="label">You Can Make</span>
@@ -19,42 +52,25 @@
       </div>
     </section>
 
+    <div class="my-bar-inline-hint">
+      <span class="inline-hint-text">{{ myBarGuidanceMessage }}</span>
+      <button type="button" class="inline-link-button" @click="openMyBarModal">
+        {{ selectedUserId ? 'Update My Bar!' : 'Open My Bar!' }}
+      </button>
+      <button
+        v-if="!selectedUserId"
+        type="button"
+        class="inline-link-button secondary-link"
+        @click="openAccountModal('login')">
+        Log in
+      </button>
+    </div>
+
     <header class="hero">
       <div class="hero-top">
         <div>
           <h1>Cocktail Chooser</h1>
           <p>Track what's in your bar, discover what you can make, and log what you try.</p>
-        </div>
-
-        <div class="app-menu" :class="{ open: accountMenuOpen }">
-          <button
-            class="menu-trigger"
-            type="button"
-            aria-label="Open navigation menu"
-            @click="toggleAccountMenu">
-            <span class="hamburger-icon" aria-hidden="true">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-            <span class="menu-trigger-text">Menu</span>
-          </button>
-
-          <div v-if="accountMenuOpen" class="app-menu-dropdown">
-            <div class="menu-user-summary">
-              <span class="user-icon">{{ currentUser ? currentUser.displayName.slice(0, 1).toUpperCase() : 'U' }}</span>
-              <div>
-                <strong>{{ currentUser ? currentUser.displayName : 'Guest' }}</strong>
-                <div class="subtle">{{ currentUser ? 'Signed in' : 'Sign in or create an account' }}</div>
-              </div>
-            </div>
-            <div class="menu-actions">
-              <button type="button" class="menu-button" @click="openAccountModal(currentUser ? 'overview' : 'login')">
-                {{ currentUser ? 'Account' : 'Log In / Create Account' }}
-              </button>
-              <button type="button" class="menu-button" @click="openMyBarModal">My Bar Checklist</button>
-            </div>
-          </div>
         </div>
       </div>
     </header>
@@ -81,15 +97,6 @@
             <span>{{ cocktail.name }}</span>
             <span v-if="canMakeById(cocktail.id)" class="pill">Can make</span>
           </button>
-        </div>
-      </article>
-
-      <article class="panel">
-        <div class="panel-title">My Bar</div>
-        <p class="my-bar-guidance">{{ myBarGuidanceMessage }}</p>
-        <div class="toolbar">
-          <button @click="openMyBarModal">{{ selectedUserId ? 'Update My Bar Ingredients' : 'Open My Bar' }}</button>
-          <button v-if="!selectedUserId" class="menu-button" @click="openAccountModal('login')">Log In</button>
         </div>
       </article>
 
@@ -543,7 +550,7 @@ export default {
 
       if (this.nextIngredientRecommendation) {
         const { ingredient, count } = this.nextIngredientRecommendation;
-        return `Update your My Bar ingredients from the Menu. Adding ${ingredient.name} will add ${count} cocktails.`;
+        return `Update your My Bar ingredients from the menu.  Adding ${ingredient.name} will add ${count} cocktails.`;
       }
 
       return 'Update your My Bar ingredients from the Menu.';
@@ -860,6 +867,12 @@ body {
   padding: 1.25rem;
 }
 
+.top-nav-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 0.45rem;
+}
+
 .info-bar {
   position: sticky;
   top: 0;
@@ -903,11 +916,38 @@ body {
   margin-bottom: 1rem;
 }
 
-.hero-top {
+.my-bar-inline-hint {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin: -0.15rem 0 0.7rem;
+  padding: 0 0.15rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.inline-hint-text {
+  white-space: pre-wrap;
+  margin-right: 0.8rem;
+}
+
+.inline-link-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #0b5a85;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  border-radius: 0;
+}
+
+.secondary-link {
+  color: var(--accent);
+}
+
+.hero-top {
+  display: block;
 }
 
 .hero h1 {
@@ -1141,11 +1181,6 @@ button:disabled {
   max-height: min(65vh, 34rem);
 }
 
-.my-bar-guidance {
-  margin: 0 0 0.8rem;
-  color: var(--muted);
-}
-
 .list,
 .inventory {
   margin-top: 0.75rem;
@@ -1265,8 +1300,7 @@ button:disabled {
 
 @media (max-width: 900px) {
   .info-bar {
-    grid-template-columns: 1fr;
-    position: static;
+    display: none;
   }
 
   .grid,
@@ -1275,12 +1309,14 @@ button:disabled {
   }
 
   .hero-top {
-    flex-direction: column;
-    align-items: stretch;
+    display: block;
+  }
+
+  .my-bar-inline-hint {
+    align-items: flex-start;
   }
 
   .menu-trigger {
-    width: 100%;
     justify-content: flex-start;
   }
 
