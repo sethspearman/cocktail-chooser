@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using CocktailChooser.API.Auth;
 using CocktailChooser.API.Services;
 using CocktailChooser.Data.Migrations;
 using CocktailChooser.Data.Repositories;
@@ -23,6 +24,10 @@ public class Startup
         services.AddControllers();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
+        services.Configure<AuthOptions>(Configuration.GetSection("Auth"));
+        services.AddScoped<ICurrentUserContext, CurrentUserContext>();
+        services.AddSingleton<ITokenService, TokenService>();
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ICocktailRepository>(_ => new CocktailRepository(connectionString));
         services.AddScoped<IIngredientRepository>(_ => new IngredientRepository(connectionString));
         services.AddScoped<ICocktailIngredientRepository>(_ => new CocktailIngredientRepository(connectionString));
@@ -41,6 +46,7 @@ public class Startup
         services.AddScoped<IRecipeSourceService, RecipeSourceService>();
         services.AddScoped<IRecipeService, RecipeService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserInventoryService, UserInventoryService>();
         services.AddScoped<ICocktailTryLogService, CocktailTryLogService>();
         services.AddScoped<ICocktailGroupingService, CocktailGroupingService>();
@@ -63,6 +69,7 @@ public class Startup
 
         app.UseRouting();
         app.UseHttpsRedirection();
+        app.UseMiddleware<AuthTokenMiddleware>();
         app.UseAuthorization();
         app.UseEndpoints(endpoints =>
         {

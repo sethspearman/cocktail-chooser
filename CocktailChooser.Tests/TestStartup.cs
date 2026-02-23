@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using CocktailChooser.API.Auth;
 using CocktailChooser.API.Services;
 using CocktailChooser.Data.Repositories;
 using Dapper;
@@ -19,6 +20,14 @@ public class TestStartup
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddControllers();
+        services.Configure<AuthOptions>(options =>
+        {
+            options.SecretKey = "test-secret-key";
+            options.TokenLifetimeHours = 24;
+        });
+        services.AddScoped<ICurrentUserContext, CurrentUserContext>();
+        services.AddSingleton<ITokenService, TokenService>();
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
         var databasePath = Path.Combine(Path.GetTempPath(), $"cocktailchooser-tests-{Guid.NewGuid():N}.db");
         var connectionString = $"Data Source={databasePath};Foreign Keys=True";
 
@@ -53,6 +62,9 @@ public class TestStartup
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     DisplayName TEXT NOT NULL,
                     Email TEXT,
+                    PasswordHash TEXT,
+                    PasswordSalt TEXT,
+                    PasswordIterations INTEGER,
                     CreatedUtc TEXT NOT NULL,
                     UpdatedUtc TEXT NOT NULL
                 );
@@ -90,6 +102,7 @@ public class TestStartup
         services.AddScoped<IIngredientService, IngredientService>();
         services.AddScoped<ICocktailRecipeService, CocktailRecipeService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserInventoryService, UserInventoryService>();
         services.AddScoped<ICocktailTryLogService, CocktailTryLogService>();
     }
@@ -98,6 +111,7 @@ public class TestStartup
     {
         app.UseDeveloperExceptionPage();
         app.UseHttpsRedirection();
+        app.UseMiddleware<AuthTokenMiddleware>();
         app.UseAuthorization();
         app.UseEndpoints(endpoints =>
         {
