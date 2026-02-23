@@ -78,44 +78,33 @@
     <p v-if="userSuccessMessage" class="success floating-message">{{ userSuccessMessage }}</p>
 
     <section class="grid">
-      <article class="panel">
-        <div class="panel-title">Cocktails</div>
+      <article class="panel wide">
+        <div class="panel-title">What Can I Drink</div>
         <div class="toolbar">
+          <select v-model="cocktailListMode">
+            <option value="makeable">What Can I Drink</option>
+            <option value="all">Show All Cocktails</option>
+          </select>
           <input v-model.trim="cocktailSearch" placeholder="Search cocktails" />
           <select v-model="selectedSpirit">
             <option value="">All spirits</option>
             <option v-for="spirit in spirits" :key="spirit" :value="spirit">{{ spirit }}</option>
           </select>
-        </div>
-
-        <div class="list">
-          <button
-            v-for="cocktail in filteredCocktails"
-            :key="cocktail.id"
-            :class="['list-item', { active: selectedCocktailId === cocktail.id }]"
-            @click="selectCocktail(cocktail.id)">
-            <span>{{ cocktail.name }}</span>
-            <span v-if="canMakeById(cocktail.id)" class="pill">Can make</span>
-          </button>
-        </div>
-      </article>
-
-      <article class="panel wide">
-        <div class="panel-title">What Can I Drink</div>
-        <div class="toolbar">
-          <select v-model="makeableTriedFilter">
+          <select v-model="makeableTriedFilter" :disabled="cocktailListMode !== 'makeable'">
             <option value="all">All makeable</option>
             <option value="untried">Only untried</option>
           </select>
-          <button :disabled="filteredMakeableCocktails.length === 0" @click="pickRandomMakeableCocktail">
+          <button
+            :disabled="cocktailListMode !== 'makeable' || filteredMakeableCocktails.length === 0"
+            @click="pickRandomMakeableCocktail">
             Random Pick From Filtered List
           </button>
         </div>
-        <div v-if="!selectedUserId" class="empty">Log in to compute matches for your bar.</div>
-        <div v-else-if="filteredMakeableCocktails.length === 0" class="empty">No full matches for the current filters. Try another spirit or add more ingredients.</div>
+        <div v-if="combinedCocktailListEmptyMessage" class="empty">{{ combinedCocktailListEmptyMessage }}</div>
         <ul v-else class="match-list">
-          <li v-for="cocktail in filteredMakeableCocktails" :key="`match-${cocktail.id}`">
+          <li v-for="cocktail in visibleCocktails" :key="`match-${cocktail.id}`">
             <button @click="selectCocktail(cocktail.id)">{{ cocktail.name }}</button>
+            <span v-if="cocktailListMode === 'all' && canMakeById(cocktail.id)" class="pill">Can make</span>
             <span v-if="hasTriedCocktail(cocktail.id)" class="tried-pill" title="Tried / logged">Tried</span>
           </li>
         </ul>
@@ -336,6 +325,7 @@ export default {
       cocktailSearch: '',
       ingredientSearch: '',
       selectedSpirit: '',
+      cocktailListMode: 'makeable',
       inventorySpiritFilter: '',
       makeableTriedFilter: 'all',
 
@@ -427,6 +417,12 @@ export default {
     },
     filteredMakeableCocktails() {
       return this.makeableCocktails.filter((cocktail) => {
+        const matchesSearch = !this.cocktailSearch
+          || cocktail.name.toLowerCase().includes(this.cocktailSearch.toLowerCase());
+        if (!matchesSearch) {
+          return false;
+        }
+
         if (this.selectedSpirit) {
           const rows = this.cocktailIngredientsByCocktail[cocktail.id] || [];
           const matchesSpirit = rows.some((row) => row.primarySpirit === this.selectedSpirit);
@@ -441,6 +437,26 @@ export default {
 
         return true;
       });
+    },
+    visibleCocktails() {
+      return this.cocktailListMode === 'all'
+        ? this.filteredCocktails
+        : this.filteredMakeableCocktails;
+    },
+    combinedCocktailListEmptyMessage() {
+      if (this.cocktailListMode === 'makeable' && !this.selectedUserId) {
+        return 'Log in to compute matches for your bar.';
+      }
+
+      if (this.visibleCocktails.length > 0) {
+        return '';
+      }
+
+      if (this.cocktailListMode === 'all') {
+        return 'No cocktails match the current search/spirit filters.';
+      }
+
+      return 'No full matches for the current filters. Try another spirit or add more ingredients.';
     },
     selectedCocktailIngredients() {
       return this.cocktailIngredientsByCocktail[this.selectedCocktailId] || [];
