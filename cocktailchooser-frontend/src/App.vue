@@ -969,6 +969,17 @@ export default {
         const ingredientLines = this.buildStructuredIngredientLines();
         const stepLines = this.buildStructuredStepLines();
         const methodText = stepLines.length ? stepLines.join('. ') : null;
+        const structuredIngredients = this.newCocktailForm.ingredientEntries
+          .map((row) => ({
+            amountText: (row.amountText || '').trim() || null,
+            ingredientName: (row.ingredientName || '').trim() || null
+          }))
+          .filter((row) => row.ingredientName);
+        const structuredSteps = this.newCocktailForm.stepEntries
+          .map((row) => ({
+            instruction: (row.instruction || '').trim() || null
+          }))
+          .filter((row) => row.instruction);
 
         const created = await createCocktail({
           id: 0,
@@ -978,6 +989,8 @@ export default {
           ingredientLines: ingredientLines.length ? ingredientLines.join('\n') : null,
           stepLines: stepLines.length ? stepLines.join('\n') : null,
           flavorProfile: null,
+          structuredIngredients,
+          structuredSteps,
           glassTypeId: this.newCocktailForm.glassTypeId ? Number(this.newCocktailForm.glassTypeId) : null,
           timePeriodId: this.newCocktailForm.timePeriodId ? Number(this.newCocktailForm.timePeriodId) : null,
           isPopular: 0,

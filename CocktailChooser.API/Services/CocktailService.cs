@@ -84,10 +84,33 @@ public class CocktailService : ICocktailService
 
     private async Task PopulateParsedRecipeDataAsync(CocktailRecord createdCocktail, CocktailDto requestDto)
     {
+        var structuredIngredients = (requestDto.StructuredIngredients ?? new List<CocktailIngredientEntryDto>())
+            .Where(x => !string.IsNullOrWhiteSpace(x.IngredientName))
+            .Select((x, idx) => new
+            {
+                SortOrder = idx + 1,
+                IngredientName = x.IngredientName!.Trim(),
+                AmountText = NullIfWhiteSpace(x.AmountText)
+            })
+            .ToList();
+
+        var structuredSteps = (requestDto.StructuredSteps ?? new List<CocktailStepEntryDto>())
+            .Where(x => !string.IsNullOrWhiteSpace(x.Instruction))
+            .Select((x, idx) => new OcrParsedStepDraft
+            {
+                StepNumber = idx + 1,
+                Instruction = x.Instruction!.Trim()
+            })
+            .ToList();
+
         var ingredientLines = SplitInputLines(requestDto.IngredientLines);
         var stepLines = SplitInputLines(requestDto.StepLines);
 
-        if (ingredientLines.Count == 0 && stepLines.Count == 0 && string.IsNullOrWhiteSpace(requestDto.Method))
+        if (structuredIngredients.Count == 0
+            && structuredSteps.Count == 0
+            && ingredientLines.Count == 0
+            && stepLines.Count == 0
+            && string.IsNullOrWhiteSpace(requestDto.Method))
         {
             return;
         }
@@ -102,41 +125,73 @@ public class CocktailService : ICocktailService
         var allIngredients = (await _ingredientRepository.GetAllAsync()).ToList();
         var allAmounts = (await _amountRepository.GetAllAsync()).ToList();
 
-        foreach (var parsedIngredient in parsed.Ingredients.OrderBy(i => i.SortOrder))
+        if (structuredIngredients.Count > 0)
         {
-            var rawIngredientName = NullIfWhiteSpace(parsedIngredient.RawIngredientName)
-                ?? ExtractIngredientNameFallback(parsedIngredient.RawLine);
-            if (string.IsNullOrWhiteSpace(rawIngredientName))
+            foreach (var row in structuredIngredients)
             {
-                continue;
-            }
-
-            var matchedIngredient = FindBestIngredientMatch(rawIngredientName, allIngredients);
-            if (matchedIngredient == null)
-            {
-                matchedIngredient = await _ingredientRepository.CreateAsync(new IngredientRecord
+                var matchedIngredient = FindBestIngredientMatch(row.IngredientName, allIngredients);
+                if (matchedIngredient == null)
                 {
-                    Name = ToTitleLikeName(rawIngredientName)
+                    matchedIngredient = await _ingredientRepository.CreateAsync(new IngredientRecord
+                    {
+                        Name = row.IngredientName
+                    });
+                    allIngredients.Add(matchedIngredient);
+                }
+
+                var amountMatch = FindBestAmountMatch(row.AmountText, allAmounts);
+                var amountText = amountMatch == null ? row.AmountText : null;
+
+                await _cocktailIngredientRepository.CreateAsync(new CocktailIngredientRecord
+                {
+                    CocktailId = createdCocktail.Id,
+                    IngredientId = matchedIngredient.Id,
+                    AmountId = amountMatch?.Id,
+                    AmountText = amountText,
+                    SortOrder = row.SortOrder
                 });
-                allIngredients.Add(matchedIngredient);
             }
-
-            var amountMatch = FindBestAmountMatch(parsedIngredient.RawAmount, allAmounts);
-            var amountText = amountMatch == null ? NullIfWhiteSpace(parsedIngredient.RawAmount) : null;
-
-            await _cocktailIngredientRepository.CreateAsync(new CocktailIngredientRecord
+        }
+        else
+        {
+            foreach (var parsedIngredient in parsed.Ingredients.OrderBy(i => i.SortOrder))
             {
-                CocktailId = createdCocktail.Id,
-                IngredientId = matchedIngredient.Id,
-                AmountId = amountMatch?.Id,
-                AmountText = amountText,
-                SortOrder = parsedIngredient.SortOrder > 0 ? parsedIngredient.SortOrder : null
-            });
+                var rawIngredientName = NullIfWhiteSpace(parsedIngredient.RawIngredientName)
+                    ?? ExtractIngredientNameFallback(parsedIngredient.RawLine);
+                if (string.IsNullOrWhiteSpace(rawIngredientName))
+                {
+                    continue;
+                }
+
+                var matchedIngredient = FindBestIngredientMatch(rawIngredientName, allIngredients);
+                if (matchedIngredient == null)
+                {
+                    matchedIngredient = await _ingredientRepository.CreateAsync(new IngredientRecord
+                    {
+                        Name = ToTitleLikeName(rawIngredientName)
+                    });
+                    allIngredients.Add(matchedIngredient);
+                }
+
+                var amountMatch = FindBestAmountMatch(parsedIngredient.RawAmount, allAmounts);
+                var amountText = amountMatch == null ? NullIfWhiteSpace(parsedIngredient.RawAmount) : null;
+
+                await _cocktailIngredientRepository.CreateAsync(new CocktailIngredientRecord
+                {
+                    CocktailId = createdCocktail.Id,
+                    IngredientId = matchedIngredient.Id,
+                    AmountId = amountMatch?.Id,
+                    AmountText = amountText,
+                    SortOrder = parsedIngredient.SortOrder > 0 ? parsedIngredient.SortOrder : null
+                });
+            }
         }
 
         // Structured UI now sends explicit step lines. Use them as canonical to avoid
         // collapsing multiple steps into one when lines don't end with periods.
-        var parsedSteps = stepLines.Count > 0
+        var parsedSteps = structuredSteps.Count > 0
+            ? structuredSteps
+            : stepLines.Count > 0
             ? stepLines.Select((line, idx) => new OcrParsedStepDraft
                 {
                     StepNumber = idx + 1,
