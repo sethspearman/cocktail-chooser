@@ -948,7 +948,9 @@ export default {
             return '';
           }
 
-          return amountText ? `${amountText} ${ingredientName}` : ingredientName;
+          // Use a comma separator so the backend heuristic parser does not
+          // accidentally consume the first ingredient word as part of the amount.
+          return amountText ? `${amountText}, ${ingredientName}` : ingredientName;
         })
         .filter(Boolean);
     },
