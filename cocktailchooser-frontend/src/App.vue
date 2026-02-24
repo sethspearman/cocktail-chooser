@@ -476,7 +476,7 @@ export default {
       cocktailSearch: '',
       ingredientSearch: '',
       selectedSpirit: '',
-      cocktailListMode: 'makeable',
+      cocktailListMode: 'all',
       inventorySpiritFilter: '',
       makeableTriedFilter: 'all',
 
@@ -793,6 +793,7 @@ export default {
         setAuthToken('');
         this.currentUser = null;
         this.selectedUserId = 0;
+        this.cocktailListMode = 'all';
       }
     },
     async loginUser() {
@@ -831,6 +832,7 @@ export default {
 
       this.currentUser = user;
       this.selectedUserId = user.id;
+      this.cocktailListMode = 'makeable';
       this.accountMenuOpen = false;
       this.accountMenuView = '';
       this.activeModal = '';
@@ -851,6 +853,7 @@ export default {
       setAuthToken('');
       this.currentUser = null;
       this.selectedUserId = 0;
+      this.cocktailListMode = 'all';
       this.accountMenuOpen = false;
       this.accountMenuView = '';
       this.activeModal = '';
