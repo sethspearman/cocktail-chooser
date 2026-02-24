@@ -34,6 +34,7 @@ public class CocktailIngredientService : ICocktailIngredientService
             IngredientName = row.IngredientName,
             PrimarySpirit = row.PrimarySpirit,
             AmountId = row.AmountId,
+            AmountName = row.AmountName,
             AmountText = row.AmountText,
             SortOrder = row.SortOrder
         };

@@ -135,7 +135,7 @@
           <ul>
             <li v-for="item in selectedCocktailIngredients" :key="`ing-${item.id}`">
               {{ item.ingredientName }}
-              <span v-if="item.amountText" class="subtle">({{ item.amountText }})</span>
+              <span v-if="item.amountName || item.amountText" class="subtle">({{ item.amountName || item.amountText }})</span>
             </li>
           </ul>
 
@@ -206,7 +206,7 @@
               <ul>
                 <li v-for="item in selectedCocktailIngredients" :key="`print-ing-${item.id}`">
                   {{ item.ingredientName }}
-                  <span v-if="item.amountText" class="subtle">({{ item.amountText }})</span>
+                  <span v-if="item.amountName || item.amountText" class="subtle">({{ item.amountName || item.amountText }})</span>
                 </li>
               </ul>
             </div>
@@ -943,7 +943,7 @@ export default {
       return this.newCocktailForm.ingredientEntries
         .map((row) => {
           const ingredientName = (row.ingredientName || '').trim();
-          const amountText = (row.amountText || '').trim();
+          const amountText = this.normalizeEnteredAmountText(row.amountText);
           if (!ingredientName) {
             return '';
           }
@@ -953,6 +953,18 @@ export default {
           return amountText ? `${amountText}, ${ingredientName}` : ingredientName;
         })
         .filter(Boolean);
+    },
+    normalizeEnteredAmountText(value) {
+      const raw = (value || '').trim();
+      if (!raw) {
+        return '';
+      }
+
+      if (raw.startsWith('.')) {
+        return `0${raw}`;
+      }
+
+      return raw.replace(/^-\./, '-0.');
     },
     buildStructuredStepLines() {
       return this.newCocktailForm.stepEntries
@@ -971,7 +983,7 @@ export default {
         const methodText = stepLines.length ? stepLines.join('. ') : null;
         const structuredIngredients = this.newCocktailForm.ingredientEntries
           .map((row) => {
-            const amountText = (row.amountText || '').trim();
+            const amountText = this.normalizeEnteredAmountText(row.amountText);
             const amountMatch = amountText
               ? this.amountOptions.find((a) => (a.name || '').toLowerCase() === amountText.toLowerCase())
               : null;
