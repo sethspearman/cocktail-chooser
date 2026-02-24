@@ -1,0 +1,65 @@
+name: Deploy Prod (Linode)
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - "prod-*"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish API
+        run: dotnet publish CocktailChooser.API/CocktailChooser.API.csproj -c Release -r linux-x64 --self-contained false -o out/api
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Adjust this folder name if your UI project path differs
+      - name: Install UI deps
+        working-directory: cocktailchooser-frontend
+        run: npm ci
+
+      - name: Build UI
+        working-directory: cocktailchooser-frontend
+        run: npm run build
+
+      - name: Copy UI dist to out
+        run: |
+          mkdir -p out/ui
+          cp -R cocktailchooser-frontend/dist/* out/ui/
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.PROD_SSH_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.PROD_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Rsync API to server incoming
+        run: rsync -av --delete out/api/ ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}:/opt/cocktailchooser/incoming/api/
+
+      - name: Rsync UI to server incoming
+        run: rsync -av --delete out/ui/ ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}:/opt/cocktailchooser/incoming/ui/
+
+      - name: Run deploy script
+        run: ssh ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} "bash /opt/cocktailchooser/deploy.sh"
+
+      - name: Smoke test (HTTPs)
+        run: |
+          curl -I https://cocktailchooser.com
