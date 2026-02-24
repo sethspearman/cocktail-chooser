@@ -970,10 +970,18 @@ export default {
         const stepLines = this.buildStructuredStepLines();
         const methodText = stepLines.length ? stepLines.join('. ') : null;
         const structuredIngredients = this.newCocktailForm.ingredientEntries
-          .map((row) => ({
-            amountText: (row.amountText || '').trim() || null,
-            ingredientName: (row.ingredientName || '').trim() || null
-          }))
+          .map((row) => {
+            const amountText = (row.amountText || '').trim();
+            const amountMatch = amountText
+              ? this.amountOptions.find((a) => (a.name || '').toLowerCase() === amountText.toLowerCase())
+              : null;
+
+            return {
+              amountId: amountMatch ? Number(amountMatch.id) : null,
+              amountText: amountText || null,
+              ingredientName: (row.ingredientName || '').trim() || null
+            };
+          })
           .filter((row) => row.ingredientName);
         const structuredSteps = this.newCocktailForm.stepEntries
           .map((row) => ({

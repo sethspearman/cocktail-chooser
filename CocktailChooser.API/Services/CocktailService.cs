@@ -89,6 +89,7 @@ public class CocktailService : ICocktailService
             .Select((x, idx) => new
             {
                 SortOrder = idx + 1,
+                AmountId = x.AmountId,
                 IngredientName = x.IngredientName!.Trim(),
                 AmountText = NullIfWhiteSpace(x.AmountText)
             })
@@ -139,7 +140,9 @@ public class CocktailService : ICocktailService
                     allIngredients.Add(matchedIngredient);
                 }
 
-                var amountMatch = FindBestAmountMatch(row.AmountText, allAmounts);
+                var amountMatch = row.AmountId.HasValue
+                    ? allAmounts.FirstOrDefault(a => a.Id == row.AmountId.Value)
+                    : FindBestAmountMatch(row.AmountText, allAmounts);
                 var amountText = amountMatch == null ? row.AmountText : null;
 
                 await _cocktailIngredientRepository.CreateAsync(new CocktailIngredientRecord

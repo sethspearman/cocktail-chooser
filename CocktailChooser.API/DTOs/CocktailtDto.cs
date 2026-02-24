@@ -2,6 +2,7 @@ namespace CocktailChooser.API.DTOs
 {
     public class CocktailIngredientEntryDto
     {
+        public int? AmountId { get; set; }
         public string? AmountText { get; set; }
         public string? IngredientName { get; set; }
     }
