@@ -151,3 +151,18 @@ export async function getCocktailSources() {
   const { data } = await api.get('/recipesources');
   return data;
 }
+
+export async function getAmounts() {
+  const { data } = await api.get('/lookups/amounts');
+  return data;
+}
+
+export async function getGlassTypes() {
+  const { data } = await api.get('/lookups/glass-types');
+  return data;
+}
+
+export async function getCocktailTimePeriods() {
+  const { data } = await api.get('/lookups/time-periods');
+  return data;
+}

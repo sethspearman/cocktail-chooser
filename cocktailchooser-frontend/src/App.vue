@@ -240,21 +240,73 @@
         <div class="auth-stack">
           <input v-model.trim="newCocktailForm.name" placeholder="Cocktail name" />
           <textarea v-model.trim="newCocktailForm.description" placeholder="Description (optional)"></textarea>
-          <textarea v-model.trim="newCocktailForm.method" placeholder="Method / notes (optional)"></textarea>
           <select v-model.number="newCocktailForm.cocktailSourceId">
             <option :value="0">Select source</option>
             <option v-for="source in sources" :key="`src-${source.id}`" :value="source.id">
               {{ source.name }}
             </option>
           </select>
+          <div class="toolbar">
+            <select v-model="newCocktailForm.glassTypeId">
+              <option value="">Glass Type (optional)</option>
+              <option v-for="glassType in glassTypeOptions" :key="`glass-${glassType.id}`" :value="glassType.id">
+                {{ glassType.name }}
+              </option>
+            </select>
+            <select v-model="newCocktailForm.timePeriodId">
+              <option value="">Time Period (optional)</option>
+              <option v-for="timePeriod in timePeriodOptions" :key="`time-${timePeriod.id}`" :value="timePeriod.id">
+                {{ timePeriod.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="subheading">Ingredients</div>
+          <div class="structured-list">
+            <div
+              v-for="(row, index) in newCocktailForm.ingredientEntries"
+              :key="`new-ing-${index}`"
+              class="structured-row">
+              <input
+                v-model.trim="row.amountText"
+                list="amount-options"
+                placeholder="Amount (e.g. 2 oz)" />
+              <input
+                v-model.trim="row.ingredientName"
+                list="ingredient-options"
+                placeholder="Ingredient (choose existing or type new)" />
+              <button type="button" class="menu-button row-remove" @click="removeIngredientEntry(index)">Remove</button>
+            </div>
+            <button type="button" class="menu-button add-row-button" @click="addIngredientEntry">Add Ingredient</button>
+          </div>
+
+          <div class="subheading">Steps</div>
+          <div class="structured-list">
+            <div
+              v-for="(row, index) in newCocktailForm.stepEntries"
+              :key="`new-step-${index}`"
+              class="structured-row structured-step-row">
+              <input v-model.trim="row.instruction" :placeholder="`Step ${index + 1}`" />
+              <button type="button" class="menu-button row-remove" @click="removeStepEntry(index)">Remove</button>
+            </div>
+            <button type="button" class="menu-button add-row-button" @click="addStepEntry">Add Step</button>
+          </div>
+
           <div class="menu-actions">
             <button type="button" :disabled="!canCreateCocktailEntry" @click="submitNewCocktail">Save Cocktail</button>
             <button type="button" class="menu-button" @click="closeActiveModal">Cancel</button>
           </div>
         </div>
 
+        <datalist id="ingredient-options">
+          <option v-for="ingredient in ingredients" :key="`ing-opt-${ingredient.id}`" :value="ingredient.name"></option>
+        </datalist>
+        <datalist id="amount-options">
+          <option v-for="amount in amountOptions" :key="`amt-opt-${amount.id}`" :value="amount.name"></option>
+        </datalist>
+
         <p class="subtle account-help">
-          Defaults to <strong>My Cocktails</strong> when available, but you can choose another source.
+          Defaults to <strong>User Added</strong> when available. Pick existing ingredients/amounts or type new values.
         </p>
       </div>
     </div>
@@ -381,13 +433,16 @@
 import {
   createCocktail,
   createCocktailTryLog,
+  getAmounts,
   getCocktailIngredients,
   getCocktailSources,
   getCocktailSteps,
+  getCocktailTimePeriods,
   getCurrentUser,
   getCocktailTryLogs,
   getUserCocktailTryLogs,
   getCocktails,
+  getGlassTypes,
   getIngredients,
   getUserInventory,
   getStoredAuthToken,
@@ -406,6 +461,9 @@ export default {
       cocktailIngredients: [],
       inventory: [],
       sources: [],
+      amountOptions: [],
+      glassTypeOptions: [],
+      timePeriodOptions: [],
       userCocktailLogs: [],
       currentUser: null,
 
@@ -435,6 +493,14 @@ export default {
         name: '',
         description: '',
         method: '',
+        glassTypeId: '',
+        timePeriodId: '',
+        ingredientEntries: [
+          { amountText: '', ingredientName: '' }
+        ],
+        stepEntries: [
+          { instruction: '' }
+        ],
         cocktailSourceId: 0
       },
       newLog: {
@@ -648,12 +714,19 @@ export default {
         && this.registerForm.password.length >= 8;
     },
     preferredMyCocktailsSourceId() {
+      const userAddedExact = this.sources.find((s) => (s.name || '').toLowerCase() === 'user added');
+      const userAddedFuzzy = this.sources.find((s) => (s.name || '').toLowerCase().includes('user add'));
       const exact = this.sources.find((s) => (s.name || '').toLowerCase() === 'my cocktails');
       const fuzzy = this.sources.find((s) => (s.name || '').toLowerCase().includes('my cocktail'));
-      return exact?.id || fuzzy?.id || this.sources[0]?.id || 0;
+      return userAddedExact?.id || userAddedFuzzy?.id || exact?.id || fuzzy?.id || this.sources[0]?.id || 0;
     },
     canCreateCocktailEntry() {
-      return this.newCocktailForm.name.trim().length > 0 && Number(this.newCocktailForm.cocktailSourceId) > 0;
+      const hasIngredient = this.newCocktailForm.ingredientEntries.some((x) => (x.ingredientName || '').trim().length > 0);
+      const hasStep = this.newCocktailForm.stepEntries.some((x) => (x.instruction || '').trim().length > 0);
+      return this.newCocktailForm.name.trim().length > 0
+        && Number(this.newCocktailForm.cocktailSourceId) > 0
+        && hasIngredient
+        && hasStep;
     },
     authValidationMessage() {
       if (this.currentUser) {
@@ -686,17 +759,23 @@ export default {
     async loadInitialData() {
       this.error = '';
       try {
-        const [cocktails, ingredients, cocktailIngredients, sources] = await Promise.all([
+        const [cocktails, ingredients, cocktailIngredients, sources, amounts, glassTypes, timePeriods] = await Promise.all([
           getCocktails(),
           getIngredients(),
           getCocktailIngredients(),
-          getCocktailSources()
+          getCocktailSources(),
+          getAmounts(),
+          getGlassTypes(),
+          getCocktailTimePeriods()
         ]);
 
         this.cocktails = cocktails;
         this.ingredients = ingredients;
         this.cocktailIngredients = cocktailIngredients;
         this.sources = sources;
+        this.amountOptions = amounts;
+        this.glassTypeOptions = glassTypes;
+        this.timePeriodOptions = timePeriods;
         await this.restoreSession();
       } catch (err) {
         this.error = this.extractError(err);
@@ -826,7 +905,57 @@ export default {
       this.newCocktailForm.name = '';
       this.newCocktailForm.description = '';
       this.newCocktailForm.method = '';
+      this.newCocktailForm.glassTypeId = '';
+      this.newCocktailForm.timePeriodId = '';
+      this.newCocktailForm.ingredientEntries = [this.createEmptyIngredientEntry()];
+      this.newCocktailForm.stepEntries = [this.createEmptyStepEntry()];
       this.newCocktailForm.cocktailSourceId = this.preferredMyCocktailsSourceId;
+    },
+    createEmptyIngredientEntry() {
+      return { amountText: '', ingredientName: '' };
+    },
+    createEmptyStepEntry() {
+      return { instruction: '' };
+    },
+    addIngredientEntry() {
+      this.newCocktailForm.ingredientEntries.push(this.createEmptyIngredientEntry());
+    },
+    removeIngredientEntry(index) {
+      if (this.newCocktailForm.ingredientEntries.length <= 1) {
+        this.newCocktailForm.ingredientEntries.splice(0, 1, this.createEmptyIngredientEntry());
+        return;
+      }
+
+      this.newCocktailForm.ingredientEntries.splice(index, 1);
+    },
+    addStepEntry() {
+      this.newCocktailForm.stepEntries.push(this.createEmptyStepEntry());
+    },
+    removeStepEntry(index) {
+      if (this.newCocktailForm.stepEntries.length <= 1) {
+        this.newCocktailForm.stepEntries.splice(0, 1, this.createEmptyStepEntry());
+        return;
+      }
+
+      this.newCocktailForm.stepEntries.splice(index, 1);
+    },
+    buildStructuredIngredientLines() {
+      return this.newCocktailForm.ingredientEntries
+        .map((row) => {
+          const ingredientName = (row.ingredientName || '').trim();
+          const amountText = (row.amountText || '').trim();
+          if (!ingredientName) {
+            return '';
+          }
+
+          return amountText ? `${amountText} ${ingredientName}` : ingredientName;
+        })
+        .filter(Boolean);
+    },
+    buildStructuredStepLines() {
+      return this.newCocktailForm.stepEntries
+        .map((row) => (row.instruction || '').trim())
+        .filter(Boolean);
     },
     async submitNewCocktail() {
       if (!this.canCreateCocktailEntry) {
@@ -835,17 +964,31 @@ export default {
 
       this.error = '';
       try {
+        const ingredientLines = this.buildStructuredIngredientLines();
+        const stepLines = this.buildStructuredStepLines();
+        const methodText = stepLines.length ? stepLines.join('. ') : null;
+
         const created = await createCocktail({
           id: 0,
           name: this.newCocktailForm.name,
           description: this.newCocktailForm.description || null,
-          method: this.newCocktailForm.method || null,
-          glassTypeId: null,
-          timePeriodId: null,
+          method: methodText,
+          ingredientLines: ingredientLines.length ? ingredientLines.join('\n') : null,
+          stepLines: stepLines.length ? stepLines.join('\n') : null,
+          flavorProfile: null,
+          glassTypeId: this.newCocktailForm.glassTypeId ? Number(this.newCocktailForm.glassTypeId) : null,
+          timePeriodId: this.newCocktailForm.timePeriodId ? Number(this.newCocktailForm.timePeriodId) : null,
           isPopular: 0,
           cocktailSourceId: Number(this.newCocktailForm.cocktailSourceId)
         });
 
+        const [ingredients, cocktailIngredients] = await Promise.all([
+          getIngredients(),
+          getCocktailIngredients()
+        ]);
+
+        this.ingredients = ingredients;
+        this.cocktailIngredients = cocktailIngredients;
         this.cocktails.push(created);
         this.cocktails.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         this.userSuccessMessage = `Cocktail "${created.name}" added.`;
@@ -1290,7 +1433,8 @@ button:disabled {
 
 .app-menu-dropdown {
   position: absolute;
-  right: 0;
+  left: 0;
+  right: auto;
   top: calc(100% + 0.4rem);
   width: min(24rem, 92vw);
   background: rgba(255, 255, 255, 0.96);
@@ -1335,6 +1479,31 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
+}
+
+.structured-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.structured-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 11rem) minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.structured-step-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.add-row-button {
+  justify-self: flex-start;
+}
+
+.row-remove {
+  white-space: nowrap;
 }
 
 .account-help {
@@ -1544,6 +1713,10 @@ button:disabled {
 
   .grid,
   .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .structured-row {
     grid-template-columns: 1fr;
   }
 
