@@ -1,5 +1,16 @@
 namespace CocktailChooser.API.DTOs
 {
+    public class CocktailIngredientEntryDto
+    {
+        public string? AmountText { get; set; }
+        public string? IngredientName { get; set; }
+    }
+
+    public class CocktailStepEntryDto
+    {
+        public string? Instruction { get; set; }
+    }
+
     public class CocktailDto
     {
         public int Id { get; set; }
@@ -9,6 +20,8 @@ namespace CocktailChooser.API.DTOs
         public string? IngredientLines { get; set; }
         public string? StepLines { get; set; }
         public string? FlavorProfile { get; set; }
+        public List<CocktailIngredientEntryDto>? StructuredIngredients { get; set; }
+        public List<CocktailStepEntryDto>? StructuredSteps { get; set; }
         public int? GlassTypeId { get; set; }
         public int? TimePeriodId { get; set; }
         public int? IsPopular { get; set; }
