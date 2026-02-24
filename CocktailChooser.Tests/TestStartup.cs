@@ -52,6 +52,19 @@ public class TestStartup
                     PrimarySpirit TEXT,
                     LongDescription TEXT
                 );
+                CREATE TABLE IF NOT EXISTS Amounts (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    MeasurementName TEXT NOT NULL,
+                    Ounces REAL
+                );
+                CREATE TABLE IF NOT EXISTS CocktailIngredients (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CocktailId INTEGER NOT NULL,
+                    IngredientId INTEGER NOT NULL,
+                    AmountId INTEGER,
+                    AmountText TEXT,
+                    SortOrder INTEGER
+                );
                 CREATE TABLE IF NOT EXISTS CocktailSteps (
                     CocktailId INTEGER NOT NULL,
                     StepNumber INTEGER NOT NULL,
@@ -93,11 +106,14 @@ public class TestStartup
         {
             return new CocktailRepository(connectionString);
         });
+        services.AddScoped<IAmountRepository>(_ => new AmountRepository(connectionString));
         services.AddScoped<IIngredientRepository>(_ => new IngredientRepository(connectionString));
+        services.AddScoped<ICocktailIngredientRepository>(_ => new CocktailIngredientRepository(connectionString));
         services.AddScoped<ICocktailRecipeRepository>(_ => new CocktailRecipeRepository(connectionString));
         services.AddScoped<IUserRepository>(_ => new UserRepository(connectionString));
         services.AddScoped<IUserIngredientRepository>(_ => new UserIngredientRepository(connectionString));
         services.AddScoped<ICocktailTryLogRepository>(_ => new CocktailTryLogRepository(connectionString));
+        services.AddScoped<IOcrRecipeParser, HeuristicOcrRecipeParser>();
         services.AddScoped<ICocktailService, CocktailService>();
         services.AddScoped<IIngredientService, IngredientService>();
         services.AddScoped<ICocktailRecipeService, CocktailRecipeService>();

@@ -38,6 +38,11 @@ export async function getCocktails() {
   return data;
 }
 
+export async function createCocktail(payload) {
+  const { data } = await api.post('/cocktails', payload);
+  return data;
+}
+
 export async function getIngredients() {
   const { data } = await api.get('/ingredients');
   return data;
@@ -144,5 +149,20 @@ export async function deleteCocktailGrouping(cocktailId, cocktailSourceId, group
 
 export async function getCocktailSources() {
   const { data } = await api.get('/recipesources');
+  return data;
+}
+
+export async function getAmounts() {
+  const { data } = await api.get('/lookups/amounts');
+  return data;
+}
+
+export async function getGlassTypes() {
+  const { data } = await api.get('/lookups/glass-types');
+  return data;
+}
+
+export async function getCocktailTimePeriods() {
+  const { data } = await api.get('/lookups/time-periods');
   return data;
 }

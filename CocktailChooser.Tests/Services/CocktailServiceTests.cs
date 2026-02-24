@@ -8,12 +8,28 @@ namespace CocktailChooser.Tests.Services;
 public class CocktailServiceTests
 {
     private readonly Mock<ICocktailRepository> _repositoryMock;
+    private readonly Mock<IIngredientRepository> _ingredientRepositoryMock;
+    private readonly Mock<ICocktailIngredientRepository> _cocktailIngredientRepositoryMock;
+    private readonly Mock<ICocktailRecipeRepository> _cocktailRecipeRepositoryMock;
+    private readonly Mock<IAmountRepository> _amountRepositoryMock;
+    private readonly Mock<IOcrRecipeParser> _recipeParserMock;
     private readonly CocktailService _service;
 
     public CocktailServiceTests()
     {
         _repositoryMock = new Mock<ICocktailRepository>();
-        _service = new CocktailService(_repositoryMock.Object);
+        _ingredientRepositoryMock = new Mock<IIngredientRepository>();
+        _cocktailIngredientRepositoryMock = new Mock<ICocktailIngredientRepository>();
+        _cocktailRecipeRepositoryMock = new Mock<ICocktailRecipeRepository>();
+        _amountRepositoryMock = new Mock<IAmountRepository>();
+        _recipeParserMock = new Mock<IOcrRecipeParser>();
+        _service = new CocktailService(
+            _repositoryMock.Object,
+            _ingredientRepositoryMock.Object,
+            _cocktailIngredientRepositoryMock.Object,
+            _cocktailRecipeRepositoryMock.Object,
+            _amountRepositoryMock.Object,
+            _recipeParserMock.Object);
     }
 
     [Fact]

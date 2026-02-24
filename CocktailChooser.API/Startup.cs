@@ -29,6 +29,7 @@ public class Startup
         services.AddSingleton<ITokenService, TokenService>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ICocktailRepository>(_ => new CocktailRepository(connectionString));
+        services.AddScoped<IAmountRepository>(_ => new AmountRepository(connectionString));
         services.AddScoped<IIngredientRepository>(_ => new IngredientRepository(connectionString));
         services.AddScoped<ICocktailIngredientRepository>(_ => new CocktailIngredientRepository(connectionString));
         services.AddScoped<ICocktailRecipeRepository>(_ => new CocktailRecipeRepository(connectionString));
