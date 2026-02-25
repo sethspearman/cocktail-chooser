@@ -20,14 +20,14 @@
             <span class="user-icon">{{ currentUser ? currentUser.displayName.slice(0, 1).toUpperCase() : 'U' }}</span>
             <div>
               <strong>{{ currentUser ? currentUser.displayName : 'Guest' }}</strong>
-              <div class="subtle">{{ currentUser ? 'Signed in' : 'Sign in or create an account' }}</div>
+              <div class="subtle">{{ currentUser ? 'Signed in' : 'Sign in or create an account to save My Bar' }}</div>
             </div>
           </div>
           <div class="menu-actions">
             <button type="button" class="menu-button" @click="openAccountModal(currentUser ? 'overview' : 'login')">
-              {{ currentUser ? 'Account' : 'Log In / Create Account' }}
+              {{ currentUser ? 'Account' : 'Log in / Create account' }}
             </button>
-            <button type="button" class="menu-button" @click="openAddCocktailModal">Add Cocktail</button>
+            <button type="button" class="menu-button" @click="openAddCocktailModal">Add a Cocktail</button>
             <button type="button" class="menu-button" @click="openMyBarModal">My Bar Checklist</button>
           </div>
         </div>
@@ -40,7 +40,7 @@
         <strong>{{ makeableCocktails.length }}</strong>
       </div>
       <div class="info-chip">
-        <span class="label">Filtered Matches</span>
+        <span class="label">Showing</span>
         <strong>{{ filteredMakeableCocktails.length }}</strong>
       </div>
       <div class="info-chip wide-chip">
@@ -48,7 +48,7 @@
         <strong>{{ lastTriedSummary }}</strong>
       </div>
       <div class="info-chip wide-chip">
-        <span class="label">Next Ingredient</span>
+        <span class="label">Try Adding</span>
         <strong>{{ nextIngredientRecommendationSummary }}</strong>
       </div>
     </section>
@@ -71,7 +71,7 @@
       <div class="hero-top">
         <div>
           <h1>Cocktail Chooser</h1>
-          <p>Track what's in your bar, discover what you can make, and log what you try.</p>
+          <p>Use My Bar to find what you can make, discover something new, and keep track of what you try.</p>
         </div>
       </div>
     </header>
@@ -115,7 +115,7 @@
           <button
             :disabled="cocktailListMode !== 'makeable' || filteredMakeableCocktails.length === 0"
             @click="pickRandomMakeableCocktail">
-            Random Pick From Filtered List
+            Pick One for Me
           </button>
         </div>
         <div v-if="selectedIngredientFilters.length" class="toolbar">
@@ -130,7 +130,7 @@
             type="button"
             class="inline-link-button secondary-link"
             @click="clearSelectedIngredientFilters">
-            RESET
+            Reset
           </button>
         </div>
         <div v-if="combinedCocktailListEmptyMessage" class="empty">{{ combinedCocktailListEmptyMessage }}</div>
@@ -265,7 +265,7 @@
       @click.self="closeActiveModal">
       <div class="modal-card modal-card-wide">
         <div class="modal-header">
-          <h2 id="add-cocktail-modal-title">Add Cocktail</h2>
+          <h2 id="add-cocktail-modal-title">Add a Cocktail</h2>
           <button type="button" class="menu-button" @click="closeActiveModal">Close</button>
         </div>
 
@@ -280,13 +280,13 @@
           </select>
           <div class="toolbar">
             <select v-model="newCocktailForm.glassTypeId">
-              <option value="">Glass Type (optional)</option>
+              <option value="">Glass type (optional)</option>
               <option v-for="glassType in glassTypeOptions" :key="`glass-${glassType.id}`" :value="glassType.id">
                 {{ glassType.name }}
               </option>
             </select>
             <select v-model="newCocktailForm.timePeriodId">
-              <option value="">Time Period (optional)</option>
+              <option value="">Time period (optional)</option>
               <option v-for="timePeriod in timePeriodOptions" :key="`time-${timePeriod.id}`" :value="timePeriod.id">
                 {{ timePeriod.name }}
               </option>
@@ -306,10 +306,10 @@
               <input
                 v-model.trim="row.ingredientName"
                 list="ingredient-options"
-                placeholder="Ingredient (choose existing or type new)" />
+                placeholder="Ingredient (choose one or type a new one)" />
               <button type="button" class="menu-button row-remove" @click="removeIngredientEntry(index)">Remove</button>
             </div>
-            <button type="button" class="menu-button add-row-button" @click="addIngredientEntry">Add Ingredient</button>
+            <button type="button" class="menu-button add-row-button" @click="addIngredientEntry">Add Another Ingredient</button>
           </div>
 
           <div class="subheading">Steps</div>
@@ -321,11 +321,11 @@
               <input v-model.trim="row.instruction" :placeholder="`Step ${index + 1}`" />
               <button type="button" class="menu-button row-remove" @click="removeStepEntry(index)">Remove</button>
             </div>
-            <button type="button" class="menu-button add-row-button" @click="addStepEntry">Add Step</button>
+            <button type="button" class="menu-button add-row-button" @click="addStepEntry">Add Another Step</button>
           </div>
 
           <div class="menu-actions">
-            <button type="button" :disabled="!canCreateCocktailEntry" @click="submitNewCocktail">Save Cocktail</button>
+            <button type="button" :disabled="!canCreateCocktailEntry" @click="submitNewCocktail">Save Cocktail Recipe</button>
             <button type="button" class="menu-button" @click="closeActiveModal">Cancel</button>
           </div>
         </div>
@@ -338,7 +338,7 @@
         </datalist>
 
         <p class="subtle account-help">
-          Defaults to <strong>User Added</strong> when available. Pick existing ingredients/amounts or type new values.
+          Defaults to <strong>User Added</strong> when available. Choose existing ingredients/amounts or type new ones.
         </p>
       </div>
     </div>
@@ -362,33 +362,33 @@
             <span v-if="currentUser.email" class="subtle">{{ currentUser.email }}</span>
           </div>
           <div class="menu-actions">
-            <button type="button" class="menu-button" @click="showNotImplementedModal('Change Password')">Change Password</button>
-            <button type="button" class="menu-button" @click="logout">Log Out</button>
+            <button type="button" class="menu-button" @click="showNotImplementedModal('Change password')">Change password</button>
+            <button type="button" class="menu-button" @click="logout">Log out</button>
           </div>
         </template>
 
         <template v-else>
           <div class="menu-actions">
-            <button type="button" class="menu-button" @click="openAccountView('login')">Log In</button>
-            <button type="button" class="menu-button" @click="openAccountView('register')">Create Account</button>
+            <button type="button" class="menu-button" @click="openAccountView('login')">Log in</button>
+            <button type="button" class="menu-button" @click="openAccountView('register')">Create account</button>
           </div>
 
           <div v-if="accountMenuView === 'login'" class="account-pane">
-            <div class="subheading">Log In</div>
+            <div class="subheading">Log in</div>
             <div class="auth-stack">
               <input v-model.trim="loginForm.email" type="email" placeholder="Email" />
               <input v-model="loginForm.password" type="password" placeholder="Password" />
-              <button :disabled="!canLogin" @click="loginUser">Log In</button>
+              <button :disabled="!canLogin" @click="loginUser">Log in</button>
             </div>
           </div>
 
           <div v-if="accountMenuView === 'register'" class="account-pane">
-            <div class="subheading">Create Account</div>
+            <div class="subheading">Create account</div>
             <div class="auth-stack">
               <input v-model.trim="registerForm.displayName" placeholder="Display name" />
               <input v-model.trim="registerForm.email" type="email" placeholder="Email" />
               <input v-model="registerForm.password" type="password" placeholder="Password (8+ chars)" />
-              <button :disabled="!canRegister" @click="registerUser">Create Account</button>
+              <button :disabled="!canRegister" @click="registerUser">Create account</button>
             </div>
           </div>
 
@@ -410,7 +410,7 @@
           <button type="button" class="menu-button" @click="closeActiveModal">Close</button>
         </div>
         <p class="subtle">
-          {{ selectedUserId ? myBarGuidanceMessage : 'Log in to update your ingredients and unlock cocktail matches.' }}
+          {{ selectedUserId ? myBarGuidanceMessage : 'Log in to update My Bar and unlock personalized cocktail matches.' }}
         </p>
         <template v-if="selectedUserId">
           <div class="toolbar">
@@ -433,8 +433,8 @@
         </template>
         <template v-else>
           <div class="menu-actions">
-            <button type="button" @click="openAccountModal('login')">Log In</button>
-            <button type="button" class="menu-button" @click="openAccountModal('register')">Create Account</button>
+            <button type="button" @click="openAccountModal('login')">Log in</button>
+            <button type="button" class="menu-button" @click="openAccountModal('register')">Create account</button>
           </div>
         </template>
       </div>
@@ -684,7 +684,7 @@ export default {
     },
     combinedCocktailListEmptyMessage() {
       if (this.cocktailListMode === 'makeable' && !this.selectedUserId) {
-        return 'Log in to compute matches for your bar.';
+        return 'Log in to see what you can make from My Bar.';
       }
 
       if (this.visibleCocktails.length > 0) {
@@ -692,10 +692,10 @@ export default {
       }
 
       if (this.cocktailListMode === 'all') {
-        return 'No cocktails match the current search/spirit/ingredient filters.';
+        return 'No cocktails match your current filters.';
       }
 
-      return 'No full matches for the current filters. Try another spirit or add more ingredients.';
+      return 'No cocktails match My Bar with these filters yet. Try another spirit or add more ingredients.';
     },
     selectedCocktailIngredients() {
       return this.cocktailIngredientsByCocktail[this.selectedCocktailId] || [];
@@ -773,7 +773,7 @@ export default {
       }
 
       if (!this.nextIngredientRecommendation) {
-        return 'No single-ingredient unlock recommendation yet';
+        return 'No single-ingredient suggestion yet';
       }
 
       const { ingredient, count } = this.nextIngredientRecommendation;
@@ -807,23 +807,23 @@ export default {
         return '';
       }
 
-      return 'Log in with email/password, or create an account with a display name, email, and password.';
+      return 'Log in or create an account to save My Bar and your cocktail history.';
     },
     myBarGuidanceMessage() {
       if (!this.selectedUserId) {
-        return 'To see the cocktails you can make, add ingredients in My Bar from the Menu.';
+        return 'To see what you can make, add ingredients to My Bar from the menu.';
       }
 
       if (this.inventoryInStockSet.size === 0) {
-        return 'To see the cocktails you can make, add ingredients in My Bar from the Menu.';
+        return 'To see what you can make, add ingredients to My Bar from the menu.';
       }
 
       if (this.nextIngredientRecommendation) {
         const { ingredient, count } = this.nextIngredientRecommendation;
-        return `Update your My Bar ingredients from the menu.  Adding ${ingredient.name} will add ${count} cocktails.`;
+        return `Update My Bar from the menu. Adding ${ingredient.name} unlocks ${count} more cocktails.`;
       }
 
-      return 'Update your My Bar ingredients from the Menu.';
+      return 'Update My Bar from the menu.';
     }
   },
   watch: {
