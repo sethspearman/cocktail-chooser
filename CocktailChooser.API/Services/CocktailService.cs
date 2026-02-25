@@ -35,10 +35,85 @@ public class CocktailService : ICocktailService
         _recipeParser = recipeParser;
     }
 
-    public async Task<IEnumerable<CocktailDto>> GetAllCocktailsAsync()
+    public async Task<IEnumerable<CocktailDto>> GetAllCocktailsAsync(IEnumerable<string>? includeIngredientNames = null, string? includeMode = null)
     {
         var cocktails = await _cocktailRepository.GetAllAsync();
-        return cocktails.Select(MapToDto);
+        var requestedIngredientNames = (includeIngredientNames ?? Array.Empty<string>())
+            .Select(x => (x ?? string.Empty).Trim())
+            .Where(x => x.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (requestedIngredientNames.Count == 0)
+        {
+            return cocktails.Select(MapToDto);
+        }
+
+        var normalizedMode = string.Equals(includeMode, "any", StringComparison.OrdinalIgnoreCase)
+            ? "any"
+            : "all";
+
+        var ingredients = (await _ingredientRepository.GetAllAsync()).ToList();
+        var ingredientIdsByName = ingredients
+            .GroupBy(i => (i.Name ?? string.Empty).Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Id).ToList(), StringComparer.OrdinalIgnoreCase);
+
+        var matchedRequestedIngredientIds = new HashSet<int>();
+        var missingRequestedNameCount = 0;
+        foreach (var name in requestedIngredientNames)
+        {
+            if (!ingredientIdsByName.TryGetValue(name, out var ids) || ids.Count == 0)
+            {
+                missingRequestedNameCount++;
+                continue;
+            }
+
+            foreach (var id in ids)
+            {
+                matchedRequestedIngredientIds.Add(id);
+            }
+        }
+
+        if (normalizedMode == "all" && missingRequestedNameCount > 0)
+        {
+            return Array.Empty<CocktailDto>();
+        }
+
+        if (matchedRequestedIngredientIds.Count == 0)
+        {
+            return Array.Empty<CocktailDto>();
+        }
+
+        var cocktailIngredientRows = await _cocktailIngredientRepository.GetAllAsync();
+        var ingredientIdsByCocktailId = cocktailIngredientRows
+            .GroupBy(x => x.CocktailId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(x => x.IngredientId).ToHashSet());
+
+        var matchingCocktailIds = cocktails
+            .Where(c =>
+            {
+                if (!ingredientIdsByCocktailId.TryGetValue(c.Id, out var cocktailIngredientIds) || cocktailIngredientIds.Count == 0)
+                {
+                    return false;
+                }
+
+                if (normalizedMode == "any")
+                {
+                    return matchedRequestedIngredientIds.Any(cocktailIngredientIds.Contains);
+                }
+
+                return requestedIngredientNames.All(name =>
+                    ingredientIdsByName.TryGetValue(name, out var candidateIds)
+                    && candidateIds.Any(cocktailIngredientIds.Contains));
+            })
+            .Select(c => c.Id)
+            .ToHashSet();
+
+        return cocktails
+            .Where(c => matchingCocktailIds.Contains(c.Id))
+            .Select(MapToDto);
     }
 
     public async Task<CocktailDto?> GetCocktailByIdAsync(int id)

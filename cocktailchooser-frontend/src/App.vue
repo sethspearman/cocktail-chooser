@@ -91,6 +91,35 @@
             <option value="">All spirits</option>
             <option v-for="spirit in spirits" :key="spirit" :value="spirit">{{ spirit }}</option>
           </select>
+          <select v-model="ingredientFilterMode">
+            <option value="all">Match all selected ingredients</option>
+            <option value="any">Match any selected ingredients</option>
+          </select>
+          <input
+            v-model.trim="ingredientFilterSearch"
+            list="cocktail-ingredient-filter-options"
+            placeholder="I Feel Like Using..." />
+          <button
+            type="button"
+            class="menu-button"
+            :disabled="!canAddIngredientFilter"
+            @click="addSelectedIngredientFilter">
+            Add Ingredient
+          </button>
+          <button
+            type="button"
+            class="menu-button"
+            :disabled="selectedIngredientIds.length === 0"
+            @click="clearSelectedIngredientFilters">
+            Clear Ingredients
+          </button>
+          <datalist id="cocktail-ingredient-filter-options">
+            <option
+              v-for="ingredient in ingredientFilterOptions"
+              :key="`filter-ing-${ingredient.id}`"
+              :value="ingredient.name">
+            </option>
+          </datalist>
           <select v-model="makeableTriedFilter" :disabled="cocktailListMode !== 'makeable'">
             <option value="all">All makeable</option>
             <option value="untried">Only untried</option>
@@ -100,6 +129,15 @@
             @click="pickRandomMakeableCocktail">
             Random Pick From Filtered List
           </button>
+        </div>
+        <div v-if="selectedIngredientFilters.length" class="toolbar">
+          <span class="subtle">Ingredient filter ({{ ingredientFilterMode === 'all' ? 'ALL' : 'ANY' }}):</span>
+          <span v-for="ingredient in selectedIngredientFilters" :key="`selected-filter-${ingredient.id}`" class="pill">
+            {{ ingredient.name }}
+            <button type="button" class="inline-link-button secondary-link" @click="removeSelectedIngredientFilter(ingredient.id)">
+              ×
+            </button>
+          </span>
         </div>
         <div v-if="combinedCocktailListEmptyMessage" class="empty">{{ combinedCocktailListEmptyMessage }}</div>
         <ul v-else class="match-list">
@@ -476,6 +514,9 @@ export default {
       cocktailSearch: '',
       ingredientSearch: '',
       selectedSpirit: '',
+      ingredientFilterMode: 'all',
+      ingredientFilterSearch: '',
+      selectedIngredientIds: [],
       cocktailListMode: 'all',
       inventorySpiritFilter: '',
       makeableTriedFilter: 'all',
@@ -522,6 +563,38 @@ export default {
     spirits() {
       return [...new Set(this.ingredients.map((x) => x.primarySpirit).filter(Boolean))].sort();
     },
+    ingredientFilterOptions() {
+      return this.ingredients
+        .filter((ingredient) => !this.selectedIngredientIds.includes(ingredient.id))
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    },
+    selectedIngredientFilters() {
+      if (!this.selectedIngredientIds.length) {
+        return [];
+      }
+
+      const selected = new Set(this.selectedIngredientIds);
+      return this.ingredients
+        .filter((ingredient) => selected.has(ingredient.id))
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    },
+    selectedIngredientFilterNames() {
+      return this.selectedIngredientFilters
+        .map((ingredient) => (ingredient.name || '').trim())
+        .filter(Boolean);
+    },
+    selectedIngredientFilterCandidate() {
+      const search = (this.ingredientFilterSearch || '').trim();
+      if (!search) {
+        return null;
+      }
+
+      return this.ingredientFilterOptions.find((ingredient) =>
+        (ingredient.name || '').toLowerCase() === search.toLowerCase()) || null;
+    },
+    canAddIngredientFilter() {
+      return !!this.selectedIngredientFilterCandidate;
+    },
     cocktailById() {
       const map = {};
       this.cocktails.forEach((c) => {
@@ -555,11 +628,16 @@ export default {
         }
 
         if (!this.selectedSpirit) {
-          return true;
+          return this.matchesSelectedIngredientFilters(cocktail.id);
         }
 
         const rows = this.cocktailIngredientsByCocktail[cocktail.id] || [];
-        return rows.some((row) => row.primarySpirit === this.selectedSpirit);
+        const matchesSpirit = rows.some((row) => row.primarySpirit === this.selectedSpirit);
+        if (!matchesSpirit) {
+          return false;
+        }
+
+        return this.matchesSelectedIngredientFilters(cocktail.id);
       });
     },
     filteredInventoryIngredients() {
@@ -596,6 +674,10 @@ export default {
           }
         }
 
+        if (!this.matchesSelectedIngredientFilters(cocktail.id)) {
+          return false;
+        }
+
         if (this.makeableTriedFilter === 'untried' && this.hasTriedCocktail(cocktail.id)) {
           return false;
         }
@@ -618,7 +700,7 @@ export default {
       }
 
       if (this.cocktailListMode === 'all') {
-        return 'No cocktails match the current search/spirit filters.';
+        return 'No cocktails match the current search/spirit/ingredient filters.';
       }
 
       return 'No full matches for the current filters. Try another spirit or add more ingredients.';
@@ -750,6 +832,17 @@ export default {
       }
 
       return 'Update your My Bar ingredients from the Menu.';
+    }
+  },
+  watch: {
+    selectedIngredientIds: {
+      deep: true,
+      async handler() {
+        await this.reloadCocktailsForIngredientFilters();
+      }
+    },
+    async ingredientFilterMode() {
+      await this.reloadCocktailsForIngredientFilters();
     }
   },
   async created() {
@@ -934,6 +1027,36 @@ export default {
     addStepEntry() {
       this.newCocktailForm.stepEntries.push(this.createEmptyStepEntry());
     },
+    addSelectedIngredientFilter() {
+      const ingredient = this.selectedIngredientFilterCandidate;
+      this.ingredientFilterSearch = '';
+      if (!ingredient || this.selectedIngredientIds.includes(ingredient.id)) {
+        return;
+      }
+
+      this.selectedIngredientIds.push(ingredient.id);
+    },
+    removeSelectedIngredientFilter(ingredientId) {
+      this.selectedIngredientIds = this.selectedIngredientIds.filter((id) => id !== ingredientId);
+    },
+    clearSelectedIngredientFilters() {
+      this.selectedIngredientIds = [];
+      this.ingredientFilterSearch = '';
+    },
+    async reloadCocktailsForIngredientFilters() {
+      if (this.ingredients.length === 0) {
+        return;
+      }
+
+      try {
+        const include = this.selectedIngredientFilterNames;
+        this.cocktails = await getCocktails(include.length > 0
+          ? { include, mode: this.ingredientFilterMode }
+          : {});
+      } catch (err) {
+        this.error = this.extractError(err);
+      }
+    },
     removeStepEntry(index) {
       if (this.newCocktailForm.stepEntries.length <= 1) {
         this.newCocktailForm.stepEntries.splice(0, 1, this.createEmptyStepEntry());
@@ -1109,6 +1232,20 @@ export default {
       const requiredIds = [...new Set(rows.map((x) => x.ingredientId))];
       return this.ingredients.filter((ingredient) =>
         requiredIds.includes(ingredient.id) && !this.inventoryInStockSet.has(ingredient.id));
+    },
+    matchesSelectedIngredientFilters(cocktailId) {
+      if (!this.selectedIngredientIds.length) {
+        return true;
+      }
+
+      const rows = this.cocktailIngredientsByCocktail[cocktailId] || [];
+      const cocktailIngredientIds = new Set(rows.map((row) => row.ingredientId));
+
+      if (this.ingredientFilterMode === 'any') {
+        return this.selectedIngredientIds.some((id) => cocktailIngredientIds.has(id));
+      }
+
+      return this.selectedIngredientIds.every((id) => cocktailIngredientIds.has(id));
     },
     async selectCocktail(cocktailId) {
       this.selectedCocktailId = cocktailId;
