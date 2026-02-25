@@ -1,6 +1,4 @@
-# cocktail-chooser
-
-Cocktail Chooser repository.
+# CocktailChooser is a decision engine for casual home bartenders.
 
 ## Technical Stack
 
