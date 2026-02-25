@@ -1,4 +1,12 @@
-# CocktailChooser is a decision engine for casual home bartenders.
+# CocktailChooser is a smart tool for casual home bartenders.
+
+CocktailChooser helps people decide what to drink quickly based on what they feel like, what ingredients they have in My Bar, and what they have tried before.
+
+Scope guard:
+- Home-bartender decision support
+- Not professional bar software
+- Not a POS system
+- Not inventory management software
 
 ## Technical Stack
 
@@ -6,7 +14,7 @@
 - SQLite (default database)
 - Dapper (preferred ORM)
 - VueJS frontend (TypeScript preferred)
-- MAUI planned for mobile app version
+- MAUI is a possible future client (after the core web experience is stable)
 
 Architecture preferences:
 - Constructor injection
@@ -15,16 +23,18 @@ Architecture preferences:
 
 ## MVP Features
 
-- Search cocktails by one or more ingredients
+- Ingredient-first cocktail discovery/filtering
 - View cocktail details (ingredients, instructions, time period)
+- View/print cocktail recipes
 - Store cocktails in SQLite database
 - Basic responsive UI
+- Lightweight My Bar checklist for personalized suggestions
 
 Future:
 - User accounts
 - Save favorites
 - Smart recommendations
-- Shopping list generation
+- Mobile app client
 
 ## Database Notes
 
@@ -103,7 +113,7 @@ Open: `http://localhost:8080`
 ### 4. MVP screens now available
 
 - Cocktails list with search + `PrimarySpirit` filter
-- My Bar inventory management per user
+- My Bar checklist per user (lightweight; not inventory management software)
 - “What Can I Drink” matching from inventory
 - Cocktail detail with:
   - ingredients + steps
