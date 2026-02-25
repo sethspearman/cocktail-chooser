@@ -21,6 +21,14 @@ Architecture preferences:
 - Repository pattern when appropriate
 - Clean separation between API and data layer
 
+## Product Docs
+
+- Vision: `docs/product-vision.md`
+- Roadmap: `docs/roadmap.md`
+- Project overview: `docs/project-overview.md`
+- Scope guard / feature decision rubric: `docs/scope-guard.md`
+- Backlog triage notes: `docs/backlog-triage.md`
+
 ## MVP Features
 
 - Ingredient-first cocktail discovery/filtering

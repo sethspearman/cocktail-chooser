@@ -24,3 +24,9 @@ Near-term product focus:
 - Recipe quantity clarity
 - "Surprise Me" flow quality
 - Lightweight personalization (recently tried awareness)
+
+Related docs:
+- `docs/product-vision.md`
+- `docs/roadmap.md`
+- `docs/scope-guard.md`
+- `docs/backlog-triage.md`
