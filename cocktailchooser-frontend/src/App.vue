@@ -489,6 +489,7 @@ export default {
   data() {
     return {
       cocktails: [],
+      allCocktails: [],
       ingredients: [],
       cocktailIngredients: [],
       inventory: [],
@@ -647,7 +648,7 @@ export default {
         return [];
       }
 
-      return this.cocktails.filter((c) => this.canMakeById(c.id));
+      return this.allCocktails.filter((c) => this.canMakeById(c.id));
     },
     filteredMakeableCocktails() {
       return this.makeableCocktails.filter((cocktail) => {
@@ -737,7 +738,7 @@ export default {
 
       const unlockCounts = new Map();
 
-      this.cocktails.forEach((cocktail) => {
+      this.allCocktails.forEach((cocktail) => {
         if (this.canMakeById(cocktail.id)) {
           return;
         }
@@ -853,7 +854,8 @@ export default {
           getCocktailTimePeriods()
         ]);
 
-        this.cocktails = cocktails;
+        this.cocktails = [...cocktails];
+        this.allCocktails = [...cocktails];
         this.ingredients = ingredients;
         this.cocktailIngredients = cocktailIngredients;
         this.sources = sources;
@@ -1143,6 +1145,8 @@ export default {
         this.cocktailIngredients = cocktailIngredients;
         this.cocktails.push(created);
         this.cocktails.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        this.allCocktails.push(created);
+        this.allCocktails.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         this.userSuccessMessage = `Cocktail "${created.name}" added.`;
         this.activeModal = '';
         await this.selectCocktail(created.id);
