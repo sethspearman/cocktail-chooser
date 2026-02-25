@@ -835,6 +835,14 @@ export default {
     },
     async ingredientFilterMode() {
       await this.reloadCocktailsForIngredientFilters();
+    },
+    selectedCocktail(newCocktail) {
+      if (typeof document === 'undefined') {
+        return;
+      }
+
+      const cocktailName = (newCocktail?.name || '').trim();
+      document.title = cocktailName ? `Cocktail Chooser - ${cocktailName}` : 'Cocktail Chooser';
     }
   },
   async created() {
@@ -843,6 +851,9 @@ export default {
   methods: {
     async loadInitialData() {
       this.error = '';
+      if (typeof document !== 'undefined') {
+        document.title = 'Cocktail Chooser';
+      }
       try {
         const [cocktails, ingredients, cocktailIngredients, sources, amounts, glassTypes, timePeriods] = await Promise.all([
           getCocktails(),
