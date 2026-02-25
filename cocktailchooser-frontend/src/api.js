@@ -33,8 +33,16 @@ export function getStoredAuthToken() {
   return authToken;
 }
 
-export async function getCocktails() {
-  const { data } = await api.get('/cocktails');
+export async function getCocktails(options = {}) {
+  const params = {};
+  if (Array.isArray(options.include) && options.include.length > 0) {
+    params.include = options.include.join(',');
+  }
+  if (options.mode) {
+    params.mode = options.mode;
+  }
+
+  const { data } = await api.get('/cocktails', { params });
   return data;
 }
 
