@@ -1,0 +1,288 @@
+[
+    {
+        "body": "Description:\n\n- Target: Casual home bartenders.\n- Explicitly NOT targeting:\n   - Professional bartenders\n   - POS integration\n   - Bar inventory systems\n- Keep UX simple and decision-focused.\n\nThis prevents scope creep.\nPriority: High (strategic, not technical).",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQu8tQ",
+                "name": "P0 - Critical",
+                "description": "",
+                "color": "fb2053"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvGwA",
+                "name": "Scope: MVP",
+                "description": "",
+                "color": "96f25c"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQwUPw",
+                "name": "Type: Strategy",
+                "description": "",
+                "color": "7f3374"
+            }
+        ],
+        "number": 45,
+        "state": "OPEN",
+        "title": "Define Product Persona & Scope Boundaries"
+    },
+    {
+        "body": "Description:\n\n- Improve exclusion of previously logged cocktails.\n- Option:\n   - “Exclude cocktails I’ve had in last X days.”\n- Improve randomness weighting (optional later).\n\nPriority: Medium-High",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvGwA",
+                "name": "Scope: MVP",
+                "description": "",
+                "color": "96f25c"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvRrg",
+                "name": "P1- High",
+                "description": "",
+                "color": "280844"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvbPw",
+                "name": "Type: UX",
+                "description": "",
+                "color": "631ab7"
+            }
+        ],
+        "number": 44,
+        "state": "OPEN",
+        "title": "Improve “Surprise Me” & Decision Flow"
+    },
+    {
+        "body": "Description:\n\n- Add IsNonAlcoholic flag (or derive from ingredients).\n- Allow filter:\n   - Alcoholic only\n   - Non-alcoholic only\n   - All\n- Ensure filtering works with ingredient selection.\n\nPriority: High (but after ingredient filtering).",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvARA",
+                "name": "Type: Core Feature",
+                "description": "",
+                "color": "9c6b56"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvGwA",
+                "name": "Scope: MVP",
+                "description": "",
+                "color": "96f25c"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvRrg",
+                "name": "P1- High",
+                "description": "",
+                "color": "280844"
+            }
+        ],
+        "number": 43,
+        "state": "OPEN",
+        "title": "Support Non-Alcoholic Cocktails & Filtering"
+    },
+    {
+        "body": "Description:\n\n- Multi-select ingredient picker.\n- Support:\n   - Include ALL selected ingredients (default)\n   - Include ANY selected ingredients\n- API support:\n   - GET /api/cocktails?include=vodka,orange juice&mode=all\n- Must integrate with:\n   - Exclude previously logged\n   - Non-alcoholic filter\n\nPriority: Very High\n",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQu8tQ",
+                "name": "P0 - Critical",
+                "description": "",
+                "color": "fb2053"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvARA",
+                "name": "Type: Core Feature",
+                "description": "",
+                "color": "9c6b56"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvoSw",
+                "name": "Scope: Post-MVP",
+                "description": "",
+                "color": "f57cbb"
+            }
+        ],
+        "number": 42,
+        "state": "OPEN",
+        "title": "Implement “I Feel Like Using…” Ingredient Filtering"
+    },
+    {
+        "body": "Add a Novice Mode...and create tooltips for common mixology terms, phrases, glass types  etc.\n\nThese tooltips could only be available in NOVICE mode.\n\nAlso, could I have longer form training text.  And what about the mixology tools.",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvbPw",
+                "name": "Type: UX",
+                "description": "",
+                "color": "631ab7"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvuiA",
+                "name": "P3 - Low",
+                "description": "",
+                "color": "bbab05"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvz6A",
+                "name": "Scope: Nice-to-Have",
+                "description": "",
+                "color": "f4022d"
+            }
+        ],
+        "number": 41,
+        "state": "OPEN",
+        "title": "Add a Novice Mode...and create tooltips for common mixology terms, phrases, glass types  etc."
+    },
+    {
+        "body": "- Define canonical ingredient names.\n- Map variations (e.g., Bourbon → Whiskey → Spirit).\n- Ensure ingredient filtering works reliably.\n- Future-proof for substitution logic.\n\nCome up with a strategy for mapping\\handling the general terms for spirits and ingredients into specific types...\n\nSo recipes right now call for whiskey.  But whiskey can mean,.,,\n- Canadian Whiskey\n- Scotch\n- Bourbon\n- Tennessee Whiskey\n- Japanese Whiskey\n- Rye Whiskey\nThis mapping could even apply to specific brands...so instead of Gin\n\n- Hendricks\n- Bombay Saphire\n\nRums can be\n- White Rum\n- Spiced Rum\n- etc\n\nThe dilemma is that limiting to specific whiskeys/gins etc reduces your ingredients match and shows you fewer recipes.",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQu8tQ",
+                "name": "P0 - Critical",
+                "description": "",
+                "color": "fb2053"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvGwA",
+                "name": "Scope: MVP",
+                "description": "",
+                "color": "96f25c"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvMYw",
+                "name": "Type: Architecture",
+                "description": "",
+                "color": "521650"
+            }
+        ],
+        "number": 40,
+        "state": "OPEN",
+        "title": "Ingredient Canonicalization & Matching Strategy"
+    },
+    {
+        "body": "GROUPING FOR:\n\n- Favorites\n- Party lists\n- Thematic lists\n- etc\n\nSo right now there was already an idea for \"linking\" the same drinks from different sources.  These recipes will almost always be different.  So you have 2 Gin and Tonics, one from source 1 and another from source 2.  So, this would allow for the display of multiple recipes of the same type (either on the same page or maybe with tabs) and you could also filter by this.\n\nBut it occurred to me that it would be nice to group cocktails together for any reason.  You should be able to create your own groupings like \"Favorites\" or \"Rye Whiskey Only\" or \"2026 Superbowl Party\" (drinks you will be making at the party).  \n\nOf course needs to be easy to add recipes to groups and then view or filter by them.",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvARA",
+                "name": "Type: Core Feature",
+                "description": "",
+                "color": "9c6b56"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvkEQ",
+                "name": "P2 - Medium",
+                "description": "",
+                "color": "2b72db"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvoSw",
+                "name": "Scope: Post-MVP",
+                "description": "",
+                "color": "f57cbb"
+            }
+        ],
+        "number": 39,
+        "state": "OPEN",
+        "title": "Cocktail Grouping Strategy"
+    },
+    {
+        "body": "- Store quantities as decimal in DB.\n- Preserve original display string.\n- Normalize Unicode fractions.\n- Support scaling later.\n\nIs it really necessary to use a lookup table for the amounts.  I know I would consistently like to display...\n¼ (U+00BC)\n½ (U+00BD)\n¾ (U+00BE)\n⅓ (U+2153)\n⅔ (U+2154)\n⅛ (U+215B)\nBut maybe there is a way to use fuzzy logic to lookup a correct value based on whatever is stored with the cocktail.  \nShould the cocktail just always store a decimal and return a unicode value?",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvGwA",
+                "name": "Scope: MVP",
+                "description": "",
+                "color": "96f25c"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvMYw",
+                "name": "Type: Architecture",
+                "description": "",
+                "color": "521650"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvRrg",
+                "name": "P1- High",
+                "description": "",
+                "color": "280844"
+            }
+        ],
+        "number": 38,
+        "state": "OPEN",
+        "title": "Amount Handling Strategy"
+    },
+    {
+        "body": "Improve this so that it is smarter and uses fuzzy logic and allows parsing of a long string into all the requisite fields.",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvkEQ",
+                "name": "P2 - Medium",
+                "description": "",
+                "color": "2b72db"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvoSw",
+                "name": "Scope: Post-MVP",
+                "description": "",
+                "color": "f57cbb"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQyO_w",
+                "name": "Type: Enhancement",
+                "description": "",
+                "color": "cf7519"
+            }
+        ],
+        "number": 37,
+        "state": "OPEN",
+        "title": "Add your own cocktails part 2."
+    },
+    {
+        "body": "Write now the ingredients listed with a cocktail show something like this...\n\nBourbon (0.75 oz)\nAperol (0.75 oz)\nAmaro Nonino (0.75 oz)\nFreshly-squeezed lemon juice (0.75 oz)\n\nI want to change that to use the the characters like this...\n\n½ fl oz Maraschino liqueur\n¼ fl oz Crémé de violette\n¾ fl oz Freshly-squeezed lemon juice\n\nSo unicode chars like these...\n¼ (U+00BC)\n½ (U+00BD)\n¾ (U+00BE)\n⅓ (U+2153)\n⅔ (U+2154)\n⅛ (U+215B)",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvbPw",
+                "name": "Type: UX",
+                "description": "",
+                "color": "631ab7"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvkEQ",
+                "name": "P2 - Medium",
+                "description": "",
+                "color": "2b72db"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvoSw",
+                "name": "Scope: Post-MVP",
+                "description": "",
+                "color": "f57cbb"
+            }
+        ],
+        "number": 36,
+        "state": "OPEN",
+        "title": "Change amount display from decimal points to ascii 3/4 1/2 etc."
+    },
+    {
+        "body": "(node:41664) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.\n(Use `node --trace-deprecation ...` to show where the warning was created)\n",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvGwA",
+                "name": "Scope: MVP",
+                "description": "",
+                "color": "96f25c"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvkEQ",
+                "name": "P2 - Medium",
+                "description": "",
+                "color": "2b72db"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQwITw",
+                "name": "Type: Bug",
+                "description": "",
+                "color": "8b5b2a"
+            }
+        ],
+        "number": 19,
+        "state": "OPEN",
+        "title": "Error warning being shown in UI console..."
+    }
+]
