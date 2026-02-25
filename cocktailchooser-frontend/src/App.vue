@@ -92,27 +92,15 @@
             <option v-for="spirit in spirits" :key="spirit" :value="spirit">{{ spirit }}</option>
           </select>
           <select v-model="ingredientFilterMode">
-            <option value="all">Match all selected ingredients</option>
-            <option value="any">Match any selected ingredients</option>
+            <option value="all">Search Ingredients (All):</option>
+            <option value="any">Search Ingredients (Any):</option>
           </select>
           <input
             v-model.trim="ingredientFilterSearch"
             list="cocktail-ingredient-filter-options"
-            placeholder="I Feel Like Using..." />
-          <button
-            type="button"
-            class="menu-button"
-            :disabled="!canAddIngredientFilter"
-            @click="addSelectedIngredientFilter">
-            Add Ingredient
-          </button>
-          <button
-            type="button"
-            class="menu-button"
-            :disabled="selectedIngredientIds.length === 0"
-            @click="clearSelectedIngredientFilters">
-            Clear Ingredients
-          </button>
+            @change="addSelectedIngredientFilter"
+            @keyup.enter.prevent="addSelectedIngredientFilter"
+            placeholder="Find Ingredient..." />
           <datalist id="cocktail-ingredient-filter-options">
             <option
               v-for="ingredient in ingredientFilterOptions"
@@ -121,8 +109,8 @@
             </option>
           </datalist>
           <select v-model="makeableTriedFilter" :disabled="cocktailListMode !== 'makeable'">
-            <option value="all">All makeable</option>
-            <option value="untried">Only untried</option>
+            <option value="all">Show Tried and Untried</option>
+            <option value="untried">Show Untried Only</option>
           </select>
           <button
             :disabled="cocktailListMode !== 'makeable' || filteredMakeableCocktails.length === 0"
@@ -138,6 +126,12 @@
               ×
             </button>
           </span>
+          <button
+            type="button"
+            class="inline-link-button secondary-link"
+            @click="clearSelectedIngredientFilters">
+            RESET
+          </button>
         </div>
         <div v-if="combinedCocktailListEmptyMessage" class="empty">{{ combinedCocktailListEmptyMessage }}</div>
         <ul v-else class="match-list">
@@ -591,9 +585,6 @@ export default {
 
       return this.ingredientFilterOptions.find((ingredient) =>
         (ingredient.name || '').toLowerCase() === search.toLowerCase()) || null;
-    },
-    canAddIngredientFilter() {
-      return !!this.selectedIngredientFilterCandidate;
     },
     cocktailById() {
       const map = {};
@@ -1239,13 +1230,41 @@ export default {
       }
 
       const rows = this.cocktailIngredientsByCocktail[cocktailId] || [];
-      const cocktailIngredientIds = new Set(rows.map((row) => row.ingredientId));
+      const cocktailIngredientIds = new Set(rows.map((row) => Number(row.ingredientId)));
+      const cocktailIngredientNames = new Set(
+        rows
+          .map((row) => (row.ingredientName || '').trim().toLowerCase())
+          .filter(Boolean)
+      );
+      const selectedIds = this.selectedIngredientIds.map((id) => Number(id));
+      const selectedNames = new Set(
+        this.selectedIngredientFilters
+          .map((ingredient) => (ingredient.name || '').trim().toLowerCase())
+          .filter(Boolean)
+      );
+
+      const matchesOne = (ingredientId) => {
+        if (cocktailIngredientIds.has(ingredientId)) {
+          return true;
+        }
+
+        const selectedIngredient = this.ingredients.find((ingredient) => Number(ingredient.id) === ingredientId);
+        if (!selectedIngredient) {
+          return false;
+        }
+
+        return cocktailIngredientNames.has((selectedIngredient.name || '').trim().toLowerCase());
+      };
 
       if (this.ingredientFilterMode === 'any') {
-        return this.selectedIngredientIds.some((id) => cocktailIngredientIds.has(id));
+        if (selectedIds.some(matchesOne)) {
+          return true;
+        }
+
+        return [...selectedNames].some((name) => cocktailIngredientNames.has(name));
       }
 
-      return this.selectedIngredientIds.every((id) => cocktailIngredientIds.has(id));
+      return selectedIds.every(matchesOne);
     },
     async selectCocktail(cocktailId) {
       this.selectedCocktailId = cocktailId;
