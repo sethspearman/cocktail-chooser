@@ -101,6 +101,10 @@
             @change="addSelectedIngredientFilter"
             @keyup.enter.prevent="addSelectedIngredientFilter"
             placeholder="Find Ingredient..." />
+          <label class="toolbar-checkbox">
+            <input v-model="virginOnly" type="checkbox" />
+            Virgin drinks only
+          </label>
           <datalist id="cocktail-ingredient-filter-options">
             <option
               v-for="ingredient in ingredientFilterOptions"
@@ -137,6 +141,7 @@
         <ul v-else class="match-list">
           <li v-for="cocktail in visibleCocktails" :key="`match-${cocktail.id}`">
             <button @click="selectCocktail(cocktail.id)">{{ cocktail.name }}</button>
+            <span v-if="isVirginCocktail(cocktail.id)" class="virgin-pill">Virgin</span>
             <span v-if="cocktailListMode === 'all' && canMakeById(cocktail.id)" class="pill">Can make</span>
             <span v-if="hasTriedCocktail(cocktail.id)" class="tried-pill" title="Tried / logged">Tried</span>
           </li>
@@ -484,6 +489,37 @@ import {
   upsertUserInventory
 } from './api';
 
+const ALCOHOLIC_INGREDIENT_TOKENS = [
+  'vodka',
+  'gin',
+  'rum',
+  'tequila',
+  'mezcal',
+  'whiskey',
+  'whisky',
+  'bourbon',
+  'scotch',
+  'brandy',
+  'cognac',
+  'liqueur',
+  'liquor',
+  'vermouth',
+  'amaro',
+  'aperol',
+  'campari',
+  'chartreuse',
+  'cointreau',
+  'triple sec',
+  'absinthe',
+  'port',
+  'wine',
+  'champagne',
+  'prosecco',
+  'kahlua',
+  'bitters',
+  'creme de'
+];
+
 export default {
   name: 'App',
   data() {
@@ -509,6 +545,7 @@ export default {
       cocktailSearch: '',
       ingredientSearch: '',
       selectedSpirit: '',
+      virginOnly: false,
       ingredientFilterMode: 'all',
       ingredientFilterSearch: '',
       selectedIngredientIds: [],
@@ -619,6 +656,10 @@ export default {
           return false;
         }
 
+        if (!this.matchesVirginFilter(cocktail.id)) {
+          return false;
+        }
+
         if (!this.selectedSpirit) {
           return this.matchesSelectedIngredientFilters(cocktail.id);
         }
@@ -655,6 +696,10 @@ export default {
         const matchesSearch = !this.cocktailSearch
           || cocktail.name.toLowerCase().includes(this.cocktailSearch.toLowerCase());
         if (!matchesSearch) {
+          return false;
+        }
+
+        if (!this.matchesVirginFilter(cocktail.id)) {
           return false;
         }
 
@@ -836,6 +881,9 @@ export default {
     async ingredientFilterMode() {
       await this.reloadCocktailsForIngredientFilters();
     },
+    async virginOnly() {
+      await this.reloadCocktailsForIngredientFilters();
+    },
     selectedCocktail(newCocktail) {
       if (typeof document === 'undefined') {
         return;
@@ -856,7 +904,7 @@ export default {
       }
       try {
         const [cocktails, ingredients, cocktailIngredients, sources, amounts, glassTypes, timePeriods] = await Promise.all([
-          getCocktails(),
+          getCocktails({ alcohol: this.virginOnly ? 'non-alcoholic' : 'all' }),
           getIngredients(),
           getCocktailIngredients(),
           getCocktailSources(),
@@ -1054,9 +1102,16 @@ export default {
 
       try {
         const include = this.selectedIngredientFilterNames;
-        this.cocktails = await getCocktails(include.length > 0
-          ? { include, mode: this.ingredientFilterMode }
-          : {});
+        const options = {
+          alcohol: this.virginOnly ? 'non-alcoholic' : 'all'
+        };
+
+        if (include.length > 0) {
+          options.include = include;
+          options.mode = this.ingredientFilterMode;
+        }
+
+        this.cocktails = await getCocktails(options);
       } catch (err) {
         this.error = this.extractError(err);
       }
@@ -1280,6 +1335,38 @@ export default {
       }
 
       return selectedIds.every(matchesOne);
+    },
+    isVirginCocktail(cocktailId) {
+      const rows = this.cocktailIngredientsByCocktail[cocktailId] || [];
+      const isAlcoholic = rows.some((row) => {
+        if ((row.primarySpirit || '').trim().length > 0) {
+          return true;
+        }
+
+        const ingredientName = (row.ingredientName || '').trim().toLowerCase();
+        if (!ingredientName) {
+          return false;
+        }
+
+        if (ingredientName.includes('non-alcoholic')
+          || ingredientName.includes('non alcoholic')
+          || ingredientName.includes('alcohol-free')
+          || ingredientName.includes('alcohol free')) {
+          return false;
+        }
+
+        const normalized = ` ${ingredientName.replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()} `;
+        return ALCOHOLIC_INGREDIENT_TOKENS.some((token) => normalized.includes(` ${token} `));
+      });
+
+      return !isAlcoholic;
+    },
+    matchesVirginFilter(cocktailId) {
+      if (!this.virginOnly) {
+        return true;
+      }
+
+      return this.isVirginCocktail(cocktailId);
     },
     async selectCocktail(cocktailId) {
       this.selectedCocktailId = cocktailId;
@@ -1571,6 +1658,19 @@ body {
   flex-wrap: wrap;
 }
 
+.toolbar-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.15rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.toolbar-checkbox input[type='checkbox'] {
+  margin: 0;
+}
+
 input,
 select,
 textarea,
@@ -1812,6 +1912,16 @@ button:disabled {
   background: #eef2ff;
   color: #2f3ea8;
   border: 1px solid #cfd7ff;
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.72rem;
+}
+
+.virgin-pill {
+  margin-left: 0.4rem;
+  background: #f4e9ff;
+  color: #5c2f93;
+  border: 1px solid #d9b8ff;
   border-radius: 999px;
   padding: 0.05rem 0.45rem;
   font-size: 0.72rem;

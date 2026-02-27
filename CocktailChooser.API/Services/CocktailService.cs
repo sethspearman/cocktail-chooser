@@ -11,6 +11,37 @@ public class CocktailService : ICocktailService
     private static readonly Regex LeadingBulletRegex = new(@"^\s*[-*•]+\s*", RegexOptions.Compiled);
     private static readonly Regex LeadingStepNumberRegex = new(@"^\s*\d+[\).\:-]\s*", RegexOptions.Compiled);
     private static readonly Regex ParentheticalRegex = new(@"\([^)]*\)", RegexOptions.Compiled);
+    private static readonly string[] AlcoholicIngredientTokens =
+    {
+        "vodka",
+        "gin",
+        "rum",
+        "tequila",
+        "mezcal",
+        "whiskey",
+        "whisky",
+        "bourbon",
+        "scotch",
+        "brandy",
+        "cognac",
+        "liqueur",
+        "liquor",
+        "vermouth",
+        "amaro",
+        "aperol",
+        "campari",
+        "chartreuse",
+        "cointreau",
+        "triple sec",
+        "absinthe",
+        "port",
+        "wine",
+        "champagne",
+        "prosecco",
+        "kahlua",
+        "bitters",
+        "creme de"
+    };
 
     private readonly ICocktailRepository _cocktailRepository;
     private readonly IIngredientRepository _ingredientRepository;
@@ -35,23 +66,47 @@ public class CocktailService : ICocktailService
         _recipeParser = recipeParser;
     }
 
-    public async Task<IEnumerable<CocktailDto>> GetAllCocktailsAsync(IEnumerable<string>? includeIngredientNames = null, string? includeMode = null)
+    public async Task<IEnumerable<CocktailDto>> GetAllCocktailsAsync(
+        IEnumerable<string>? includeIngredientNames = null,
+        string? includeMode = null,
+        string? alcoholFilter = null)
     {
         var cocktails = await _cocktailRepository.GetAllAsync();
+        var normalizedAlcoholFilter = NormalizeAlcoholFilter(alcoholFilter);
         var requestedIngredientNames = (includeIngredientNames ?? Array.Empty<string>())
             .Select(x => (x ?? string.Empty).Trim())
             .Where(x => x.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        if (requestedIngredientNames.Count == 0)
-        {
-            return cocktails.Select(MapToDto);
-        }
-
         var normalizedMode = string.Equals(includeMode, "any", StringComparison.OrdinalIgnoreCase)
             ? "any"
             : "all";
+        var needsCocktailIngredientRows = requestedIngredientNames.Count > 0 || normalizedAlcoholFilter != "all";
+        var cocktailIngredientRows = needsCocktailIngredientRows
+            ? (await _cocktailIngredientRepository.GetAllAsync()).ToList()
+            : new List<CocktailIngredientRecord>();
+        var filteredCocktails = cocktails;
+
+        if (normalizedAlcoholFilter != "all")
+        {
+            var ingredientRowsByCocktailId = cocktailIngredientRows
+                .GroupBy(x => x.CocktailId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            filteredCocktails = filteredCocktails
+                .Where(c =>
+                {
+                    ingredientRowsByCocktailId.TryGetValue(c.Id, out var rows);
+                    return MatchesAlcoholFilter(rows, normalizedAlcoholFilter);
+                })
+                .ToList();
+        }
+
+        if (requestedIngredientNames.Count == 0)
+        {
+            return filteredCocktails.Select(MapToDto);
+        }
 
         var ingredients = (await _ingredientRepository.GetAllAsync()).ToList();
         var ingredientIdsByName = ingredients
@@ -84,14 +139,13 @@ public class CocktailService : ICocktailService
             return Array.Empty<CocktailDto>();
         }
 
-        var cocktailIngredientRows = await _cocktailIngredientRepository.GetAllAsync();
         var ingredientIdsByCocktailId = cocktailIngredientRows
             .GroupBy(x => x.CocktailId)
             .ToDictionary(
                 g => g.Key,
                 g => g.Select(x => x.IngredientId).ToHashSet());
 
-        var matchingCocktailIds = cocktails
+        var matchingCocktailIds = filteredCocktails
             .Where(c =>
             {
                 if (!ingredientIdsByCocktailId.TryGetValue(c.Id, out var cocktailIngredientIds) || cocktailIngredientIds.Count == 0)
@@ -111,7 +165,7 @@ public class CocktailService : ICocktailService
             .Select(c => c.Id)
             .ToHashSet();
 
-        return cocktails
+        return filteredCocktails
             .Where(c => matchingCocktailIds.Contains(c.Id))
             .Select(MapToDto);
     }
@@ -500,6 +554,89 @@ public class CocktailService : ICocktailService
     private static string? NullIfWhiteSpace(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string NormalizeAlcoholFilter(string? filter)
+    {
+        if (string.Equals(filter, "alcoholic", StringComparison.OrdinalIgnoreCase))
+        {
+            return "alcoholic";
+        }
+
+        if (string.Equals(filter, "non-alcoholic", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(filter, "nonalcoholic", StringComparison.OrdinalIgnoreCase))
+        {
+            return "non-alcoholic";
+        }
+
+        return "all";
+    }
+
+    private static bool MatchesAlcoholFilter(IReadOnlyList<CocktailIngredientRecord>? rows, string filter)
+    {
+        var isAlcoholic = IsAlcoholic(rows);
+        return filter switch
+        {
+            "alcoholic" => isAlcoholic,
+            "non-alcoholic" => !isAlcoholic,
+            _ => true
+        };
+    }
+
+    private static bool IsAlcoholic(IReadOnlyList<CocktailIngredientRecord>? rows)
+    {
+        if (rows == null || rows.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (var row in rows)
+        {
+            if (!string.IsNullOrWhiteSpace(row.PrimarySpirit))
+            {
+                return true;
+            }
+
+            var ingredientName = (row.IngredientName ?? string.Empty).Trim().ToLowerInvariant();
+            if (ingredientName.Length == 0)
+            {
+                continue;
+            }
+
+            if (ingredientName.Contains("non-alcoholic", StringComparison.Ordinal)
+                || ingredientName.Contains("non alcoholic", StringComparison.Ordinal)
+                || ingredientName.Contains("alcohol-free", StringComparison.Ordinal)
+                || ingredientName.Contains("alcohol free", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (ContainsAlcoholicToken(ingredientName))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsAlcoholicToken(string ingredientName)
+    {
+        var normalized = NormalizeIngredientForAlcoholCheck(ingredientName);
+        if (normalized.Length == 0)
+        {
+            return false;
+        }
+
+        return AlcoholicIngredientTokens.Any(token =>
+            normalized.Contains($" {token} ", StringComparison.Ordinal));
+    }
+
+    private static string NormalizeIngredientForAlcoholCheck(string ingredientName)
+    {
+        var normalized = Regex.Replace(ingredientName.ToLowerInvariant(), @"[^a-z0-9\s]", " ");
+        normalized = Regex.Replace(normalized, @"\s+", " ").Trim();
+        return normalized.Length == 0 ? string.Empty : $" {normalized} ";
     }
 
     private static CocktailDto MapToDto(CocktailRecord cocktail)

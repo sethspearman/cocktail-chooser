@@ -41,6 +41,9 @@ export async function getCocktails(options = {}) {
   if (options.mode) {
     params.mode = options.mode;
   }
+  if (options.alcohol) {
+    params.alcohol = options.alcohol;
+  }
 
   const { data } = await api.get('/cocktails', { params });
   return data;

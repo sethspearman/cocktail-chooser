@@ -30,7 +30,7 @@ namespace CocktailChooser.Tests.Controllers
                 new CocktailDto { Id = 2, Name = "Martini" }
             };
 
-            _mockService.Setup(s => s.GetAllCocktailsAsync())
+            _mockService.Setup(s => s.GetAllCocktailsAsync(null, null, null))
                 .ReturnsAsync(cocktails);
 
             // Act

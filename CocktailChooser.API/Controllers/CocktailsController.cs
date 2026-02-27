@@ -18,14 +18,17 @@ namespace CocktailChooser.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CocktailDto>>> GetCocktails([FromQuery] string? include = null, [FromQuery] string? mode = null)
+        public async Task<ActionResult<IEnumerable<CocktailDto>>> GetCocktails(
+            [FromQuery] string? include = null,
+            [FromQuery] string? mode = null,
+            [FromQuery] string? alcohol = null)
         {
             var includeNames = string.IsNullOrWhiteSpace(include)
                 ? null
                 : include
                     .Split(',', System.StringSplitOptions.TrimEntries | System.StringSplitOptions.RemoveEmptyEntries);
 
-            var cocktails = await _cocktailService.GetAllCocktailsAsync(includeNames, mode);
+            var cocktails = await _cocktailService.GetAllCocktailsAsync(includeNames, mode, alcohol);
             return Ok(cocktails);
         }
 

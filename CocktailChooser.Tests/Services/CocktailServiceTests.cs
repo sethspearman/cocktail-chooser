@@ -76,4 +76,65 @@ public class CocktailServiceTests
         _repositoryMock.Verify(r => r.UpdateAsync(It.Is<CocktailRecord>(c =>
             c.Id == 10 && c.Name == "Negroni")), Times.Once);
     }
+
+    [Fact]
+    public async Task GetAllCocktailsAsync_AlcoholicFilter_ReturnsOnlyAlcoholicCocktails()
+    {
+        _repositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<CocktailRecord>
+            {
+                new() { Id = 1, Name = "Daiquiri" },
+                new() { Id = 2, Name = "Virgin Mule" }
+            });
+
+        _cocktailIngredientRepositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<CocktailIngredientRecord>
+            {
+                new() { CocktailId = 1, IngredientId = 11, IngredientName = "White rum", PrimarySpirit = "Rum" },
+                new() { CocktailId = 2, IngredientId = 22, IngredientName = "Ginger beer", PrimarySpirit = null }
+            });
+
+        var result = (await _service.GetAllCocktailsAsync(alcoholFilter: "alcoholic")).ToList();
+
+        Assert.Single(result);
+        Assert.Equal("Daiquiri", result[0].Name);
+    }
+
+    [Fact]
+    public async Task GetAllCocktailsAsync_NonAlcoholicFilter_CombinesWithIngredientAllFilter()
+    {
+        _repositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<CocktailRecord>
+            {
+                new() { Id = 1, Name = "Daiquiri" },
+                new() { Id = 2, Name = "Virgin Mule" },
+                new() { Id = 3, Name = "Ginger Fizz" }
+            });
+
+        _ingredientRepositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<IngredientRecord>
+            {
+                new() { Id = 1, Name = "White rum" },
+                new() { Id = 2, Name = "Ginger beer" },
+                new() { Id = 3, Name = "Lime juice" }
+            });
+
+        _cocktailIngredientRepositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<CocktailIngredientRecord>
+            {
+                new() { CocktailId = 1, IngredientId = 1, IngredientName = "White rum", PrimarySpirit = "Rum" },
+                new() { CocktailId = 1, IngredientId = 3, IngredientName = "Lime juice" },
+                new() { CocktailId = 2, IngredientId = 2, IngredientName = "Ginger beer" },
+                new() { CocktailId = 2, IngredientId = 3, IngredientName = "Lime juice" },
+                new() { CocktailId = 3, IngredientId = 2, IngredientName = "Ginger beer" }
+            });
+
+        var result = (await _service.GetAllCocktailsAsync(
+            includeIngredientNames: new[] { "Ginger beer", "Lime juice" },
+            includeMode: "all",
+            alcoholFilter: "non-alcoholic")).ToList();
+
+        Assert.Single(result);
+        Assert.Equal("Virgin Mule", result[0].Name);
+    }
 }
