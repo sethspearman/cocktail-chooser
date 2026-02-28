@@ -13,6 +13,9 @@ public class CocktailRepository : ICocktailRepository
         GlassTypeId,
         TimePeriodId,
         IsPopular,
+        IsApproved,
+        IsUserSubmitted,
+        SubmittedByUserId,
         CocktailSourceId
         """;
 
@@ -37,6 +40,18 @@ public class CocktailRepository : ICocktailRepository
         return await connection.QuerySingleOrDefaultAsync<CocktailRecord>(sql, new { Id = id });
     }
 
+    public async Task<IEnumerable<LookupOptionRecord>> GetTimePeriodsAsync()
+    {
+        const string sql = """
+            SELECT Id, Name
+            FROM CocktailTimePeriods
+            ORDER BY Name;
+            """;
+
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.QueryAsync<LookupOptionRecord>(sql);
+    }
+
     public async Task<CocktailRecord> CreateAsync(CocktailRecord cocktail)
     {
         const string sql = """
@@ -48,6 +63,9 @@ public class CocktailRepository : ICocktailRepository
                 GlassTypeId,
                 TimePeriodId,
                 IsPopular,
+                IsApproved,
+                IsUserSubmitted,
+                SubmittedByUserId,
                 CocktailSourceId
             )
             VALUES
@@ -58,6 +76,9 @@ public class CocktailRepository : ICocktailRepository
                 @GlassTypeId,
                 @TimePeriodId,
                 @IsPopular,
+                COALESCE(@IsApproved, 0),
+                COALESCE(@IsUserSubmitted, 0),
+                @SubmittedByUserId,
                 @CocktailSourceId
             );
             SELECT last_insert_rowid();
@@ -79,6 +100,9 @@ public class CocktailRepository : ICocktailRepository
                 GlassTypeId = @GlassTypeId,
                 TimePeriodId = @TimePeriodId,
                 IsPopular = @IsPopular,
+                IsApproved = COALESCE(@IsApproved, IsApproved),
+                IsUserSubmitted = COALESCE(@IsUserSubmitted, IsUserSubmitted),
+                SubmittedByUserId = COALESCE(@SubmittedByUserId, SubmittedByUserId),
                 CocktailSourceId = @CocktailSourceId
             WHERE Id = @Id;
             """;

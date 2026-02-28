@@ -19,6 +19,12 @@ public partial class Cocktail
 
     public int? IsPopular { get; set; }
 
+    public int IsApproved { get; set; }
+
+    public int IsUserSubmitted { get; set; }
+
+    public int? SubmittedByUserId { get; set; }
+
     public int? CocktailSourceId { get; set; }
 
     public virtual ICollection<CocktailRecipe> CocktailRecipes { get; set; } = new List<CocktailRecipe>();

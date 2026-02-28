@@ -26,6 +26,9 @@ namespace CocktailChooser.API.DTOs
         public int? GlassTypeId { get; set; }
         public int? TimePeriodId { get; set; }
         public int? IsPopular { get; set; }
+        public int? IsApproved { get; set; }
+        public int? IsUserSubmitted { get; set; }
+        public int? SubmittedByUserId { get; set; }
         public int? CocktailSourceId { get; set; }
     }
 }

@@ -1,0 +1,5 @@
+ALTER TABLE Cocktails
+ADD COLUMN IsApproved INTEGER NOT NULL DEFAULT 0;
+
+UPDATE Cocktails
+SET IsApproved = 1;

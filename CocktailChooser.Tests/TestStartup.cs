@@ -42,7 +42,14 @@ public class TestStartup
                     GlassTypeId INTEGER,
                     TimePeriodId INTEGER,
                     IsPopular INTEGER DEFAULT 0,
+                    IsApproved INTEGER NOT NULL DEFAULT 0,
+                    IsUserSubmitted INTEGER NOT NULL DEFAULT 0,
+                    SubmittedByUserId INTEGER,
                     CocktailSourceId INTEGER
+                );
+                CREATE TABLE IF NOT EXISTS CocktailTimePeriods (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL
                 );
                 CREATE TABLE IF NOT EXISTS Ingredients (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,

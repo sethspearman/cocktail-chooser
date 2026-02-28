@@ -15,7 +15,20 @@ public class AmountRepository : IAmountRepository
     public async Task<IEnumerable<AmountRecord>> GetAllAsync()
     {
         const string sql = """
-            SELECT Id, MeasurementName, Ounces
+            SELECT
+                Id,
+                MeasurementName,
+                CAST(
+                    CASE
+                        WHEN Ounces IS NULL THEN NULL
+                        WHEN TRIM(CAST(Ounces AS TEXT)) = '' THEN NULL
+                        WHEN UPPER(TRIM(CAST(Ounces AS TEXT))) IN ('NULL', 'N/A') THEN NULL
+                        -- Preserve only simple numeric text formats for conversion.
+                        WHEN REPLACE(REPLACE(TRIM(CAST(Ounces AS TEXT)), '.', ''), '-', '') GLOB '[0-9]*'
+                            THEN CAST(TRIM(CAST(Ounces AS TEXT)) AS REAL)
+                        ELSE NULL
+                    END
+                AS REAL) AS Ounces
             FROM Amounts
             ORDER BY MeasurementName;
             """;
