@@ -11,6 +11,7 @@ public class CocktailService : ICocktailService
     private static readonly Regex LeadingBulletRegex = new(@"^\s*[-*•]+\s*", RegexOptions.Compiled);
     private static readonly Regex LeadingStepNumberRegex = new(@"^\s*\d+[\).\:-]\s*", RegexOptions.Compiled);
     private static readonly Regex ParentheticalRegex = new(@"\([^)]*\)", RegexOptions.Compiled);
+    private static readonly Regex HeaderLineRegex = new(@"^(?<header>Name|Description|Ingredients|Steps|Flavor Profile|Time Period)\s*:\s*(?<value>.*)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly string[] AlcoholicIngredientTokens =
     {
         "vodka",
@@ -71,7 +72,9 @@ public class CocktailService : ICocktailService
         string? includeMode = null,
         string? alcoholFilter = null)
     {
-        var cocktails = await _cocktailRepository.GetAllAsync();
+        var cocktails = (await _cocktailRepository.GetAllAsync())
+            .Where(IsApprovedForPublicRead)
+            .ToList();
         var normalizedAlcoholFilter = NormalizeAlcoholFilter(alcoholFilter);
         var requestedIngredientNames = (includeIngredientNames ?? Array.Empty<string>())
             .Select(x => (x ?? string.Empty).Trim())
@@ -170,15 +173,144 @@ public class CocktailService : ICocktailService
             .Select(MapToDto);
     }
 
+    public async Task<IEnumerable<CocktailDto>> GetPendingCocktailsForUserAsync(int userId)
+    {
+        var cocktails = await _cocktailRepository.GetAllAsync();
+        return cocktails
+            .Where(c => c.IsApproved.GetValueOrDefault() == 0
+                        && c.SubmittedByUserId.GetValueOrDefault() == userId)
+            .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(MapToDto);
+    }
+
     public async Task<CocktailDto?> GetCocktailByIdAsync(int id)
     {
         var cocktail = await _cocktailRepository.GetByIdAsync(id);
-        if (cocktail == null)
+        if (cocktail == null || !IsApprovedForPublicRead(cocktail))
         {
             return null;
         }
 
         return MapToDto(cocktail);
+    }
+
+    public async Task<CocktailTextPreviewResponseDto> PreviewFromTextAsync(CocktailTextPreviewRequestDto requestDto)
+    {
+        var draft = ParsePasteDraft(requestDto.RawText);
+        var response = new CocktailTextPreviewResponseDto
+        {
+            Name = draft.Name,
+            Description = draft.Description,
+            FlavorProfile = draft.FlavorProfile,
+            TimePeriodName = draft.TimePeriodName,
+            Steps = draft.Steps
+        };
+
+        response.Errors.AddRange(draft.Errors);
+
+        var ingredients = (await _ingredientRepository.GetAllAsync()).ToList();
+        foreach (var ingredientName in draft.Ingredients)
+        {
+            var exists = FindBestIngredientMatch(ingredientName, ingredients) != null;
+            response.Ingredients.Add(new CocktailTextIngredientPreviewDto
+            {
+                Name = ingredientName,
+                IsNew = !exists
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(draft.TimePeriodName))
+        {
+            var timePeriods = (await _cocktailRepository.GetTimePeriodsAsync()).ToList();
+            var match = timePeriods.FirstOrDefault(x => string.Equals(x.Name, draft.TimePeriodName, StringComparison.OrdinalIgnoreCase));
+            if (match == null)
+            {
+                response.Errors.Add($"Unknown time period: '{draft.TimePeriodName}'. Choose an existing time period.");
+            }
+            else
+            {
+                response.MatchedTimePeriodId = match.Id;
+            }
+        }
+
+        return response;
+    }
+
+    public async Task<CocktailDto> SubmitFromTextAsync(CocktailTextSubmitRequestDto requestDto, int userId)
+    {
+        var preview = await PreviewFromTextAsync(new CocktailTextPreviewRequestDto
+        {
+            RawText = requestDto.RawText
+        });
+
+        if (!preview.IsValid)
+        {
+            throw new ArgumentException(string.Join(" ", preview.Errors));
+        }
+
+        var timePeriodId = requestDto.TimePeriodIdOverride ?? preview.MatchedTimePeriodId;
+        var ingredientLines = preview.Ingredients.Select(x => x.Name).ToList();
+        var stepLines = preview.Steps.ToList();
+        var methodText = stepLines.Count > 0 ? string.Join(". ", stepLines) : null;
+
+        var dto = new CocktailDto
+        {
+            Name = preview.Name!,
+            Description = preview.Description,
+            Method = methodText,
+            IngredientLines = ingredientLines.Count > 0 ? string.Join('\n', ingredientLines) : null,
+            StepLines = stepLines.Count > 0 ? string.Join('\n', stepLines) : null,
+            FlavorProfile = preview.FlavorProfile,
+            StructuredIngredients = ingredientLines
+                .Select(x => new CocktailIngredientEntryDto
+                {
+                    IngredientName = x
+                })
+                .ToList(),
+            StructuredSteps = stepLines
+                .Select(x => new CocktailStepEntryDto
+                {
+                    Instruction = x
+                })
+                .ToList(),
+            TimePeriodId = timePeriodId,
+            CocktailSourceId = requestDto.CocktailSourceId,
+            IsPopular = 0,
+            IsApproved = 0,
+            IsUserSubmitted = 1,
+            SubmittedByUserId = userId
+        };
+
+        return await CreateCocktailAsync(dto);
+    }
+
+    public async Task<bool> ApproveCocktailAsync(int id)
+    {
+        var existing = await _cocktailRepository.GetByIdAsync(id);
+        if (existing == null)
+        {
+            return false;
+        }
+
+        existing.IsApproved = 1;
+        return await _cocktailRepository.UpdateAsync(existing);
+    }
+
+    public async Task<bool> RejectCocktailAsync(int id, bool delete)
+    {
+        var existing = await _cocktailRepository.GetByIdAsync(id);
+        if (existing == null)
+        {
+            return false;
+        }
+
+        if (delete)
+        {
+            return await _cocktailRepository.DeleteAsync(id);
+        }
+
+        existing.IsApproved = 0;
+        return await _cocktailRepository.UpdateAsync(existing);
     }
 
     public async Task<CocktailDto> CreateCocktailAsync(CocktailDto cocktailDto)
@@ -193,6 +325,8 @@ public class CocktailService : ICocktailService
         cocktailDto.Method = NullIfWhiteSpace(cocktailDto.Method);
         cocktailDto.IngredientLines = NullIfWhiteSpace(cocktailDto.IngredientLines);
         cocktailDto.StepLines = NullIfWhiteSpace(cocktailDto.StepLines);
+        cocktailDto.IsApproved ??= 0;
+        cocktailDto.IsUserSubmitted ??= 0;
 
         var createdCocktail = await _cocktailRepository.CreateAsync(MapToRecord(cocktailDto));
 
@@ -344,6 +478,140 @@ public class CocktailService : ICocktailService
                 Instruction = step.Instruction.Trim()
             });
         }
+    }
+
+    private static ParsedPasteDraft ParsePasteDraft(string? rawText)
+    {
+        var draft = new ParsedPasteDraft();
+        var text = (rawText ?? string.Empty).Replace("\r\n", "\n");
+        var lines = text.Split('\n');
+        var sectionLines = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        string? currentHeader = null;
+
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine ?? string.Empty;
+            var headerMatch = HeaderLineRegex.Match(line);
+            if (headerMatch.Success)
+            {
+                currentHeader = NormalizeHeaderName(headerMatch.Groups["header"].Value);
+                if (!sectionLines.ContainsKey(currentHeader))
+                {
+                    sectionLines[currentHeader] = new List<string>();
+                }
+
+                var firstValue = headerMatch.Groups["value"].Value.Trim();
+                if (firstValue.Length > 0)
+                {
+                    sectionLines[currentHeader].Add(firstValue);
+                }
+
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            if (currentHeader == null)
+            {
+                draft.Errors.Add("Paste format must include section headers like 'Name:' and 'Ingredients:'.");
+                continue;
+            }
+
+            sectionLines[currentHeader].Add(line.Trim());
+        }
+
+        var requiredHeaders = new[] { "name", "description", "ingredients", "steps" };
+        foreach (var required in requiredHeaders)
+        {
+            if (!sectionLines.ContainsKey(required))
+            {
+                draft.Errors.Add($"Missing required header: {HeaderDisplayName(required)}:");
+            }
+        }
+
+        draft.Name = JoinSection(sectionLines, "name");
+        draft.Description = JoinSection(sectionLines, "description");
+        draft.FlavorProfile = JoinSection(sectionLines, "flavor profile");
+        draft.TimePeriodName = JoinSection(sectionLines, "time period");
+
+        if (string.IsNullOrWhiteSpace(draft.Name))
+        {
+            draft.Errors.Add("Name is required.");
+        }
+
+        draft.Ingredients = (sectionLines.TryGetValue("ingredients", out var ingredientLines) ? ingredientLines : new List<string>())
+            .Select(CleanListPrefix)
+            .Select(ExtractIngredientNameFromLine)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (draft.Ingredients.Count == 0)
+        {
+            draft.Errors.Add("At least one ingredient is required.");
+        }
+
+        draft.Steps = (sectionLines.TryGetValue("steps", out var stepLines) ? stepLines : new List<string>())
+            .Select(CleanListPrefix)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+
+        if (draft.Steps.Count == 0)
+        {
+            draft.Errors.Add("At least one step is required.");
+        }
+
+        return draft;
+    }
+
+    private static string NormalizeHeaderName(string header)
+    {
+        return header.Trim().ToLowerInvariant();
+    }
+
+    private static string HeaderDisplayName(string normalizedHeader)
+    {
+        return normalizedHeader switch
+        {
+            "flavor profile" => "Flavor Profile",
+            "time period" => "Time Period",
+            "name" => "Name",
+            "description" => "Description",
+            "ingredients" => "Ingredients",
+            "steps" => "Steps",
+            _ => normalizedHeader
+        };
+    }
+
+    private static string? JoinSection(IReadOnlyDictionary<string, List<string>> sections, string key)
+    {
+        if (!sections.TryGetValue(key, out var lines))
+        {
+            return null;
+        }
+
+        var joined = string.Join('\n', lines.Select(x => x.Trim()).Where(x => x.Length > 0));
+        return string.IsNullOrWhiteSpace(joined) ? null : joined;
+    }
+
+    private static string ExtractIngredientNameFromLine(string line)
+    {
+        var trimmed = line.Trim();
+        if (trimmed.Length == 0)
+        {
+            return trimmed;
+        }
+
+        var commaIndex = trimmed.IndexOf(',');
+        if (commaIndex >= 0 && commaIndex < trimmed.Length - 1)
+        {
+            return trimmed[(commaIndex + 1)..].Trim();
+        }
+
+        return ExtractIngredientNameFallback(trimmed);
     }
 
     private static string BuildParserInput(string cocktailName, IReadOnlyList<string> ingredientLines, IReadOnlyList<string> stepLines, string? methodText)
@@ -650,6 +918,9 @@ public class CocktailService : ICocktailService
             GlassTypeId = cocktail.GlassTypeId,
             TimePeriodId = cocktail.TimePeriodId,
             IsPopular = cocktail.IsPopular,
+            IsApproved = cocktail.IsApproved,
+            IsUserSubmitted = cocktail.IsUserSubmitted,
+            SubmittedByUserId = cocktail.SubmittedByUserId,
             CocktailSourceId = cocktail.CocktailSourceId
         };
     }
@@ -665,7 +936,26 @@ public class CocktailService : ICocktailService
             GlassTypeId = cocktail.GlassTypeId,
             TimePeriodId = cocktail.TimePeriodId,
             IsPopular = cocktail.IsPopular,
+            IsApproved = cocktail.IsApproved,
+            IsUserSubmitted = cocktail.IsUserSubmitted,
+            SubmittedByUserId = cocktail.SubmittedByUserId,
             CocktailSourceId = cocktail.CocktailSourceId
         };
+    }
+
+    private static bool IsApprovedForPublicRead(CocktailRecord cocktail)
+    {
+        return cocktail.IsApproved.GetValueOrDefault() == 1;
+    }
+
+    private sealed class ParsedPasteDraft
+    {
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public string? FlavorProfile { get; set; }
+        public string? TimePeriodName { get; set; }
+        public List<string> Ingredients { get; set; } = new();
+        public List<string> Steps { get; set; } = new();
+        public List<string> Errors { get; } = new();
     }
 }

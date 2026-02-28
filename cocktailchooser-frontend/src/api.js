@@ -54,6 +54,21 @@ export async function createCocktail(payload) {
   return data;
 }
 
+export async function previewCocktailFromText(payload) {
+  const { data } = await api.post('/cocktails/preview-from-text', payload);
+  return data;
+}
+
+export async function submitCocktailFromText(payload) {
+  const { data } = await api.post('/cocktails/submit-from-text', payload);
+  return data;
+}
+
+export async function getMyPendingCocktails() {
+  const { data } = await api.get('/cocktails/my-pending');
+  return data;
+}
+
 export async function getIngredients() {
   const { data } = await api.get('/ingredients');
   return data;

@@ -52,6 +52,7 @@ public class CocktailServiceTests
                 Id = 1,
                 Name = "Mojito",
                 Method = "Build over ice",
+                IsApproved = 1,
                 CocktailSourceId = 2
             });
 
@@ -83,8 +84,8 @@ public class CocktailServiceTests
         _repositoryMock.Setup(r => r.GetAllAsync())
             .ReturnsAsync(new List<CocktailRecord>
             {
-                new() { Id = 1, Name = "Daiquiri" },
-                new() { Id = 2, Name = "Virgin Mule" }
+                new() { Id = 1, Name = "Daiquiri", IsApproved = 1 },
+                new() { Id = 2, Name = "Virgin Mule", IsApproved = 1 }
             });
 
         _cocktailIngredientRepositoryMock.Setup(r => r.GetAllAsync())
@@ -106,9 +107,9 @@ public class CocktailServiceTests
         _repositoryMock.Setup(r => r.GetAllAsync())
             .ReturnsAsync(new List<CocktailRecord>
             {
-                new() { Id = 1, Name = "Daiquiri" },
-                new() { Id = 2, Name = "Virgin Mule" },
-                new() { Id = 3, Name = "Ginger Fizz" }
+                new() { Id = 1, Name = "Daiquiri", IsApproved = 1 },
+                new() { Id = 2, Name = "Virgin Mule", IsApproved = 1 },
+                new() { Id = 3, Name = "Ginger Fizz", IsApproved = 1 }
             });
 
         _ingredientRepositoryMock.Setup(r => r.GetAllAsync())
@@ -136,5 +137,71 @@ public class CocktailServiceTests
 
         Assert.Single(result);
         Assert.Equal("Virgin Mule", result[0].Name);
+    }
+
+    [Fact]
+    public async Task PreviewFromTextAsync_ReturnsValidationErrors_WhenRequiredHeadersMissing()
+    {
+        var preview = await _service.PreviewFromTextAsync(new CocktailTextPreviewRequestDto
+        {
+            RawText = "Name: Broken Cocktail\nIngredients:\n- Gin"
+        });
+
+        Assert.False(preview.IsValid);
+        Assert.Contains(preview.Errors, e => e.Contains("Missing required header: Description:", StringComparison.Ordinal));
+        Assert.Contains(preview.Errors, e => e.Contains("Missing required header: Steps:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SubmitFromTextAsync_CreatesPendingUserSubmittedCocktail()
+    {
+        _ingredientRepositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<IngredientRecord>());
+        _repositoryMock.Setup(r => r.GetTimePeriodsAsync())
+            .ReturnsAsync(new List<LookupOptionRecord>());
+        _amountRepositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<AmountRecord>());
+        _recipeParserMock.Setup(r => r.Parse(It.IsAny<string>()))
+            .Returns(new List<OcrParsedRecipeDraft>
+            {
+                new()
+                {
+                    Ingredients = new List<OcrParsedIngredientDraft>(),
+                    Steps = new List<OcrParsedStepDraft>()
+                }
+            });
+        _ingredientRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<IngredientRecord>()))
+            .ReturnsAsync((IngredientRecord input) => new IngredientRecord { Id = 77, Name = input.Name });
+        _repositoryMock.Setup(r => r.CreateAsync(It.IsAny<CocktailRecord>()))
+            .ReturnsAsync((CocktailRecord input) => new CocktailRecord
+            {
+                Id = 55,
+                Name = input.Name,
+                Description = input.Description,
+                Method = input.Method,
+                TimePeriodId = input.TimePeriodId,
+                IsApproved = input.IsApproved,
+                IsUserSubmitted = input.IsUserSubmitted,
+                SubmittedByUserId = input.SubmittedByUserId,
+                CocktailSourceId = input.CocktailSourceId
+            });
+
+        var result = await _service.SubmitFromTextAsync(new CocktailTextSubmitRequestDto
+        {
+            RawText = """
+                Name: Test Submission
+                Description: A pending cocktail
+                Ingredients:
+                - 2 oz gin
+                Steps:
+                1. Shake with ice
+                """
+        }, userId: 42);
+
+        Assert.Equal("Test Submission", result.Name);
+        Assert.Equal(0, result.IsApproved);
+        Assert.Equal(1, result.IsUserSubmitted);
+        Assert.Equal(42, result.SubmittedByUserId);
+        _cocktailIngredientRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<CocktailIngredientRecord>()), Times.AtLeastOnce);
     }
 }
