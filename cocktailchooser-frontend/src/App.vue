@@ -280,20 +280,24 @@
         </div>
 
         <div class="auth-stack">
+          <div class="subtle">
+            Current mode:
+            <strong>{{ newCocktailForm.mode === 'paste' ? 'Paste Mode' : 'Structured Mode' }}</strong>
+          </div>
           <div class="toolbar">
             <button
               type="button"
               class="menu-button"
               :class="{ active: newCocktailForm.mode === 'paste' }"
               @click="newCocktailForm.mode = 'paste'">
-              Paste Recipe
+              {{ newCocktailForm.mode === 'paste' ? '✓ Paste Mode' : 'Paste Mode' }}
             </button>
             <button
               type="button"
               class="menu-button"
               :class="{ active: newCocktailForm.mode === 'structured' }"
               @click="newCocktailForm.mode = 'structured'">
-              Structured Entry
+              {{ newCocktailForm.mode === 'structured' ? '✓ Structured Mode' : 'Structured Mode' }}
             </button>
           </div>
           <select v-model.number="newCocktailForm.cocktailSourceId">
@@ -324,7 +328,7 @@ Steps:
                 </option>
               </select>
             </div>
-            <div v-if="addCocktailPreview" class="structured-list">
+            <div v-if="addCocktailPreview" ref="addCocktailPreviewSection" class="structured-list">
               <div class="subheading">Preview</div>
               <p><strong>Name:</strong> {{ addCocktailPreview.name || 'Missing' }}</p>
               <p><strong>Description:</strong> {{ addCocktailPreview.description || 'Missing' }}</p>
@@ -350,14 +354,18 @@ Steps:
               <p v-if="!selectedUserId" class="subtle">Log in to submit for approval.</p>
             </div>
             <div class="menu-actions add-cocktail-actions">
-              <button type="button" :disabled="!canReviewCocktailPaste || addCocktailPreviewLoading" @click="reviewNewCocktailPaste">
-                {{ addCocktailPreviewLoading ? 'Reviewing...' : 'Review' }}
+              <button
+                type="button"
+                :disabled="!canReviewCocktailPaste || addCocktailPreviewLoading || (addCocktailPreview && addCocktailPreview.isValid && !pasteNeedsReview)"
+                @click="reviewNewCocktailPaste">
+                {{ addCocktailPreviewLoading ? 'Reviewing...' : (addCocktailPreview && addCocktailPreview.isValid && !pasteNeedsReview ? 'Reviewed' : 'Review') }}
               </button>
               <button type="button" :disabled="!canSubmitCocktailPaste || addCocktailSubmitLoading" @click="submitNewCocktailFromPaste">
                 {{ addCocktailSubmitLoading ? 'Submitting...' : 'Submit for Approval' }}
               </button>
               <button type="button" class="menu-button" @click="closeActiveModal">Cancel</button>
             </div>
+            <p v-if="submitFromPasteDisabledReason" class="subtle">{{ submitFromPasteDisabledReason }}</p>
           </template>
 
           <template v-else>
@@ -551,6 +559,22 @@ Steps:
         </div>
       </div>
     </div>
+
+    <div
+      v-if="reviewSubmittedModalOpen"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="review-submitted-title"
+      @click.self="closeReviewSubmittedModal">
+      <div class="modal-card">
+        <h2 id="review-submitted-title">Submitted for Review</h2>
+        <p>Your cocktail recipe has been submitted for review.</p>
+        <div class="modal-actions">
+          <button type="button" @click="closeReviewSubmittedModal">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -675,7 +699,9 @@ export default {
       addCocktailPreview: null,
       addCocktailPreviewLoading: false,
       addCocktailSubmitLoading: false,
+      lastReviewedRawText: '',
       myPendingCocktails: [],
+      reviewSubmittedModalOpen: false,
       newLog: {
         rating: null,
         comment: '',
@@ -959,10 +985,29 @@ export default {
       return this.newCocktailForm.rawText.trim().length > 0;
     },
     canSubmitCocktailPaste() {
-      return this.addCocktailPreview
-        && this.addCocktailPreview.isValid
-        && Number(this.selectedUserId) > 0
-        && Number(this.newCocktailForm.cocktailSourceId) > 0;
+      return !this.submitFromPasteDisabledReason;
+    },
+    submitFromPasteDisabledReason() {
+      if (!this.selectedUserId) {
+        return 'Log in to submit cocktails for approval.';
+      }
+
+      if (!Number(this.newCocktailForm.cocktailSourceId)) {
+        return 'Select a source before submitting.';
+      }
+
+      if (!this.addCocktailPreview) {
+        return 'Run Review first.';
+      }
+
+      if (!this.addCocktailPreview.isValid) {
+        return 'Fix review errors before submitting.';
+      }
+
+      return '';
+    },
+    pasteNeedsReview() {
+      return this.newCocktailForm.rawText.trim() !== this.lastReviewedRawText;
     },
     authValidationMessage() {
       if (this.currentUser) {
@@ -1202,6 +1247,7 @@ export default {
       this.addCocktailPreview = null;
       this.addCocktailPreviewLoading = false;
       this.addCocktailSubmitLoading = false;
+      this.lastReviewedRawText = '';
     },
     createEmptyIngredientEntry() {
       return { amountText: '', ingredientName: '' };
@@ -1311,9 +1357,16 @@ export default {
         this.addCocktailPreview = await previewCocktailFromText({
           rawText: this.newCocktailForm.rawText
         });
+        this.lastReviewedRawText = this.newCocktailForm.rawText.trim();
 
         if (!this.addCocktailPreview.isValid) {
           this.error = (this.addCocktailPreview.errors || []).join(' ');
+        }
+
+        await this.$nextTick();
+        const previewSection = this.$refs.addCocktailPreviewSection;
+        if (previewSection && typeof previewSection.scrollIntoView === 'function') {
+          previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       } catch (err) {
         this.error = this.extractError(err);
@@ -1352,6 +1405,7 @@ export default {
         ]);
         this.userSuccessMessage = `Cocktail "${created.name}" submitted for approval.`;
         this.activeModal = '';
+        this.reviewSubmittedModalOpen = true;
         setTimeout(() => {
           this.userSuccessMessage = '';
         }, 2500);
@@ -1448,6 +1502,9 @@ export default {
     },
     closeNotImplementedModal() {
       this.notImplementedModalOpen = false;
+    },
+    closeReviewSubmittedModal() {
+      this.reviewSubmittedModalOpen = false;
     },
     async loadInventory() {
       this.inventory = [];
@@ -2002,6 +2059,14 @@ button:disabled {
 
 .menu-button {
   background: #fff;
+}
+
+.menu-button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: #0f6048;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(19, 121, 91, 0.2);
 }
 
 .account-pane {
