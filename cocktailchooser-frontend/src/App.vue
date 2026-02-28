@@ -105,6 +105,10 @@
             <input v-model="virginOnly" type="checkbox" />
             Virgin drinks only
           </label>
+          <label class="toolbar-checkbox">
+            <input v-model="popularOnly" type="checkbox" />
+            Popular only
+          </label>
           <datalist id="cocktail-ingredient-filter-options">
             <option
               v-for="ingredient in ingredientFilterOptions"
@@ -141,6 +145,7 @@
         <ul v-else class="match-list">
           <li v-for="cocktail in visibleCocktails" :key="`match-${cocktail.id}`">
             <button @click="selectCocktail(cocktail.id)">{{ cocktail.name }}</button>
+            <span v-if="isPopularCocktail(cocktail)" class="pill">Popular</span>
             <span v-if="isVirginCocktail(cocktail.id)" class="virgin-pill">Virgin</span>
             <span v-if="cocktailListMode === 'all' && canMakeById(cocktail.id)" class="pill">Can make</span>
             <span v-if="hasTriedCocktail(cocktail.id)" class="tried-pill" title="Tried / logged">Tried</span>
@@ -489,6 +494,8 @@ import {
   upsertUserInventory
 } from './api';
 
+const POPULAR_ONLY_STORAGE_KEY = 'cocktailchooser.popularOnly';
+
 const ALCOHOLIC_INGREDIENT_TOKENS = [
   'vodka',
   'gin',
@@ -546,6 +553,7 @@ export default {
       ingredientSearch: '',
       selectedSpirit: '',
       virginOnly: false,
+      popularOnly: true,
       ingredientFilterMode: 'all',
       ingredientFilterSearch: '',
       selectedIngredientIds: [],
@@ -656,6 +664,10 @@ export default {
           return false;
         }
 
+        if (!this.matchesPopularFilter(cocktail)) {
+          return false;
+        }
+
         if (!this.matchesVirginFilter(cocktail.id)) {
           return false;
         }
@@ -696,6 +708,10 @@ export default {
         const matchesSearch = !this.cocktailSearch
           || cocktail.name.toLowerCase().includes(this.cocktailSearch.toLowerCase());
         if (!matchesSearch) {
+          return false;
+        }
+
+        if (!this.matchesPopularFilter(cocktail)) {
           return false;
         }
 
@@ -884,6 +900,13 @@ export default {
     async virginOnly() {
       await this.reloadCocktailsForIngredientFilters();
     },
+    popularOnly(value) {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      window.localStorage.setItem(POPULAR_ONLY_STORAGE_KEY, value ? '1' : '0');
+    },
     selectedCocktail(newCocktail) {
       if (typeof document === 'undefined') {
         return;
@@ -894,9 +917,22 @@ export default {
     }
   },
   async created() {
+    this.restorePopularOnlyPreference();
     await this.loadInitialData();
   },
   methods: {
+    restorePopularOnlyPreference() {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      const stored = window.localStorage.getItem(POPULAR_ONLY_STORAGE_KEY);
+      if (stored === '0') {
+        this.popularOnly = false;
+      } else if (stored === '1') {
+        this.popularOnly = true;
+      }
+    },
     async loadInitialData() {
       this.error = '';
       if (typeof document !== 'undefined') {
@@ -1360,6 +1396,16 @@ export default {
       });
 
       return !isAlcoholic;
+    },
+    isPopularCocktail(cocktail) {
+      return Number(cocktail?.isPopular || 0) === 1;
+    },
+    matchesPopularFilter(cocktail) {
+      if (!this.popularOnly) {
+        return true;
+      }
+
+      return this.isPopularCocktail(cocktail);
     },
     matchesVirginFilter(cocktailId) {
       if (!this.virginOnly) {

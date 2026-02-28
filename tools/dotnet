@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-"/mnt/c/Program Files/dotnet/dotnet.exe" "$@"
+dotnet "$@"
