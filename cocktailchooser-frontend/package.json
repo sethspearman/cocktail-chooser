@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "serve": "node --no-deprecation ./node_modules/@vue/cli-service/bin/vue-cli-service.js serve",
-    "serve:debug": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "serve:debug": "node --no-deprecation ./node_modules/@vue/cli-service/bin/vue-cli-service.js serve",
+    "build": "node --no-deprecation ./node_modules/@vue/cli-service/bin/vue-cli-service.js build",
+    "lint": "node --no-deprecation ./node_modules/@vue/cli-service/bin/vue-cli-service.js lint"
   },
   "dependencies": {
     "@babel/preset-env": "^7.24.7",
