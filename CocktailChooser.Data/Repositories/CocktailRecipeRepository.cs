@@ -89,4 +89,15 @@ public class CocktailRecipeRepository : ICocktailRecipeRepository
         var rows = await connection.ExecuteAsync(sql, new { CocktailId = cocktailId, StepNumber = stepNumber });
         return rows > 0;
     }
+
+    public async Task<int> DeleteByCocktailIdAsync(int cocktailId)
+    {
+        const string sql = """
+            DELETE FROM CocktailSteps
+            WHERE CocktailId = @CocktailId;
+            """;
+
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.ExecuteAsync(sql, new { CocktailId = cocktailId });
+    }
 }

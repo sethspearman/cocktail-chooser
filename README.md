@@ -128,3 +128,102 @@ Open: `http://localhost:8080`
   - groupings
   - missing ingredients
   - try logs (rating/comment/date)
+
+## Admin API (Issue #52)
+
+MVP admin policy in this codebase:
+- User with `Id = 1` is treated as admin.
+- Admin-only cocktail management endpoints are server-side protected.
+
+### Export endpoints
+
+- Export all cocktails (optional source filter):
+  - `GET /api/cocktails/admin/export`
+  - `GET /api/cocktails/admin/export?sourceId=2`
+  - `GET /api/cocktails/admin/export?sourceId=2&offset=0&limit=100`
+- Export one cocktail:
+  - `GET /api/cocktails/admin/export/{id}`
+
+Pagination/query params:
+- `offset` (optional): skip first N rows (default `0`)
+- `limit` (optional): max rows to return
+- Results are ordered by cocktail name.
+
+Example export item (round-trip compatible):
+
+```json
+{
+  "cocktailId": 12,
+  "canonicalKey": "aliza_imports::old_fashioned",
+  "name": "Old Fashioned",
+  "description": "Whiskey classic.",
+  "method": "Stir with ice and strain.",
+  "glassTypeId": 3,
+  "timePeriodId": 2,
+  "isPopular": 1,
+  "isApproved": 1,
+  "isUserSubmitted": 0,
+  "submittedByUserId": null,
+  "cocktailSourceId": 2,
+  "structuredIngredients": [
+    { "amountId": 10, "amountText": null, "ingredientName": "Bourbon" },
+    { "amountId": null, "amountText": "2 dashes", "ingredientName": "Angostura bitters" }
+  ],
+  "structuredSteps": [
+    { "instruction": "Add ingredients to a mixing glass with ice." },
+    { "instruction": "Stir and strain over fresh ice." }
+  ]
+}
+```
+
+### Import endpoint
+
+- `POST /api/cocktails/admin/import`
+
+Request body:
+
+```json
+{
+  "cocktails": [
+    {
+      "cocktailId": 12,
+      "canonicalKey": "aliza_imports::old_fashioned",
+      "name": "Old Fashioned",
+      "description": "Updated text",
+      "structuredIngredients": [
+        { "amountId": 10, "ingredientName": "Bourbon" }
+      ],
+      "structuredSteps": [
+        { "instruction": "Stir with ice." }
+      ]
+    }
+  ]
+}
+```
+
+Matching/upsert rules:
+1. If `cocktailId` exists in this DB, update that record.
+2. Else if `canonicalKey` matches, update that record.
+3. Else create a new cocktail.
+
+Transaction behavior:
+- Import executes **per item transactionally**.
+- Each item commits all related changes (cocktail + ingredients + steps) or rolls back completely.
+
+Response summary shape:
+
+```json
+{
+  "created": 1,
+  "updated": 2,
+  "failed": 1,
+  "items": [
+    { "inputIndex": 0, "cocktailId": 101, "canonicalKey": "my_source::demo", "action": "created", "error": null },
+    { "inputIndex": 1, "cocktailId": null, "canonicalKey": null, "action": "failed", "error": "Name is required." }
+  ]
+}
+```
+
+Web admin UX:
+- `/admin` includes import summary totals.
+- You can download per-item import results as CSV (`inputIndex,action,cocktailId,canonicalKey,error`).

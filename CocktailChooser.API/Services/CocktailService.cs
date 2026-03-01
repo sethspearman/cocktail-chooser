@@ -49,6 +49,7 @@ public class CocktailService : ICocktailService
     private readonly ICocktailIngredientRepository _cocktailIngredientRepository;
     private readonly ICocktailRecipeRepository _cocktailRecipeRepository;
     private readonly IAmountRepository _amountRepository;
+    private readonly IRecipeSourceRepository _recipeSourceRepository;
     private readonly IOcrRecipeParser _recipeParser;
 
     public CocktailService(
@@ -57,6 +58,7 @@ public class CocktailService : ICocktailService
         ICocktailIngredientRepository cocktailIngredientRepository,
         ICocktailRecipeRepository cocktailRecipeRepository,
         IAmountRepository amountRepository,
+        IRecipeSourceRepository recipeSourceRepository,
         IOcrRecipeParser recipeParser)
     {
         _cocktailRepository = cocktailRepository;
@@ -64,6 +66,7 @@ public class CocktailService : ICocktailService
         _cocktailIngredientRepository = cocktailIngredientRepository;
         _cocktailRecipeRepository = cocktailRecipeRepository;
         _amountRepository = amountRepository;
+        _recipeSourceRepository = recipeSourceRepository;
         _recipeParser = recipeParser;
     }
 
@@ -192,6 +195,162 @@ public class CocktailService : ICocktailService
         }
 
         return MapToDto(cocktail);
+    }
+
+    public async Task<IEnumerable<AdminCocktailPortDto>> ExportAdminCocktailsAsync(
+        int? cocktailId = null,
+        int? sourceId = null,
+        int? offset = null,
+        int? limit = null)
+    {
+        var cocktails = (await _cocktailRepository.GetAllAsync()).ToList();
+        if (cocktailId.HasValue)
+        {
+            cocktails = cocktails.Where(c => c.Id == cocktailId.Value).ToList();
+        }
+
+        if (sourceId.HasValue)
+        {
+            cocktails = cocktails.Where(c => c.CocktailSourceId == sourceId.Value).ToList();
+        }
+
+        var normalizedOffset = Math.Max(offset.GetValueOrDefault(0), 0);
+        var normalizedLimit = limit.HasValue ? Math.Max(limit.Value, 0) : (int?)null;
+        IEnumerable<CocktailRecord> orderedCocktails = cocktails.OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase);
+        if (normalizedOffset > 0)
+        {
+            orderedCocktails = orderedCocktails.Skip(normalizedOffset);
+        }
+
+        if (normalizedLimit.HasValue)
+        {
+            orderedCocktails = orderedCocktails.Take(normalizedLimit.Value);
+        }
+
+        var result = new List<AdminCocktailPortDto>();
+        foreach (var cocktail in orderedCocktails)
+        {
+            var ingredientRows = (await _cocktailIngredientRepository.GetByCocktailIdAsync(cocktail.Id)).ToList();
+            var stepRows = (await _cocktailRecipeRepository.GetByCocktailIdAsync(cocktail.Id))
+                .OrderBy(s => s.StepNumber)
+                .ToList();
+
+            result.Add(new AdminCocktailPortDto
+            {
+                CocktailId = cocktail.Id,
+                CanonicalKey = cocktail.CanonicalKey,
+                Name = cocktail.Name,
+                Description = cocktail.Description,
+                Method = cocktail.Method,
+                GlassTypeId = cocktail.GlassTypeId,
+                TimePeriodId = cocktail.TimePeriodId,
+                IsPopular = cocktail.IsPopular,
+                IsApproved = cocktail.IsApproved,
+                IsUserSubmitted = cocktail.IsUserSubmitted,
+                SubmittedByUserId = cocktail.SubmittedByUserId,
+                CocktailSourceId = cocktail.CocktailSourceId,
+                StructuredIngredients = ingredientRows
+                    .Select(x => new CocktailIngredientEntryDto
+                    {
+                        IngredientName = x.IngredientName,
+                        AmountId = x.AmountId,
+                        AmountText = x.AmountText
+                    })
+                    .ToList(),
+                StructuredSteps = stepRows
+                    .Select(x => new CocktailStepEntryDto
+                    {
+                        Instruction = x.Instruction
+                    })
+                    .ToList()
+            });
+        }
+
+        return result;
+    }
+
+    public async Task<AdminCocktailImportResultDto> ImportAdminCocktailsAsync(AdminCocktailImportRequestDto request)
+    {
+        var response = new AdminCocktailImportResultDto();
+        var inputCocktails = request?.Cocktails ?? new List<AdminCocktailPortDto>();
+
+        for (var index = 0; index < inputCocktails.Count; index++)
+        {
+            var item = inputCocktails[index];
+            var itemResult = new AdminCocktailImportItemResultDto { InputIndex = index };
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(item.Name))
+                {
+                    throw new ArgumentException("Name is required.");
+                }
+
+                var existing = item.CocktailId.HasValue
+                    ? await _cocktailRepository.GetByIdAsync(item.CocktailId.Value)
+                    : !string.IsNullOrWhiteSpace(item.CanonicalKey)
+                    ? await _cocktailRepository.GetByCanonicalKeyAsync(NormalizeCanonicalKey(item.CanonicalKey))
+                    : null;
+
+                var importRecord = new AdminCocktailImportRecord
+                {
+                    CocktailId = item.CocktailId,
+                    CanonicalKey = item.CanonicalKey,
+                    Name = item.Name.Trim(),
+                    Description = NullIfWhiteSpace(item.Description),
+                    Method = NullIfWhiteSpace(item.Method),
+                    GlassTypeId = item.GlassTypeId,
+                    TimePeriodId = item.TimePeriodId,
+                    IsPopular = item.IsPopular,
+                    IsApproved = item.IsApproved,
+                    IsUserSubmitted = item.IsUserSubmitted,
+                    SubmittedByUserId = item.SubmittedByUserId,
+                    CocktailSourceId = item.CocktailSourceId,
+                    Ingredients = (item.StructuredIngredients ?? new List<CocktailIngredientEntryDto>())
+                        .Where(x => !string.IsNullOrWhiteSpace(x.IngredientName))
+                        .Select(x => new AdminCocktailImportIngredientRecord
+                        {
+                            IngredientName = x.IngredientName!.Trim(),
+                            AmountId = x.AmountId,
+                            AmountText = NullIfWhiteSpace(x.AmountText)
+                        })
+                        .ToList(),
+                    Steps = (item.StructuredSteps ?? new List<CocktailStepEntryDto>())
+                        .Where(x => !string.IsNullOrWhiteSpace(x.Instruction))
+                        .Select(x => new AdminCocktailImportStepRecord
+                        {
+                            Instruction = x.Instruction!.Trim()
+                        })
+                        .ToList()
+                };
+
+                var savedRecord = await _cocktailRepository.UpsertAdminImportAsync(importRecord);
+
+                if (existing == null)
+                {
+                    response.Created++;
+                    itemResult.Action = "created";
+                }
+                else
+                {
+                    response.Updated++;
+                    itemResult.Action = "updated";
+                }
+
+                itemResult.CocktailId = savedRecord.Id;
+                itemResult.CanonicalKey = savedRecord.CanonicalKey;
+            }
+            catch (Exception ex)
+            {
+                response.Failed++;
+                itemResult.Action = "failed";
+                itemResult.Error = ex.Message;
+            }
+
+            response.Items.Add(itemResult);
+        }
+
+        return response;
     }
 
     public async Task<CocktailTextPreviewResponseDto> PreviewFromTextAsync(CocktailTextPreviewRequestDto requestDto)
@@ -327,6 +486,7 @@ public class CocktailService : ICocktailService
         cocktailDto.StepLines = NullIfWhiteSpace(cocktailDto.StepLines);
         cocktailDto.IsApproved ??= 0;
         cocktailDto.IsUserSubmitted ??= 0;
+        cocktailDto.CanonicalKey = await BuildUniqueCanonicalKeyAsync(cocktailDto);
 
         var createdCocktail = await _cocktailRepository.CreateAsync(MapToRecord(cocktailDto));
 
@@ -337,6 +497,7 @@ public class CocktailService : ICocktailService
 
     public async Task<bool> UpdateCocktailAsync(CocktailDto cocktailDto)
     {
+        cocktailDto.CanonicalKey = await BuildUniqueCanonicalKeyAsync(cocktailDto, cocktailDto.Id);
         return await _cocktailRepository.UpdateAsync(MapToRecord(cocktailDto));
     }
 
@@ -912,6 +1073,7 @@ public class CocktailService : ICocktailService
         return new CocktailDto
         {
             Id = cocktail.Id,
+            CanonicalKey = cocktail.CanonicalKey,
             Name = cocktail.Name,
             Description = cocktail.Description,
             Method = cocktail.Method,
@@ -930,6 +1092,7 @@ public class CocktailService : ICocktailService
         return new CocktailRecord
         {
             Id = cocktail.Id,
+            CanonicalKey = cocktail.CanonicalKey ?? string.Empty,
             Name = cocktail.Name,
             Description = cocktail.Description,
             Method = cocktail.Method,
@@ -946,6 +1109,78 @@ public class CocktailService : ICocktailService
     private static bool IsApprovedForPublicRead(CocktailRecord cocktail)
     {
         return cocktail.IsApproved.GetValueOrDefault() == 1;
+    }
+
+    private async Task<string> BuildUniqueCanonicalKeyAsync(CocktailDto cocktailDto, int? existingCocktailId = null)
+    {
+        var canonicalKeyBase = string.IsNullOrWhiteSpace(cocktailDto.CanonicalKey)
+            ? BuildCanonicalKeyBase(await ResolveCanonicalSourceTokenAsync(cocktailDto.CocktailSourceId), cocktailDto.Name)
+            : NormalizeCanonicalKey(cocktailDto.CanonicalKey);
+        if (!await _cocktailRepository.IsCanonicalKeyInUseAsync(canonicalKeyBase, existingCocktailId))
+        {
+            return canonicalKeyBase;
+        }
+
+        var suffix = 2;
+        while (true)
+        {
+            var candidate = $"{canonicalKeyBase}_{suffix}";
+            if (!await _cocktailRepository.IsCanonicalKeyInUseAsync(candidate, existingCocktailId))
+            {
+                return candidate;
+            }
+
+            suffix++;
+        }
+    }
+
+    private async Task<string> ResolveCanonicalSourceTokenAsync(int? cocktailSourceId)
+    {
+        if (!cocktailSourceId.HasValue)
+        {
+            return "manual";
+        }
+
+        var source = await _recipeSourceRepository.GetByIdAsync(cocktailSourceId.Value);
+        return source == null || string.IsNullOrWhiteSpace(source.Name) ? "manual" : source.Name;
+    }
+
+    private static string BuildCanonicalKeyBase(string sourceToken, string cocktailName)
+    {
+        var normalizedSource = NormalizeCanonicalToken(sourceToken);
+        var normalizedName = NormalizeCanonicalToken(cocktailName);
+        return $"{normalizedSource}::{normalizedName}";
+    }
+
+    private static string NormalizeCanonicalKey(string? canonicalKey)
+    {
+        if (string.IsNullOrWhiteSpace(canonicalKey))
+        {
+            return "unknown::unknown";
+        }
+
+        var separatorIndex = canonicalKey.IndexOf("::", StringComparison.Ordinal);
+        if (separatorIndex < 0)
+        {
+            return NormalizeCanonicalToken(canonicalKey);
+        }
+
+        var sourceToken = canonicalKey[..separatorIndex];
+        var nameToken = canonicalKey[(separatorIndex + 2)..];
+        return $"{NormalizeCanonicalToken(sourceToken)}::{NormalizeCanonicalToken(nameToken)}";
+    }
+
+    private static string NormalizeCanonicalToken(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return "unknown";
+        }
+
+        var normalized = input.ToLowerInvariant().Trim();
+        normalized = Regex.Replace(normalized, @"[^a-z0-9]+", "_");
+        normalized = Regex.Replace(normalized, @"_+", "_").Trim('_');
+        return normalized.Length == 0 ? "unknown" : normalized;
     }
 
     private sealed class ParsedPasteDraft

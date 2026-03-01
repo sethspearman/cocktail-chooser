@@ -72,6 +72,7 @@ namespace CocktailChooser.Tests.Controllers
         {
             var cocktailDto = new CocktailDto { Name = "Mojito" };
             var createdCocktailDto = new CocktailDto { Id = 1, Name = "Mojito" };
+            _mockCurrentUserContext.SetupGet(x => x.UserId).Returns(1);
 
             _mockService.Setup(s => s.CreateCocktailAsync(cocktailDto))
                 .ReturnsAsync(createdCocktailDto);
@@ -87,6 +88,7 @@ namespace CocktailChooser.Tests.Controllers
         public async Task PutCocktail_ReturnsNoContent_WhenCocktailIsUpdated()
         {
             var cocktailDto = new CocktailDto { Id = 1, Name = "Mojito" };
+            _mockCurrentUserContext.SetupGet(x => x.UserId).Returns(1);
 
             _mockService.Setup(s => s.UpdateCocktailAsync(cocktailDto))
                 .ReturnsAsync(true);
@@ -99,12 +101,23 @@ namespace CocktailChooser.Tests.Controllers
         [Fact]
         public async Task DeleteCocktail_ReturnsNoContent_WhenCocktailIsDeleted()
         {
+            _mockCurrentUserContext.SetupGet(x => x.UserId).Returns(1);
             _mockService.Setup(s => s.DeleteCocktailAsync(1))
                 .ReturnsAsync(true);
 
             var result = await _controller.DeleteCocktail(1);
 
             Assert.IsType<NoContentResult>(result);
+        }
+
+        [Fact]
+        public async Task PostCocktail_ReturnsForbid_WhenUserIsNotAdmin()
+        {
+            _mockCurrentUserContext.SetupGet(x => x.UserId).Returns(2);
+
+            var result = await _controller.PostCocktail(new CocktailDto { Name = "Mojito" });
+
+            Assert.IsType<ForbidResult>(result.Result);
         }
 
         [Fact]
@@ -207,6 +220,59 @@ namespace CocktailChooser.Tests.Controllers
             var result = await _controller.RejectCocktail(10, true);
 
             Assert.IsType<NoContentResult>(result);
+        }
+
+        [Fact]
+        public async Task ExportAdminCocktails_ReturnsForbid_WhenUserIsNotAdmin()
+        {
+            _mockCurrentUserContext.SetupGet(x => x.UserId).Returns(2);
+
+            var result = await _controller.ExportAdminCocktails();
+
+            Assert.IsType<ForbidResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task ExportAdminCocktails_ReturnsOk_WhenAdmin()
+        {
+            _mockCurrentUserContext.SetupGet(x => x.UserId).Returns(1);
+            _mockService.Setup(s => s.ExportAdminCocktailsAsync(null, null, null, null))
+                .ReturnsAsync(new List<AdminCocktailPortDto>
+                {
+                    new() { CocktailId = 1, Name = "Negroni", CanonicalKey = "book::negroni" }
+                });
+
+            var result = await _controller.ExportAdminCocktails();
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var payload = Assert.IsType<List<AdminCocktailPortDto>>(okResult.Value);
+            Assert.Single(payload);
+            Assert.Equal("Negroni", payload[0].Name);
+        }
+
+        [Fact]
+        public async Task ImportAdminCocktails_ReturnsOk_WhenAdmin()
+        {
+            _mockCurrentUserContext.SetupGet(x => x.UserId).Returns(1);
+            _mockService.Setup(s => s.ImportAdminCocktailsAsync(It.IsAny<AdminCocktailImportRequestDto>()))
+                .ReturnsAsync(new AdminCocktailImportResultDto
+                {
+                    Created = 1,
+                    Updated = 0,
+                    Failed = 0
+                });
+
+            var result = await _controller.ImportAdminCocktails(new AdminCocktailImportRequestDto
+            {
+                Cocktails = new List<AdminCocktailPortDto>
+                {
+                    new() { Name = "Margarita" }
+                }
+            });
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var payload = Assert.IsType<AdminCocktailImportResultDto>(okResult.Value);
+            Assert.Equal(1, payload.Created);
         }
     }
 }

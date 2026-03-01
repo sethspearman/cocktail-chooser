@@ -3,6 +3,7 @@ using CocktailChooser.API.DTOs;
 using CocktailChooser.API.Services;
 using CocktailChooser.API.Auth;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace CocktailChooser.API.Controllers
@@ -58,9 +59,61 @@ namespace CocktailChooser.API.Controllers
             return Ok(cocktail);
         }
 
+        [HttpGet("admin/export")]
+        public async Task<ActionResult<IEnumerable<AdminCocktailPortDto>>> ExportAdminCocktails(
+            [FromQuery] int? sourceId = null,
+            [FromQuery] int? offset = null,
+            [FromQuery] int? limit = null)
+        {
+            if (!IsAdminUser())
+            {
+                return Forbid();
+            }
+
+            var payload = await _cocktailService.ExportAdminCocktailsAsync(
+                sourceId: sourceId,
+                offset: offset,
+                limit: limit);
+            return Ok(payload);
+        }
+
+        [HttpGet("admin/export/{id}")]
+        public async Task<ActionResult<AdminCocktailPortDto>> ExportAdminCocktail(int id)
+        {
+            if (!IsAdminUser())
+            {
+                return Forbid();
+            }
+
+            var payload = (await _cocktailService.ExportAdminCocktailsAsync(cocktailId: id)).ToList();
+            if (payload.Count == 0)
+            {
+                return NotFound();
+            }
+
+            return Ok(payload[0]);
+        }
+
+        [HttpPost("admin/import")]
+        public async Task<ActionResult<AdminCocktailImportResultDto>> ImportAdminCocktails(AdminCocktailImportRequestDto request)
+        {
+            if (!IsAdminUser())
+            {
+                return Forbid();
+            }
+
+            var result = await _cocktailService.ImportAdminCocktailsAsync(request);
+            return Ok(result);
+        }
+
         [HttpPost]
         public async Task<ActionResult<CocktailDto>> PostCocktail(CocktailDto cocktailDto)
         {
+            if (!IsAdminUser())
+            {
+                return Forbid();
+            }
+
             var newCocktail = await _cocktailService.CreateCocktailAsync(cocktailDto);
             return CreatedAtAction(nameof(GetCocktail), new { id = newCocktail.Id }, newCocktail);
         }
@@ -128,6 +181,11 @@ namespace CocktailChooser.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCocktail(int id, CocktailDto cocktailDto)
         {
+            if (!IsAdminUser())
+            {
+                return Forbid();
+            }
+
             if (id != cocktailDto.Id)
             {
                 return BadRequest();
@@ -145,6 +203,11 @@ namespace CocktailChooser.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCocktail(int id)
         {
+            if (!IsAdminUser())
+            {
+                return Forbid();
+            }
+
             var result = await _cocktailService.DeleteCocktailAsync(id);
             if (!result)
             {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using CocktailChooser.Data.Repositories;
@@ -26,6 +27,7 @@ public class CocktailRepositoryIntegrationTests : IDisposable
     {
         var created = await _repository.CreateAsync(new CocktailRecord
         {
+            CanonicalKey = "manual::old_fashioned",
             Name = "Old Fashioned",
             Method = "Stir with ice"
         });
@@ -43,6 +45,7 @@ public class CocktailRepositoryIntegrationTests : IDisposable
         var updated = await _repository.UpdateAsync(new CocktailRecord
         {
             Id = 404,
+            CanonicalKey = "manual::missing",
             Name = "Missing"
         });
 
@@ -54,6 +57,7 @@ public class CocktailRepositoryIntegrationTests : IDisposable
     {
         var created = await _repository.CreateAsync(new CocktailRecord
         {
+            CanonicalKey = "manual::daiquiri",
             Name = "Daiquiri"
         });
 
@@ -64,12 +68,95 @@ public class CocktailRepositoryIntegrationTests : IDisposable
         Assert.Null(afterDelete);
     }
 
+    [Fact]
+    public async Task UpsertAdminImportAsync_UpdatesByCanonicalKey_AndReplacesChildren()
+    {
+        var created = await _repository.UpsertAdminImportAsync(new AdminCocktailImportRecord
+        {
+            CanonicalKey = "book::negroni",
+            Name = "Negroni",
+            Ingredients = new List<AdminCocktailImportIngredientRecord>
+            {
+                new() { IngredientName = "Gin", AmountText = "1 oz" },
+                new() { IngredientName = "Campari", AmountText = "1 oz" }
+            },
+            Steps = new List<AdminCocktailImportStepRecord>
+            {
+                new() { Instruction = "Stir with ice." },
+                new() { Instruction = "Strain over fresh ice." }
+            }
+        });
+
+        var updated = await _repository.UpsertAdminImportAsync(new AdminCocktailImportRecord
+        {
+            CanonicalKey = "book::negroni",
+            Name = "Negroni (Revised)",
+            Ingredients = new List<AdminCocktailImportIngredientRecord>
+            {
+                new() { IngredientName = "Gin", AmountText = "1.5 oz" }
+            },
+            Steps = new List<AdminCocktailImportStepRecord>
+            {
+                new() { Instruction = "Build in mixing glass and stir." }
+            }
+        });
+
+        Assert.Equal(created.Id, updated.Id);
+        Assert.Equal("Negroni (Revised)", updated.Name);
+
+        using var connection = new SqliteConnection(_connectionString);
+        var ingredientCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM CocktailIngredients WHERE CocktailId = @Id;", new { Id = updated.Id });
+        var stepCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM CocktailSteps WHERE CocktailId = @Id;", new { Id = updated.Id });
+
+        Assert.Equal(1, ingredientCount);
+        Assert.Equal(1, stepCount);
+    }
+
+    [Fact]
+    public async Task UpsertAdminImportAsync_RollsBack_AllChanges_WhenChildInsertFails()
+    {
+        using (var connection = new SqliteConnection(_connectionString))
+        {
+            connection.Execute("""
+                CREATE TRIGGER IF NOT EXISTS trg_fail_on_bad_ingredient
+                BEFORE INSERT ON CocktailIngredients
+                WHEN NEW.IngredientId = 9999
+                BEGIN
+                    SELECT RAISE(ABORT, 'forced ingredient failure');
+                END;
+                """);
+        }
+
+        using (var connection = new SqliteConnection(_connectionString))
+        {
+            connection.Execute("INSERT INTO Ingredients (Id, Name) VALUES (9999, 'Bad Ingredient');");
+        }
+
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
+            await _repository.UpsertAdminImportAsync(new AdminCocktailImportRecord
+            {
+                CanonicalKey = "manual::rollback_test",
+                Name = "Rollback Test",
+                Ingredients = new List<AdminCocktailImportIngredientRecord>
+                {
+                    new() { IngredientName = "Bad Ingredient" }
+                }
+            }));
+
+        using (var connection = new SqliteConnection(_connectionString))
+        {
+            var cocktailExists = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM Cocktails WHERE CanonicalKey = 'manual::rollback_test';");
+            Assert.Equal(0, cocktailExists);
+        }
+    }
+
     private void InitializeDatabase()
     {
         using var connection = new SqliteConnection(_connectionString);
         connection.Execute("""
             CREATE TABLE IF NOT EXISTS Cocktails (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                CanonicalKey TEXT NOT NULL UNIQUE,
                 Name TEXT NOT NULL,
                 Description TEXT,
                 Method TEXT,
@@ -80,6 +167,32 @@ public class CocktailRepositoryIntegrationTests : IDisposable
                 IsUserSubmitted INTEGER NOT NULL DEFAULT 0,
                 SubmittedByUserId INTEGER,
                 CocktailSourceId INTEGER
+            );
+            CREATE TABLE IF NOT EXISTS CocktailSource (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS Ingredients (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS Amounts (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                MeasurementName TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS CocktailIngredients (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                CocktailId INTEGER NOT NULL,
+                IngredientId INTEGER NOT NULL,
+                AmountId INTEGER,
+                AmountText TEXT,
+                SortOrder INTEGER
+            );
+            CREATE TABLE IF NOT EXISTS CocktailSteps (
+                CocktailId INTEGER NOT NULL,
+                StepNumber INTEGER NOT NULL,
+                Instruction TEXT,
+                PRIMARY KEY (CocktailId, StepNumber)
             );
             CREATE TABLE IF NOT EXISTS CocktailTimePeriods (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,

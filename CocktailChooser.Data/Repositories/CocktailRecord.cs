@@ -3,6 +3,7 @@ namespace CocktailChooser.Data.Repositories;
 public class CocktailRecord
 {
     public int Id { get; set; }
+    public string CanonicalKey { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Method { get; set; }

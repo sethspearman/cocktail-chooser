@@ -12,6 +12,7 @@ public class CocktailServiceTests
     private readonly Mock<ICocktailIngredientRepository> _cocktailIngredientRepositoryMock;
     private readonly Mock<ICocktailRecipeRepository> _cocktailRecipeRepositoryMock;
     private readonly Mock<IAmountRepository> _amountRepositoryMock;
+    private readonly Mock<IRecipeSourceRepository> _recipeSourceRepositoryMock;
     private readonly Mock<IOcrRecipeParser> _recipeParserMock;
     private readonly CocktailService _service;
 
@@ -22,13 +23,17 @@ public class CocktailServiceTests
         _cocktailIngredientRepositoryMock = new Mock<ICocktailIngredientRepository>();
         _cocktailRecipeRepositoryMock = new Mock<ICocktailRecipeRepository>();
         _amountRepositoryMock = new Mock<IAmountRepository>();
+        _recipeSourceRepositoryMock = new Mock<IRecipeSourceRepository>();
         _recipeParserMock = new Mock<IOcrRecipeParser>();
+        _repositoryMock.Setup(r => r.IsCanonicalKeyInUseAsync(It.IsAny<string>(), It.IsAny<int?>()))
+            .ReturnsAsync(false);
         _service = new CocktailService(
             _repositoryMock.Object,
             _ingredientRepositoryMock.Object,
             _cocktailIngredientRepositoryMock.Object,
             _cocktailRecipeRepositoryMock.Object,
             _amountRepositoryMock.Object,
+            _recipeSourceRepositoryMock.Object,
             _recipeParserMock.Object);
     }
 

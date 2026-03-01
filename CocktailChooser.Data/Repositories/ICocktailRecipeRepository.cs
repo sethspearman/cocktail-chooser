@@ -8,4 +8,5 @@ public interface ICocktailRecipeRepository
     Task<CocktailRecipeRecord> CreateAsync(CocktailRecipeRecord recipe);
     Task<bool> UpdateAsync(CocktailRecipeRecord recipe);
     Task<bool> DeleteAsync(int cocktailId, int stepNumber);
+    Task<int> DeleteByCocktailIdAsync(int cocktailId);
 }

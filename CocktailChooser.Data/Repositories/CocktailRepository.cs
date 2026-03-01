@@ -1,12 +1,17 @@
 using Dapper;
 using Microsoft.Data.Sqlite;
+using System.Data.Common;
+using System.Text.RegularExpressions;
 
 namespace CocktailChooser.Data.Repositories;
 
 public class CocktailRepository : ICocktailRepository
 {
+    private static readonly Regex CanonicalTokenRegex = new(@"[^a-z0-9]+", RegexOptions.Compiled);
+
     private const string SelectColumns = """
         Id,
+        CanonicalKey,
         Name,
         Description,
         Method,
@@ -40,6 +45,29 @@ public class CocktailRepository : ICocktailRepository
         return await connection.QuerySingleOrDefaultAsync<CocktailRecord>(sql, new { Id = id });
     }
 
+    public async Task<CocktailRecord?> GetByCanonicalKeyAsync(string canonicalKey)
+    {
+        const string sql = $"SELECT {SelectColumns} FROM Cocktails WHERE CanonicalKey = @CanonicalKey;";
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.QuerySingleOrDefaultAsync<CocktailRecord>(sql, new { CanonicalKey = canonicalKey });
+    }
+
+    public async Task<bool> IsCanonicalKeyInUseAsync(string canonicalKey, int? excludeCocktailId = null)
+    {
+        const string sql = """
+            SELECT EXISTS (
+                SELECT 1
+                FROM Cocktails
+                WHERE CanonicalKey = @CanonicalKey
+                  AND (@ExcludeCocktailId IS NULL OR Id <> @ExcludeCocktailId)
+            );
+            """;
+
+        await using var connection = new SqliteConnection(_connectionString);
+        var inUse = await connection.ExecuteScalarAsync<long>(sql, new { CanonicalKey = canonicalKey, ExcludeCocktailId = excludeCocktailId });
+        return inUse == 1;
+    }
+
     public async Task<IEnumerable<LookupOptionRecord>> GetTimePeriodsAsync()
     {
         const string sql = """
@@ -57,6 +85,7 @@ public class CocktailRepository : ICocktailRepository
         const string sql = """
             INSERT INTO Cocktails
             (
+                CanonicalKey,
                 Name,
                 Description,
                 Method,
@@ -70,6 +99,7 @@ public class CocktailRepository : ICocktailRepository
             )
             VALUES
             (
+                @CanonicalKey,
                 @Name,
                 @Description,
                 @Method,
@@ -94,6 +124,7 @@ public class CocktailRepository : ICocktailRepository
         const string sql = """
             UPDATE Cocktails
             SET
+                CanonicalKey = @CanonicalKey,
                 Name = @Name,
                 Description = @Description,
                 Method = @Method,
@@ -112,11 +143,389 @@ public class CocktailRepository : ICocktailRepository
         return rows > 0;
     }
 
+    public async Task<CocktailRecord> UpsertAdminImportAsync(AdminCocktailImportRecord importRecord)
+    {
+        if (string.IsNullOrWhiteSpace(importRecord.Name))
+        {
+            throw new ArgumentException("Name is required.", nameof(importRecord));
+        }
+
+        await using var connection = new SqliteConnection(_connectionString);
+        await connection.OpenAsync();
+        await using var tx = await connection.BeginTransactionAsync();
+
+        var existingId = await ResolveExistingCocktailIdAsync(connection, tx, importRecord.CocktailId, importRecord.CanonicalKey);
+        var canonicalKey = await ResolveUniqueCanonicalKeyAsync(connection, tx, importRecord, existingId);
+
+        int cocktailId;
+        if (existingId.HasValue)
+        {
+            cocktailId = existingId.Value;
+            await connection.ExecuteAsync(
+                """
+                UPDATE Cocktails
+                SET
+                    CanonicalKey = @CanonicalKey,
+                    Name = @Name,
+                    Description = @Description,
+                    Method = @Method,
+                    GlassTypeId = @GlassTypeId,
+                    TimePeriodId = @TimePeriodId,
+                    IsPopular = @IsPopular,
+                    IsApproved = COALESCE(@IsApproved, IsApproved),
+                    IsUserSubmitted = COALESCE(@IsUserSubmitted, IsUserSubmitted),
+                    SubmittedByUserId = @SubmittedByUserId,
+                    CocktailSourceId = @CocktailSourceId
+                WHERE Id = @Id;
+                """,
+                new
+                {
+                    Id = cocktailId,
+                    CanonicalKey = canonicalKey,
+                    Name = importRecord.Name.Trim(),
+                    importRecord.Description,
+                    importRecord.Method,
+                    importRecord.GlassTypeId,
+                    importRecord.TimePeriodId,
+                    importRecord.IsPopular,
+                    importRecord.IsApproved,
+                    importRecord.IsUserSubmitted,
+                    importRecord.SubmittedByUserId,
+                    importRecord.CocktailSourceId
+                },
+                tx);
+        }
+        else
+        {
+            cocktailId = (int)(await connection.ExecuteScalarAsync<long>(
+                """
+                INSERT INTO Cocktails
+                (
+                    CanonicalKey,
+                    Name,
+                    Description,
+                    Method,
+                    GlassTypeId,
+                    TimePeriodId,
+                    IsPopular,
+                    IsApproved,
+                    IsUserSubmitted,
+                    SubmittedByUserId,
+                    CocktailSourceId
+                )
+                VALUES
+                (
+                    @CanonicalKey,
+                    @Name,
+                    @Description,
+                    @Method,
+                    @GlassTypeId,
+                    @TimePeriodId,
+                    @IsPopular,
+                    COALESCE(@IsApproved, 1),
+                    COALESCE(@IsUserSubmitted, 0),
+                    @SubmittedByUserId,
+                    @CocktailSourceId
+                );
+                SELECT last_insert_rowid();
+                """,
+                new
+                {
+                    CanonicalKey = canonicalKey,
+                    Name = importRecord.Name.Trim(),
+                    importRecord.Description,
+                    importRecord.Method,
+                    importRecord.GlassTypeId,
+                    importRecord.TimePeriodId,
+                    importRecord.IsPopular,
+                    importRecord.IsApproved,
+                    importRecord.IsUserSubmitted,
+                    importRecord.SubmittedByUserId,
+                    importRecord.CocktailSourceId
+                },
+                tx))!;
+        }
+
+        await connection.ExecuteAsync("DELETE FROM CocktailIngredients WHERE CocktailId = @CocktailId;", new { CocktailId = cocktailId }, tx);
+        await connection.ExecuteAsync("DELETE FROM CocktailSteps WHERE CocktailId = @CocktailId;", new { CocktailId = cocktailId }, tx);
+
+        var normalizedIngredients = (importRecord.Ingredients ?? new List<AdminCocktailImportIngredientRecord>())
+            .Where(x => !string.IsNullOrWhiteSpace(x.IngredientName))
+            .Select(x => new AdminCocktailImportIngredientRecord
+            {
+                IngredientName = x.IngredientName.Trim(),
+                AmountId = x.AmountId,
+                AmountText = string.IsNullOrWhiteSpace(x.AmountText) ? null : x.AmountText.Trim()
+            })
+            .ToList();
+
+        for (var i = 0; i < normalizedIngredients.Count; i++)
+        {
+            var row = normalizedIngredients[i];
+            var ingredientId = await ResolveOrCreateIngredientIdAsync(connection, tx, row.IngredientName);
+            var amountId = await ResolveAmountIdAsync(connection, tx, row.AmountId, row.AmountText);
+            var amountText = amountId.HasValue ? null : row.AmountText;
+
+            await connection.ExecuteAsync(
+                """
+                INSERT INTO CocktailIngredients
+                (
+                    CocktailId,
+                    IngredientId,
+                    AmountId,
+                    AmountText,
+                    SortOrder
+                )
+                VALUES
+                (
+                    @CocktailId,
+                    @IngredientId,
+                    @AmountId,
+                    @AmountText,
+                    @SortOrder
+                );
+                """,
+                new
+                {
+                    CocktailId = cocktailId,
+                    IngredientId = ingredientId,
+                    AmountId = amountId,
+                    AmountText = amountText,
+                    SortOrder = i + 1
+                },
+                tx);
+        }
+
+        var normalizedSteps = (importRecord.Steps ?? new List<AdminCocktailImportStepRecord>())
+            .Where(x => !string.IsNullOrWhiteSpace(x.Instruction))
+            .Select(x => x.Instruction.Trim())
+            .ToList();
+
+        for (var i = 0; i < normalizedSteps.Count; i++)
+        {
+            await connection.ExecuteAsync(
+                """
+                INSERT INTO CocktailSteps
+                (
+                    CocktailId,
+                    StepNumber,
+                    Instruction
+                )
+                VALUES
+                (
+                    @CocktailId,
+                    @StepNumber,
+                    @Instruction
+                );
+                """,
+                new
+                {
+                    CocktailId = cocktailId,
+                    StepNumber = i + 1,
+                    Instruction = normalizedSteps[i]
+                },
+                tx);
+        }
+
+        await tx.CommitAsync();
+        return (await GetByIdAsync(cocktailId))!;
+    }
+
     public async Task<bool> DeleteAsync(int id)
     {
         const string sql = "DELETE FROM Cocktails WHERE Id = @Id;";
         await using var connection = new SqliteConnection(_connectionString);
         var rows = await connection.ExecuteAsync(sql, new { Id = id });
         return rows > 0;
+    }
+
+    private static async Task<int?> ResolveExistingCocktailIdAsync(
+        SqliteConnection connection,
+        DbTransaction tx,
+        int? cocktailId,
+        string? canonicalKey)
+    {
+        if (cocktailId.HasValue)
+        {
+            var idById = await connection.ExecuteScalarAsync<long?>(
+                "SELECT Id FROM Cocktails WHERE Id = @Id;",
+                new { Id = cocktailId.Value },
+                tx);
+            if (idById.HasValue)
+            {
+                return (int)idById.Value;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(canonicalKey))
+        {
+            return null;
+        }
+
+        var normalized = NormalizeCanonicalKey(canonicalKey);
+        var idByCanonical = await connection.ExecuteScalarAsync<long?>(
+            "SELECT Id FROM Cocktails WHERE CanonicalKey = @CanonicalKey;",
+            new { CanonicalKey = normalized },
+            tx);
+        return idByCanonical.HasValue ? (int)idByCanonical.Value : null;
+    }
+
+    private static async Task<string> ResolveUniqueCanonicalKeyAsync(
+        SqliteConnection connection,
+        DbTransaction tx,
+        AdminCocktailImportRecord importRecord,
+        int? existingCocktailId)
+    {
+        var baseKey = string.IsNullOrWhiteSpace(importRecord.CanonicalKey)
+            ? await BuildCanonicalKeyFromRecordAsync(connection, tx, importRecord)
+            : NormalizeCanonicalKey(importRecord.CanonicalKey);
+        if (!await IsCanonicalKeyInUseAsync(connection, tx, baseKey, existingCocktailId))
+        {
+            return baseKey;
+        }
+
+        var suffix = 2;
+        while (true)
+        {
+            var candidate = $"{baseKey}_{suffix}";
+            if (!await IsCanonicalKeyInUseAsync(connection, tx, candidate, existingCocktailId))
+            {
+                return candidate;
+            }
+
+            suffix++;
+        }
+    }
+
+    private static async Task<bool> IsCanonicalKeyInUseAsync(
+        SqliteConnection connection,
+        DbTransaction tx,
+        string canonicalKey,
+        int? excludeCocktailId)
+    {
+        var found = await connection.ExecuteScalarAsync<long?>(
+            """
+            SELECT Id
+            FROM Cocktails
+            WHERE CanonicalKey = @CanonicalKey
+              AND (@ExcludeCocktailId IS NULL OR Id <> @ExcludeCocktailId)
+            LIMIT 1;
+            """,
+            new { CanonicalKey = canonicalKey, ExcludeCocktailId = excludeCocktailId },
+            tx);
+        return found.HasValue;
+    }
+
+    private static async Task<string> BuildCanonicalKeyFromRecordAsync(
+        SqliteConnection connection,
+        DbTransaction tx,
+        AdminCocktailImportRecord importRecord)
+    {
+        var sourceName = "manual";
+        if (importRecord.CocktailSourceId.HasValue)
+        {
+            var dbSourceName = await connection.ExecuteScalarAsync<string?>(
+                "SELECT Name FROM CocktailSource WHERE Id = @Id;",
+                new { Id = importRecord.CocktailSourceId.Value },
+                tx);
+            if (!string.IsNullOrWhiteSpace(dbSourceName))
+            {
+                sourceName = dbSourceName.Trim();
+            }
+        }
+
+        return $"{NormalizeCanonicalToken(sourceName)}::{NormalizeCanonicalToken(importRecord.Name)}";
+    }
+
+    private static string NormalizeCanonicalKey(string canonicalKey)
+    {
+        var separator = canonicalKey.IndexOf("::", StringComparison.Ordinal);
+        if (separator < 0)
+        {
+            return NormalizeCanonicalToken(canonicalKey);
+        }
+
+        var source = canonicalKey[..separator];
+        var name = canonicalKey[(separator + 2)..];
+        return $"{NormalizeCanonicalToken(source)}::{NormalizeCanonicalToken(name)}";
+    }
+
+    private static string NormalizeCanonicalToken(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return "unknown";
+        }
+
+        var value = input.ToLowerInvariant().Trim();
+        value = CanonicalTokenRegex.Replace(value, "_");
+        value = Regex.Replace(value, "_+", "_").Trim('_');
+        return value.Length == 0 ? "unknown" : value;
+    }
+
+    private static async Task<int> ResolveOrCreateIngredientIdAsync(
+        SqliteConnection connection,
+        DbTransaction tx,
+        string ingredientName)
+    {
+        var ingredientId = await connection.ExecuteScalarAsync<long?>(
+            """
+            SELECT Id
+            FROM Ingredients
+            WHERE lower(trim(Name)) = lower(trim(@Name))
+            LIMIT 1;
+            """,
+            new { Name = ingredientName },
+            tx);
+        if (ingredientId.HasValue)
+        {
+            return (int)ingredientId.Value;
+        }
+
+        var insertedId = await connection.ExecuteScalarAsync<long>(
+            """
+            INSERT INTO Ingredients (Name)
+            VALUES (@Name);
+            SELECT last_insert_rowid();
+            """,
+            new { Name = ingredientName },
+            tx);
+        return (int)insertedId;
+    }
+
+    private static async Task<int?> ResolveAmountIdAsync(
+        SqliteConnection connection,
+        DbTransaction tx,
+        int? amountId,
+        string? amountText)
+    {
+        if (amountId.HasValue)
+        {
+            var existingAmountId = await connection.ExecuteScalarAsync<long?>(
+                "SELECT Id FROM Amounts WHERE Id = @Id;",
+                new { Id = amountId.Value },
+                tx);
+            if (existingAmountId.HasValue)
+            {
+                return (int)existingAmountId.Value;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(amountText))
+        {
+            return null;
+        }
+
+        var matchedAmountId = await connection.ExecuteScalarAsync<long?>(
+            """
+            SELECT Id
+            FROM Amounts
+            WHERE lower(trim(MeasurementName)) = lower(trim(@AmountText))
+            LIMIT 1;
+            """,
+            new { AmountText = amountText.Trim() },
+            tx);
+
+        return matchedAmountId.HasValue ? (int)matchedAmountId.Value : null;
     }
 }
