@@ -15,6 +15,7 @@ namespace CocktailChooser.API.DTOs
     public class CocktailDto
     {
         public int Id { get; set; }
+        public string? CanonicalKey { get; set; }
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
         public string? Method { get; set; }

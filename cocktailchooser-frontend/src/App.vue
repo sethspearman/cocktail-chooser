@@ -27,6 +27,7 @@
             <button type="button" class="menu-button" @click="openAccountModal(currentUser ? 'overview' : 'login')">
               {{ currentUser ? 'Account' : 'Log in / Create account' }}
             </button>
+            <button v-if="isAdminUser" type="button" class="menu-button" @click="openAdminModal">Admin</button>
             <button type="button" class="menu-button" @click="openAddCocktailModal">Add a Cocktail</button>
             <button type="button" class="menu-button" @click="openMyBarModal">My Bar Checklist</button>
           </div>
@@ -561,6 +562,89 @@ Steps:
     </div>
 
     <div
+      v-if="activeModal === 'admin' && isAdminUser"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="admin-modal-title"
+      @click.self="closeActiveModal">
+      <div class="modal-card modal-card-xl">
+        <div class="modal-header">
+          <h2 id="admin-modal-title">Admin Import / Export</h2>
+          <div class="menu-actions">
+            <button type="button" class="menu-button" :disabled="adminBusy" @click="loadAdminExportPayload">
+              {{ adminBusy ? 'Working...' : 'Refresh Export' }}
+            </button>
+            <button type="button" class="menu-button" :disabled="adminBusy" @click="closeActiveModal">Close</button>
+          </div>
+        </div>
+
+        <div class="detail-grid recipe-modal-grid">
+          <div>
+            <h3>Export JSON</h3>
+            <textarea v-model="adminExportJson" rows="16" spellcheck="false"></textarea>
+            <div class="modal-actions">
+              <button
+                type="button"
+                class="menu-button"
+                :disabled="!adminExportJson || adminBusy"
+                @click="downloadAdminExportJson">
+                Download Export JSON
+              </button>
+            </div>
+          </div>
+          <div>
+            <h3>Import JSON</h3>
+            <textarea v-model="adminImportJson" rows="16" spellcheck="false"></textarea>
+            <div class="modal-actions">
+              <button type="button" :disabled="adminBusy" @click="importAdminPayload">
+                {{ adminBusy ? 'Importing...' : 'Run Import' }}
+              </button>
+              <button
+                type="button"
+                class="menu-button"
+                :disabled="!adminImportSummary || !adminImportSummary.items || !adminImportSummary.items.length"
+                @click="downloadAdminImportCsv">
+                Download CSV
+              </button>
+            </div>
+            <p v-if="adminImportSummary" class="subtle">
+              Created: {{ adminImportSummary.created }},
+              Updated: {{ adminImportSummary.updated }},
+              Failed: {{ adminImportSummary.failed }}
+            </p>
+            <div v-if="adminImportSummary && adminImportSummary.items && adminImportSummary.items.length" class="admin-import-results">
+              <h4>Import Item Results</h4>
+              <table class="admin-import-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Action</th>
+                    <th>Cocktail ID</th>
+                    <th>Canonical Key</th>
+                    <th>Error</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="item in adminImportSummary.items"
+                    :key="`admin-import-${item.inputIndex}`"
+                    :class="`admin-import-row-${item.action || 'unknown'}`">
+                    <td>{{ item.inputIndex }}</td>
+                    <td>{{ item.action || '-' }}</td>
+                    <td>{{ item.cocktailId || '-' }}</td>
+                    <td><code>{{ item.canonicalKey || '-' }}</code></td>
+                    <td class="admin-import-error">{{ item.error || '' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
       v-if="reviewSubmittedModalOpen"
       class="modal-backdrop"
       role="dialog"
@@ -582,6 +666,7 @@ Steps:
 import {
   createCocktail,
   createCocktailTryLog,
+  exportAdminCocktails,
   getMyPendingCocktails,
   getAmounts,
   getCocktailIngredients,
@@ -596,6 +681,7 @@ import {
   getIngredients,
   getUserInventory,
   getStoredAuthToken,
+  importAdminCocktails,
   login,
   previewCocktailFromText,
   register,
@@ -713,6 +799,11 @@ export default {
       accountMenuOpen: false,
       accountMenuView: '',
       activeModal: '',
+      currentPath: '/',
+      adminExportJson: '',
+      adminImportJson: '',
+      adminImportSummary: null,
+      adminBusy: false,
       notImplementedModalOpen: false,
       notImplementedFeatureName: 'This feature'
     };
@@ -966,6 +1057,12 @@ export default {
         && this.registerForm.email.trim().length > 0
         && this.registerForm.password.length >= 8;
     },
+    isAdminUser() {
+      return Number(this.currentUser?.id || 0) === 1;
+    },
+    isAdminRoute() {
+      return this.currentPath === '/admin';
+    },
     preferredMyCocktailsSourceId() {
       const userAddedExact = this.sources.find((s) => (s.name || '').toLowerCase() === 'user added');
       const userAddedFuzzy = this.sources.find((s) => (s.name || '').toLowerCase().includes('user add'));
@@ -1063,10 +1160,51 @@ export default {
     }
   },
   async created() {
+    this.currentPath = this.getCurrentPath();
     this.restorePopularOnlyPreference();
     await this.loadInitialData();
   },
+  mounted() {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('popstate', this.handlePopState);
+    }
+  },
+  beforeUnmount() {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('popstate', this.handlePopState);
+    }
+  },
   methods: {
+    getCurrentPath() {
+      if (typeof window === 'undefined') {
+        return '/';
+      }
+
+      const path = (window.location.pathname || '/').trim();
+      return path || '/';
+    },
+    handlePopState() {
+      this.currentPath = this.getCurrentPath();
+      if (this.currentPath === '/admin' && this.isAdminUser) {
+        this.openAdminModal();
+      } else if (this.activeModal === 'admin') {
+        this.activeModal = '';
+      }
+    },
+    navigateTo(path, { replace = false } = {}) {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      const target = path || '/';
+      if (replace) {
+        window.history.replaceState({}, '', target);
+      } else if (window.location.pathname !== target) {
+        window.history.pushState({}, '', target);
+      }
+
+      this.currentPath = this.getCurrentPath();
+    },
     restorePopularOnlyPreference() {
       if (typeof window === 'undefined') {
         return;
@@ -1110,6 +1248,10 @@ export default {
     },
     async restoreSession() {
       if (!getStoredAuthToken()) {
+        if (this.isAdminRoute) {
+          this.error = 'Log in as admin to access /admin.';
+          this.navigateTo('/', { replace: true });
+        }
         return;
       }
 
@@ -1176,6 +1318,15 @@ export default {
       if (this.selectedCocktailId) {
         await this.loadCocktailDetail();
       }
+
+      if (this.isAdminRoute) {
+        if (this.isAdminUser) {
+          this.openAdminModal();
+        } else {
+          this.error = 'Admin access is required for /admin.';
+          this.navigateTo('/', { replace: true });
+        }
+      }
     },
     async logout() {
       setAuthToken('');
@@ -1191,6 +1342,9 @@ export default {
       this.userSuccessMessage = 'Logged out.';
       if (this.selectedCocktailId) {
         await this.loadCocktailDetail();
+      }
+      if (this.isAdminRoute) {
+        this.navigateTo('/', { replace: true });
       }
       setTimeout(() => {
         this.userSuccessMessage = '';
@@ -1230,8 +1384,134 @@ export default {
       this.accountMenuOpen = false;
       this.activeModal = 'recipe';
     },
+    openAdminModal() {
+      if (!this.isAdminUser) {
+        return;
+      }
+
+      this.navigateTo('/admin');
+      this.accountMenuOpen = false;
+      this.activeModal = 'admin';
+      if (!this.adminExportJson) {
+        this.loadAdminExportPayload();
+      }
+    },
     closeActiveModal() {
+      if (this.activeModal === 'admin' && this.isAdminRoute) {
+        this.navigateTo('/');
+      }
       this.activeModal = '';
+    },
+    async loadAdminExportPayload() {
+      if (!this.isAdminUser) {
+        return;
+      }
+
+      this.error = '';
+      this.adminBusy = true;
+      this.adminImportSummary = null;
+      try {
+        const payload = await exportAdminCocktails();
+        this.adminExportJson = JSON.stringify(payload, null, 2);
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminBusy = false;
+      }
+    },
+    async importAdminPayload() {
+      if (!this.isAdminUser) {
+        return;
+      }
+
+      this.error = '';
+      this.adminBusy = true;
+      this.adminImportSummary = null;
+      try {
+        const raw = this.adminImportJson.trim();
+        if (!raw) {
+          throw new Error('Paste import JSON first.');
+        }
+
+        const parsed = JSON.parse(raw);
+        const requestPayload = Array.isArray(parsed)
+          ? { cocktails: parsed }
+          : parsed;
+        const summary = await importAdminCocktails(requestPayload);
+        this.adminImportSummary = summary;
+        await this.loadAdminExportPayload();
+
+        const [ingredients, cocktailIngredients, allCocktails] = await Promise.all([
+          getIngredients(),
+          getCocktailIngredients(),
+          getCocktails({ alcohol: this.virginOnly ? 'non-alcoholic' : 'all' })
+        ]);
+
+        this.ingredients = ingredients;
+        this.cocktailIngredients = cocktailIngredients;
+        this.allCocktails = [...allCocktails];
+        await this.reloadCocktailsForIngredientFilters();
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminBusy = false;
+      }
+    },
+    downloadAdminImportCsv() {
+      const items = this.adminImportSummary?.items || [];
+      if (!items.length || typeof window === 'undefined' || typeof document === 'undefined') {
+        return;
+      }
+
+      const headers = ['inputIndex', 'action', 'cocktailId', 'canonicalKey', 'error'];
+      const rows = items.map((item) => [
+        item.inputIndex,
+        item.action || '',
+        item.cocktailId ?? '',
+        item.canonicalKey || '',
+        item.error || ''
+      ]);
+
+      const escapeCell = (value) => {
+        const text = String(value ?? '');
+        if (text.includes('"') || text.includes(',') || text.includes('\n') || text.includes('\r')) {
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+
+        return text;
+      };
+
+      const csv = [headers, ...rows]
+        .map((row) => row.map(escapeCell).join(','))
+        .join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `admin-import-results-${stamp}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    },
+    downloadAdminExportJson() {
+      const raw = (this.adminExportJson || '').trim();
+      if (!raw || typeof window === 'undefined' || typeof document === 'undefined') {
+        return;
+      }
+
+      const blob = new Blob([raw], { type: 'application/json;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `admin-cocktails-export-${stamp}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     },
     initializeNewCocktailForm() {
       this.newCocktailForm.mode = 'paste';
@@ -2314,6 +2594,47 @@ button:disabled {
   margin-top: 0.3rem;
 }
 
+.admin-import-results {
+  margin-top: 0.8rem;
+}
+
+.admin-import-results h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+
+.admin-import-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.admin-import-table th,
+.admin-import-table td {
+  border: 1px solid var(--line);
+  padding: 0.3rem 0.35rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-import-row-created {
+  background: #ecf8f2;
+}
+
+.admin-import-row-updated {
+  background: #eef4ff;
+}
+
+.admin-import-row-failed {
+  background: #fff0f1;
+}
+
+.admin-import-error {
+  color: #8c1028;
+  max-width: 16rem;
+  word-break: break-word;
+}
+
 .recipe-print-content h3 {
   margin: 0 0 0.35rem;
 }
@@ -2375,6 +2696,10 @@ button:disabled {
   .match-list {
     column-width: auto;
     column-count: 1;
+  }
+
+  .admin-import-table {
+    font-size: 0.72rem;
   }
 }
 </style>

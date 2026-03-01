@@ -36,6 +36,7 @@ public class TestStartup
             connection.Execute("""
                 CREATE TABLE IF NOT EXISTS Cocktails (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CanonicalKey TEXT NOT NULL UNIQUE,
                     Name TEXT NOT NULL,
                     Description TEXT,
                     Method TEXT,
@@ -50,6 +51,24 @@ public class TestStartup
                 CREATE TABLE IF NOT EXISTS CocktailTimePeriods (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Name TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS CocktailSource (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL,
+                    SourceType TEXT NOT NULL,
+                    Publisher TEXT,
+                    PublishDate TEXT,
+                    Author TEXT,
+                    Isbn10 TEXT,
+                    Isbn13 TEXT,
+                    PurchaseUrl TEXT,
+                    Edition TEXT,
+                    Language TEXT,
+                    CopyrightCredit TEXT,
+                    Url TEXT,
+                    Notes TEXT,
+                    IsBuiltIn INTEGER NOT NULL DEFAULT 0,
+                    CreatedUtc TEXT
                 );
                 CREATE TABLE IF NOT EXISTS Ingredients (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -117,6 +136,7 @@ public class TestStartup
         services.AddScoped<IIngredientRepository>(_ => new IngredientRepository(connectionString));
         services.AddScoped<ICocktailIngredientRepository>(_ => new CocktailIngredientRepository(connectionString));
         services.AddScoped<ICocktailRecipeRepository>(_ => new CocktailRecipeRepository(connectionString));
+        services.AddScoped<IRecipeSourceRepository>(_ => new RecipeSourceRepository(connectionString));
         services.AddScoped<IUserRepository>(_ => new UserRepository(connectionString));
         services.AddScoped<IUserIngredientRepository>(_ => new UserIngredientRepository(connectionString));
         services.AddScoped<ICocktailTryLogRepository>(_ => new CocktailTryLogRepository(connectionString));
