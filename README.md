@@ -202,9 +202,12 @@ Request body:
 ```
 
 Matching/upsert rules:
-1. If `cocktailId` exists in this DB, update that record.
-2. Else if `canonicalKey` matches, update that record.
-3. Else create a new cocktail.
+1. If `canonicalKey` matches an existing record, update that record.
+2. Else create a new cocktail with that canonical key.
+
+Notes:
+- `cocktailId` is included in payloads for convenience, but import identity matching is CanonicalKey-based for cross-environment safety.
+- Canonical keys are normalized and collision suffixing uses `__vN` (for example, `my_source::daiquiri__v2`).
 
 Transaction behavior:
 - Import executes **per item transactionally**.

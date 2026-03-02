@@ -157,6 +157,7 @@ public class CocktailRepositoryIntegrationTests : IDisposable
             CREATE TABLE IF NOT EXISTS Cocktails (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 CanonicalKey TEXT NOT NULL UNIQUE,
+                RecipeFingerprint TEXT,
                 Name TEXT NOT NULL,
                 Description TEXT,
                 Method TEXT,

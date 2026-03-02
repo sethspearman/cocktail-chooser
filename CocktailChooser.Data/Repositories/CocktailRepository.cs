@@ -1,6 +1,8 @@
 using Dapper;
 using Microsoft.Data.Sqlite;
 using System.Data.Common;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace CocktailChooser.Data.Repositories;
@@ -12,6 +14,7 @@ public class CocktailRepository : ICocktailRepository
     private const string SelectColumns = """
         Id,
         CanonicalKey,
+        RecipeFingerprint,
         Name,
         Description,
         Method,
@@ -86,6 +89,7 @@ public class CocktailRepository : ICocktailRepository
             INSERT INTO Cocktails
             (
                 CanonicalKey,
+                RecipeFingerprint,
                 Name,
                 Description,
                 Method,
@@ -100,6 +104,7 @@ public class CocktailRepository : ICocktailRepository
             VALUES
             (
                 @CanonicalKey,
+                @RecipeFingerprint,
                 @Name,
                 @Description,
                 @Method,
@@ -125,6 +130,7 @@ public class CocktailRepository : ICocktailRepository
             UPDATE Cocktails
             SET
                 CanonicalKey = @CanonicalKey,
+                RecipeFingerprint = @RecipeFingerprint,
                 Name = @Name,
                 Description = @Description,
                 Method = @Method,
@@ -154,8 +160,9 @@ public class CocktailRepository : ICocktailRepository
         await connection.OpenAsync();
         await using var tx = await connection.BeginTransactionAsync();
 
-        var existingId = await ResolveExistingCocktailIdAsync(connection, tx, importRecord.CocktailId, importRecord.CanonicalKey);
+        var existingId = await ResolveExistingCocktailIdAsync(connection, tx, importRecord.CanonicalKey);
         var canonicalKey = await ResolveUniqueCanonicalKeyAsync(connection, tx, importRecord, existingId);
+        var recipeFingerprint = BuildRecipeFingerprint(importRecord);
 
         int cocktailId;
         if (existingId.HasValue)
@@ -165,7 +172,7 @@ public class CocktailRepository : ICocktailRepository
                 """
                 UPDATE Cocktails
                 SET
-                    CanonicalKey = @CanonicalKey,
+                    RecipeFingerprint = @RecipeFingerprint,
                     Name = @Name,
                     Description = @Description,
                     Method = @Method,
@@ -181,7 +188,7 @@ public class CocktailRepository : ICocktailRepository
                 new
                 {
                     Id = cocktailId,
-                    CanonicalKey = canonicalKey,
+                    RecipeFingerprint = recipeFingerprint,
                     Name = importRecord.Name.Trim(),
                     importRecord.Description,
                     importRecord.Method,
@@ -202,6 +209,7 @@ public class CocktailRepository : ICocktailRepository
                 INSERT INTO Cocktails
                 (
                     CanonicalKey,
+                    RecipeFingerprint,
                     Name,
                     Description,
                     Method,
@@ -216,6 +224,7 @@ public class CocktailRepository : ICocktailRepository
                 VALUES
                 (
                     @CanonicalKey,
+                    @RecipeFingerprint,
                     @Name,
                     @Description,
                     @Method,
@@ -232,6 +241,7 @@ public class CocktailRepository : ICocktailRepository
                 new
                 {
                     CanonicalKey = canonicalKey,
+                    RecipeFingerprint = recipeFingerprint,
                     Name = importRecord.Name.Trim(),
                     importRecord.Description,
                     importRecord.Method,
@@ -342,21 +352,8 @@ public class CocktailRepository : ICocktailRepository
     private static async Task<int?> ResolveExistingCocktailIdAsync(
         SqliteConnection connection,
         DbTransaction tx,
-        int? cocktailId,
         string? canonicalKey)
     {
-        if (cocktailId.HasValue)
-        {
-            var idById = await connection.ExecuteScalarAsync<long?>(
-                "SELECT Id FROM Cocktails WHERE Id = @Id;",
-                new { Id = cocktailId.Value },
-                tx);
-            if (idById.HasValue)
-            {
-                return (int)idById.Value;
-            }
-        }
-
         if (string.IsNullOrWhiteSpace(canonicalKey))
         {
             return null;
@@ -387,7 +384,7 @@ public class CocktailRepository : ICocktailRepository
         var suffix = 2;
         while (true)
         {
-            var candidate = $"{baseKey}_{suffix}";
+            var candidate = $"{baseKey}__v{suffix}";
             if (!await IsCanonicalKeyInUseAsync(connection, tx, candidate, existingCocktailId))
             {
                 return candidate;
@@ -442,7 +439,7 @@ public class CocktailRepository : ICocktailRepository
         var separator = canonicalKey.IndexOf("::", StringComparison.Ordinal);
         if (separator < 0)
         {
-            return NormalizeCanonicalToken(canonicalKey);
+            return $"manual::{NormalizeCanonicalToken(canonicalKey)}";
         }
 
         var source = canonicalKey[..separator];
@@ -461,6 +458,37 @@ public class CocktailRepository : ICocktailRepository
         value = CanonicalTokenRegex.Replace(value, "_");
         value = Regex.Replace(value, "_+", "_").Trim('_');
         return value.Length == 0 ? "unknown" : value;
+    }
+
+    private static string BuildRecipeFingerprint(AdminCocktailImportRecord importRecord)
+    {
+        var normalizedName = NormalizeFingerprintText(importRecord.Name);
+        var normalizedIngredients = (importRecord.Ingredients ?? new List<AdminCocktailImportIngredientRecord>())
+            .Where(x => !string.IsNullOrWhiteSpace(x.IngredientName))
+            .Select(x => NormalizeCanonicalToken(x.IngredientName))
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+        var normalizedSteps = (importRecord.Steps ?? new List<AdminCocktailImportStepRecord>())
+            .Where(x => !string.IsNullOrWhiteSpace(x.Instruction))
+            .Select(x => NormalizeFingerprintText(x.Instruction))
+            .ToList();
+
+        var input = $"{normalizedName}|{string.Join(",", normalizedIngredients)}|{string.Join(",", normalizedSteps)}";
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+        return Convert.ToHexString(bytes);
+    }
+
+    private static string NormalizeFingerprintText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = value.ToLowerInvariant().Trim();
+        normalized = Regex.Replace(normalized, @"[^\p{L}\p{N}\s]", " ");
+        normalized = Regex.Replace(normalized, @"\s+", " ").Trim();
+        return normalized;
     }
 
     private static async Task<int> ResolveOrCreateIngredientIdAsync(

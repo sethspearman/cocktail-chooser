@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using CocktailChooser.API.DTOs;
@@ -239,6 +240,7 @@ public class CocktailService : ICocktailService
             {
                 CocktailId = cocktail.Id,
                 CanonicalKey = cocktail.CanonicalKey,
+                RecipeFingerprint = cocktail.RecipeFingerprint,
                 Name = cocktail.Name,
                 Description = cocktail.Description,
                 Method = cocktail.Method,
@@ -286,16 +288,14 @@ public class CocktailService : ICocktailService
                     throw new ArgumentException("Name is required.");
                 }
 
-                var existing = item.CocktailId.HasValue
-                    ? await _cocktailRepository.GetByIdAsync(item.CocktailId.Value)
-                    : !string.IsNullOrWhiteSpace(item.CanonicalKey)
-                    ? await _cocktailRepository.GetByCanonicalKeyAsync(NormalizeCanonicalKey(item.CanonicalKey))
-                    : null;
+                var canonicalKeyForMatch = !string.IsNullOrWhiteSpace(item.CanonicalKey)
+                    ? NormalizeCanonicalKey(item.CanonicalKey)
+                    : BuildCanonicalKeyBase(await ResolveCanonicalSourceTokenAsync(item.CocktailSourceId), item.Name);
+                var existing = await _cocktailRepository.GetByCanonicalKeyAsync(canonicalKeyForMatch);
 
                 var importRecord = new AdminCocktailImportRecord
                 {
-                    CocktailId = item.CocktailId,
-                    CanonicalKey = item.CanonicalKey,
+                    CanonicalKey = item.CanonicalKey ?? canonicalKeyForMatch,
                     Name = item.Name.Trim(),
                     Description = NullIfWhiteSpace(item.Description),
                     Method = NullIfWhiteSpace(item.Method),
@@ -487,6 +487,10 @@ public class CocktailService : ICocktailService
         cocktailDto.IsApproved ??= 0;
         cocktailDto.IsUserSubmitted ??= 0;
         cocktailDto.CanonicalKey = await BuildUniqueCanonicalKeyAsync(cocktailDto);
+        cocktailDto.RecipeFingerprint = BuildRecipeFingerprint(
+            cocktailDto.Name,
+            cocktailDto.StructuredIngredients ?? new List<CocktailIngredientEntryDto>(),
+            cocktailDto.StructuredSteps ?? new List<CocktailStepEntryDto>());
 
         var createdCocktail = await _cocktailRepository.CreateAsync(MapToRecord(cocktailDto));
 
@@ -497,7 +501,15 @@ public class CocktailService : ICocktailService
 
     public async Task<bool> UpdateCocktailAsync(CocktailDto cocktailDto)
     {
-        cocktailDto.CanonicalKey = await BuildUniqueCanonicalKeyAsync(cocktailDto, cocktailDto.Id);
+        var existing = await _cocktailRepository.GetByIdAsync(cocktailDto.Id);
+        if (existing == null)
+        {
+            return false;
+        }
+
+        // Canonical identity must remain stable after creation.
+        cocktailDto.CanonicalKey = existing.CanonicalKey;
+        cocktailDto.RecipeFingerprint = existing.RecipeFingerprint;
         return await _cocktailRepository.UpdateAsync(MapToRecord(cocktailDto));
     }
 
@@ -1073,8 +1085,9 @@ public class CocktailService : ICocktailService
         return new CocktailDto
         {
             Id = cocktail.Id,
-            CanonicalKey = cocktail.CanonicalKey,
-            Name = cocktail.Name,
+                CanonicalKey = cocktail.CanonicalKey,
+                RecipeFingerprint = cocktail.RecipeFingerprint,
+                Name = cocktail.Name,
             Description = cocktail.Description,
             Method = cocktail.Method,
             GlassTypeId = cocktail.GlassTypeId,
@@ -1093,6 +1106,7 @@ public class CocktailService : ICocktailService
         {
             Id = cocktail.Id,
             CanonicalKey = cocktail.CanonicalKey ?? string.Empty,
+            RecipeFingerprint = cocktail.RecipeFingerprint,
             Name = cocktail.Name,
             Description = cocktail.Description,
             Method = cocktail.Method,
@@ -1124,7 +1138,7 @@ public class CocktailService : ICocktailService
         var suffix = 2;
         while (true)
         {
-            var candidate = $"{canonicalKeyBase}_{suffix}";
+            var candidate = $"{canonicalKeyBase}__v{suffix}";
             if (!await _cocktailRepository.IsCanonicalKeyInUseAsync(candidate, existingCocktailId))
             {
                 return candidate;
@@ -1162,7 +1176,7 @@ public class CocktailService : ICocktailService
         var separatorIndex = canonicalKey.IndexOf("::", StringComparison.Ordinal);
         if (separatorIndex < 0)
         {
-            return NormalizeCanonicalToken(canonicalKey);
+            return $"manual::{NormalizeCanonicalToken(canonicalKey)}";
         }
 
         var sourceToken = canonicalKey[..separatorIndex];
@@ -1181,6 +1195,35 @@ public class CocktailService : ICocktailService
         normalized = Regex.Replace(normalized, @"[^a-z0-9]+", "_");
         normalized = Regex.Replace(normalized, @"_+", "_").Trim('_');
         return normalized.Length == 0 ? "unknown" : normalized;
+    }
+
+    private static string BuildRecipeFingerprint(
+        string cocktailName,
+        IReadOnlyList<CocktailIngredientEntryDto> structuredIngredients,
+        IReadOnlyList<CocktailStepEntryDto> structuredSteps)
+    {
+        var normalizedName = NormalizeFingerprintText(cocktailName);
+        var normalizedIngredients = (structuredIngredients ?? Array.Empty<CocktailIngredientEntryDto>())
+            .Where(x => !string.IsNullOrWhiteSpace(x.IngredientName))
+            .Select(x => NormalizeCanonicalToken(x.IngredientName!))
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+        var normalizedSteps = (structuredSteps ?? Array.Empty<CocktailStepEntryDto>())
+            .Where(x => !string.IsNullOrWhiteSpace(x.Instruction))
+            .Select(x => NormalizeFingerprintText(x.Instruction!))
+            .ToList();
+
+        var fingerprintInput = $"{normalizedName}|{string.Join(",", normalizedIngredients)}|{string.Join(",", normalizedSteps)}";
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(fingerprintInput));
+        return Convert.ToHexString(bytes);
+    }
+
+    private static string NormalizeFingerprintText(string value)
+    {
+        var normalized = (value ?? string.Empty).ToLowerInvariant().Trim();
+        normalized = Regex.Replace(normalized, @"[^\p{L}\p{N}\s]", " ");
+        normalized = Regex.Replace(normalized, @"\s+", " ").Trim();
+        return normalized;
     }
 
     private sealed class ParsedPasteDraft
