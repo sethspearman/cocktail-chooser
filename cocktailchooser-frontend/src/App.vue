@@ -42,7 +42,7 @@
       </div>
       <div class="info-chip">
         <span class="label">Showing</span>
-        <strong>{{ filteredMakeableCocktails.length }}</strong>
+        <strong>{{ displayedCocktails.length }}</strong>
       </div>
       <div class="info-chip wide-chip">
         <span class="label">Last Tried</span>
@@ -144,7 +144,7 @@
         </div>
         <div v-if="combinedCocktailListEmptyMessage" class="empty">{{ combinedCocktailListEmptyMessage }}</div>
         <ul v-else class="match-list">
-          <li v-for="cocktail in visibleCocktails" :key="`match-${cocktail.id}`">
+          <li v-for="cocktail in displayedCocktails" :key="`match-${cocktail.id}`">
             <button @click="selectCocktail(cocktail.id)">{{ cocktail.name }}</button>
             <span v-if="isPopularCocktail(cocktail)" class="pill">Popular</span>
             <span v-if="isVirginCocktail(cocktail.id)" class="virgin-pill">Virgin</span>
@@ -952,12 +952,15 @@ export default {
         ? this.filteredCocktails
         : this.filteredMakeableCocktails;
     },
+    displayedCocktails() {
+      return this.visibleCocktails;
+    },
     combinedCocktailListEmptyMessage() {
       if (this.cocktailListMode === 'makeable' && !this.selectedUserId) {
         return 'Log in to see what you can make from My Bar.';
       }
 
-      if (this.visibleCocktails.length > 0) {
+      if (this.displayedCocktails.length > 0) {
         return '';
       }
 
