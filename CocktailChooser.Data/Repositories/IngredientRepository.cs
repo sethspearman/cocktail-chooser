@@ -18,6 +18,7 @@ public class IngredientRepository : IIngredientRepository
             SELECT
                 Id,
                 Name,
+                NormalizedName,
                 IngredientTypeId,
                 MixerSubtypeId,
                 PrimarySpirit,
@@ -36,6 +37,7 @@ public class IngredientRepository : IIngredientRepository
             SELECT
                 Id,
                 Name,
+                NormalizedName,
                 IngredientTypeId,
                 MixerSubtypeId,
                 PrimarySpirit,
@@ -48,12 +50,48 @@ public class IngredientRepository : IIngredientRepository
         return await connection.QuerySingleOrDefaultAsync<IngredientRecord>(sql, new { Id = id });
     }
 
+    public async Task<IngredientRecord?> GetByNormalizedNameAsync(string normalizedName)
+    {
+        const string sql = """
+            SELECT
+                Id,
+                Name,
+                NormalizedName,
+                IngredientTypeId,
+                MixerSubtypeId,
+                PrimarySpirit,
+                LongDescription
+            FROM Ingredients
+            WHERE NormalizedName = @NormalizedName
+            LIMIT 1;
+            """;
+
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.QuerySingleOrDefaultAsync<IngredientRecord>(sql, new { NormalizedName = normalizedName });
+    }
+
     public async Task<IngredientRecord> CreateAsync(IngredientRecord ingredient)
     {
+        ingredient.Name = IngredientNameNormalizer.CleanupDisplayName(ingredient.Name);
+        var normalizedName = IngredientNameNormalizer.Normalize(ingredient.Name);
+        if (normalizedName.Length == 0)
+        {
+            throw new ArgumentException("Ingredient name is required.", nameof(ingredient));
+        }
+
+        ingredient.NormalizedName = normalizedName;
+
+        var existing = await GetByNormalizedNameAsync(normalizedName);
+        if (existing != null)
+        {
+            return existing;
+        }
+
         const string sql = """
             INSERT INTO Ingredients
             (
                 Name,
+                NormalizedName,
                 IngredientTypeId,
                 MixerSubtypeId,
                 PrimarySpirit,
@@ -62,6 +100,7 @@ public class IngredientRepository : IIngredientRepository
             VALUES
             (
                 @Name,
+                @NormalizedName,
                 @IngredientTypeId,
                 @MixerSubtypeId,
                 @PrimarySpirit,
@@ -70,17 +109,34 @@ public class IngredientRepository : IIngredientRepository
             SELECT last_insert_rowid();
             """;
 
-        await using var connection = new SqliteConnection(_connectionString);
-        var id = await connection.ExecuteScalarAsync<long>(sql, ingredient);
-        return (await GetByIdAsync((int)id))!;
+        try
+        {
+            await using var connection = new SqliteConnection(_connectionString);
+            var id = await connection.ExecuteScalarAsync<long>(sql, ingredient);
+            return (await GetByIdAsync((int)id))!;
+        }
+        catch (SqliteException)
+        {
+            var existingAfterConflict = await GetByNormalizedNameAsync(normalizedName);
+            if (existingAfterConflict != null)
+            {
+                return existingAfterConflict;
+            }
+
+            throw;
+        }
     }
 
     public async Task<bool> UpdateAsync(IngredientRecord ingredient)
     {
+        ingredient.Name = IngredientNameNormalizer.CleanupDisplayName(ingredient.Name);
+        ingredient.NormalizedName = IngredientNameNormalizer.Normalize(ingredient.Name);
+
         const string sql = """
             UPDATE Ingredients
             SET
                 Name = @Name,
+                NormalizedName = @NormalizedName,
                 IngredientTypeId = @IngredientTypeId,
                 MixerSubtypeId = @MixerSubtypeId,
                 PrimarySpirit = @PrimarySpirit,

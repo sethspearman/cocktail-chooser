@@ -496,14 +496,21 @@ public class CocktailRepository : ICocktailRepository
         DbTransaction tx,
         string ingredientName)
     {
+        var cleanedName = IngredientNameNormalizer.CleanupDisplayName(ingredientName);
+        var normalizedName = IngredientNameNormalizer.Normalize(cleanedName);
+        if (normalizedName.Length == 0)
+        {
+            throw new InvalidOperationException("Ingredient name is required.");
+        }
+
         var ingredientId = await connection.ExecuteScalarAsync<long?>(
             """
             SELECT Id
             FROM Ingredients
-            WHERE lower(trim(Name)) = lower(trim(@Name))
+            WHERE NormalizedName = @NormalizedName
             LIMIT 1;
             """,
-            new { Name = ingredientName },
+            new { NormalizedName = normalizedName },
             tx);
         if (ingredientId.HasValue)
         {
@@ -512,11 +519,11 @@ public class CocktailRepository : ICocktailRepository
 
         var insertedId = await connection.ExecuteScalarAsync<long>(
             """
-            INSERT INTO Ingredients (Name)
-            VALUES (@Name);
+            INSERT INTO Ingredients (Name, NormalizedName)
+            VALUES (@Name, @NormalizedName);
             SELECT last_insert_rowid();
             """,
-            new { Name = ingredientName },
+            new { Name = cleanedName, NormalizedName = normalizedName },
             tx);
         return (int)insertedId;
     }

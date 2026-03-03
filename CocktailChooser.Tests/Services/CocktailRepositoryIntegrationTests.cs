@@ -129,7 +129,7 @@ public class CocktailRepositoryIntegrationTests : IDisposable
 
         using (var connection = new SqliteConnection(_connectionString))
         {
-            connection.Execute("INSERT INTO Ingredients (Id, Name) VALUES (9999, 'Bad Ingredient');");
+            connection.Execute("INSERT INTO Ingredients (Id, Name, NormalizedName) VALUES (9999, 'Bad Ingredient', 'bad ingredient');");
         }
 
         await Assert.ThrowsAnyAsync<Exception>(async () =>
@@ -148,6 +148,36 @@ public class CocktailRepositoryIntegrationTests : IDisposable
             var cocktailExists = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM Cocktails WHERE CanonicalKey = 'manual::rollback_test';");
             Assert.Equal(0, cocktailExists);
         }
+    }
+
+    [Fact]
+    public async Task UpsertAdminImportAsync_ReusesIngredient_ByNormalizedName()
+    {
+        await _repository.UpsertAdminImportAsync(new AdminCocktailImportRecord
+        {
+            CanonicalKey = "manual::normalize_a",
+            Name = "Normalize A",
+            Ingredients = new List<AdminCocktailImportIngredientRecord>
+            {
+                new() { IngredientName = "Club Soda" }
+            }
+        });
+
+        await _repository.UpsertAdminImportAsync(new AdminCocktailImportRecord
+        {
+            CanonicalKey = "manual::normalize_b",
+            Name = "Normalize B",
+            Ingredients = new List<AdminCocktailImportIngredientRecord>
+            {
+                new() { IngredientName = "  club   soda  " }
+            }
+        });
+
+        using var connection = new SqliteConnection(_connectionString);
+        var ingredientCount = connection.ExecuteScalar<int>(
+            "SELECT COUNT(*) FROM Ingredients WHERE NormalizedName = 'club soda';");
+
+        Assert.Equal(1, ingredientCount);
     }
 
     private void InitializeDatabase()
@@ -175,7 +205,8 @@ public class CocktailRepositoryIntegrationTests : IDisposable
             );
             CREATE TABLE IF NOT EXISTS Ingredients (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name TEXT NOT NULL
+                Name TEXT NOT NULL,
+                NormalizedName TEXT
             );
             CREATE TABLE IF NOT EXISTS Amounts (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,

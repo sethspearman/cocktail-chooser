@@ -73,13 +73,6 @@ public class CocktailServiceTests
     public async Task UpdateCocktailAsync_DelegatesToRepository()
     {
         var dto = new CocktailDto { Id = 10, Name = "Negroni" };
-        _repositoryMock.Setup(r => r.GetByIdAsync(10))
-            .ReturnsAsync(new CocktailRecord
-            {
-                Id = 10,
-                CanonicalKey = "book::negroni",
-                Name = "Negroni"
-            });
         _repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<CocktailRecord>()))
             .ReturnsAsync(true);
 
@@ -87,7 +80,7 @@ public class CocktailServiceTests
 
         Assert.True(updated);
         _repositoryMock.Verify(r => r.UpdateAsync(It.Is<CocktailRecord>(c =>
-            c.Id == 10 && c.Name == "Negroni" && c.CanonicalKey == "book::negroni")), Times.Once);
+            c.Id == 10 && c.Name == "Negroni" && c.CanonicalKey == "manual::negroni")), Times.Once);
     }
 
     [Fact]
