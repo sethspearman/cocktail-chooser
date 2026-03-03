@@ -74,6 +74,7 @@ public class TestStartup
                 CREATE TABLE IF NOT EXISTS Ingredients (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Name TEXT NOT NULL,
+                    NormalizedName TEXT,
                     IngredientTypeId INTEGER,
                     MixerSubtypeId INTEGER,
                     PrimarySpirit TEXT,

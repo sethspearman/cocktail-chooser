@@ -4,6 +4,7 @@ public class IngredientRecord
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? NormalizedName { get; set; }
     public int? IngredientTypeId { get; set; }
     public int? MixerSubtypeId { get; set; }
     public string? PrimarySpirit { get; set; }
