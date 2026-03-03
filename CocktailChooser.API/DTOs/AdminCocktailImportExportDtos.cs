@@ -4,7 +4,6 @@ public class AdminCocktailPortDto
 {
     public int? CocktailId { get; set; }
     public string? CanonicalKey { get; set; }
-    public string? RecipeFingerprint { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Method { get; set; }

@@ -9,8 +9,6 @@ public partial class Cocktail
 
     public string CanonicalKey { get; set; } = null!;
 
-    public string? RecipeFingerprint { get; set; }
-
     public string Name { get; set; } = null!;
 
     public string? Description { get; set; }
