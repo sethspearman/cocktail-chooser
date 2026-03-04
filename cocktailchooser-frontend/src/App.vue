@@ -221,7 +221,7 @@
           <ul>
             <li v-for="item in selectedCocktailIngredients" :key="`ing-${item.id}`">
               {{ item.ingredientName }}
-              <span v-if="item.amountName || item.amountText" class="subtle">({{ item.amountName || item.amountText }})</span>
+              <span v-if="item.amountName || item.amountText" class="subtle">({{ displayAmount(item) }})</span>
             </li>
           </ul>
 
@@ -292,7 +292,7 @@
               <ul>
                 <li v-for="item in selectedCocktailIngredients" :key="`print-ing-${item.id}`">
                   {{ item.ingredientName }}
-                  <span v-if="item.amountName || item.amountText" class="subtle">({{ item.amountName || item.amountText }})</span>
+                  <span v-if="item.amountName || item.amountText" class="subtle">({{ displayAmount(item) }})</span>
                 </li>
               </ul>
             </div>
@@ -2256,6 +2256,60 @@ export default {
       }
 
       return new Date(utc).toLocaleString();
+    },
+    displayAmount(item) {
+      const raw = (item?.amountName || item?.amountText || '').trim();
+      if (!raw) {
+        return '';
+      }
+
+      return this.formatAmountTextForDisplay(raw);
+    },
+    formatAmountTextForDisplay(value) {
+      const cleaned = (value || '').trim().replace(/\s+/g, ' ');
+      if (!cleaned) {
+        return '';
+      }
+
+      const normalizedFractions = cleaned
+        .replace(/\b1\/4\b/g, '¼')
+        .replace(/\b1\/2\b/g, '½')
+        .replace(/\b3\/4\b/g, '¾');
+
+      return normalizedFractions.replace(/\b\d+(?:\.\d+)?\b/g, (token) => this.convertDecimalTokenToFraction(token));
+    },
+    convertDecimalTokenToFraction(token) {
+      if (!token.includes('.')) {
+        return token;
+      }
+
+      const numeric = Number(token);
+      if (!Number.isFinite(numeric)) {
+        return token;
+      }
+
+      const whole = Math.trunc(numeric);
+      const fractional = numeric - whole;
+      const epsilon = 0.0001;
+      let fractionGlyph = '';
+
+      if (Math.abs(fractional - 0.25) < epsilon) {
+        fractionGlyph = '¼';
+      } else if (Math.abs(fractional - 0.5) < epsilon) {
+        fractionGlyph = '½';
+      } else if (Math.abs(fractional - 0.75) < epsilon) {
+        fractionGlyph = '¾';
+      } else if (Math.abs(fractional) < epsilon) {
+        return String(whole);
+      } else {
+        return token;
+      }
+
+      if (whole === 0) {
+        return fractionGlyph;
+      }
+
+      return `${whole}${fractionGlyph}`;
     },
     printSelectedRecipe() {
       if (!this.selectedCocktail || !this.$refs.recipePrintContent) {
