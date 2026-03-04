@@ -79,7 +79,33 @@
 
     <p v-if="userSuccessMessage" class="success floating-message">{{ userSuccessMessage }}</p>
 
-    <section class="grid">
+    <section v-if="isMyCocktailsRoute" class="grid">
+      <article class="panel wide">
+        <div class="panel-title">My Cocktails</div>
+        <div class="toolbar">
+          <input v-model.trim="myCocktailSearch" placeholder="Search my cocktails" />
+          <select v-model="myCocktailStatusFilter">
+            <option value="all">All statuses</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <button type="button" class="menu-button" @click="navigateTo('/')">Back to Browse</button>
+        </div>
+        <p v-if="!selectedUserId" class="subtle">Log in to view your submitted cocktails.</p>
+        <p v-else-if="!filteredMyCocktailsForPage.length" class="subtle">No cocktails match these filters.</p>
+        <ul v-else class="match-list">
+          <li v-for="cocktail in filteredMyCocktailsForPage" :key="`mine-page-${cocktail.id}`">
+            <button @click="selectCocktail(cocktail.id)">{{ cocktail.name }}</button>
+            <span class="pill" :class="moderationStatusClass(cocktail.moderationStatus)">
+              {{ moderationStatusLabel(cocktail.moderationStatus) }}
+            </span>
+          </li>
+        </ul>
+      </article>
+    </section>
+
+    <section v-else class="grid">
       <article class="panel wide">
         <div class="panel-title">What Can I Drink</div>
         <div class="toolbar">
@@ -109,6 +135,10 @@
           <label class="toolbar-checkbox">
             <input v-model="popularOnly" type="checkbox" />
             Popular only
+          </label>
+          <label class="toolbar-checkbox">
+            <input v-model="myDrinksOnly" type="checkbox" :disabled="!selectedUserId" />
+            My drinks only
           </label>
           <datalist id="cocktail-ingredient-filter-options">
             <option
@@ -146,6 +176,9 @@
         <ul v-else class="match-list">
           <li v-for="cocktail in displayedCocktails" :key="`match-${cocktail.id}`">
             <button @click="selectCocktail(cocktail.id)">{{ cocktail.name }}</button>
+            <span v-if="isMyDrink(cocktail)" class="pill" :class="moderationStatusClass(cocktail.moderationStatus)">
+              {{ moderationStatusLabel(cocktail.moderationStatus) }}
+            </span>
             <span v-if="isPopularCocktail(cocktail)" class="pill">Popular</span>
             <span v-if="isVirginCocktail(cocktail.id)" class="virgin-pill">Virgin</span>
             <span v-if="cocktailListMode === 'all' && canMakeById(cocktail.id)" class="pill">Can make</span>
@@ -456,11 +489,14 @@ Steps:
             <strong>{{ currentUser.displayName }}</strong>
             <span v-if="currentUser.email" class="subtle">{{ currentUser.email }}</span>
           </div>
-          <div class="subheading">My Pending Cocktails</div>
-          <p v-if="!myPendingCocktails.length" class="subtle">No pending submissions.</p>
+          <div class="subheading">My Cocktails</div>
+          <p v-if="!myCocktails.length" class="subtle">No submitted cocktails yet.</p>
           <ul v-else>
-            <li v-for="cocktail in myPendingCocktails" :key="`pending-${cocktail.id}`">
+            <li v-for="cocktail in myCocktails" :key="`mine-${cocktail.id}`">
               {{ cocktail.name }}
+              <span class="pill" :class="moderationStatusClass(cocktail.moderationStatus)">
+                {{ moderationStatusLabel(cocktail.moderationStatus) }}
+              </span>
             </li>
           </ul>
           <div class="menu-actions">
@@ -580,6 +616,24 @@ Steps:
         </div>
 
         <div class="detail-grid recipe-modal-grid">
+          <div class="admin-block">
+            <h3>Moderation Queue</h3>
+            <p v-if="!adminPendingCocktails.length" class="subtle">No pending user submissions.</p>
+            <ul v-else class="match-list">
+              <li v-for="cocktail in adminPendingCocktails" :key="`admin-pending-${cocktail.id}`">
+                <button @click="selectCocktail(cocktail.id)">{{ cocktail.name }}</button>
+                <span class="subtle">by User #{{ cocktail.submittedByUserId || '?' }}</span>
+                <div class="menu-actions">
+                  <button type="button" class="menu-button" :disabled="adminModerationBusy" @click="approvePendingCocktail(cocktail.id)">
+                    Approve
+                  </button>
+                  <button type="button" class="menu-button" :disabled="adminModerationBusy" @click="rejectPendingCocktail(cocktail.id)">
+                    Reject
+                  </button>
+                </div>
+              </li>
+            </ul>
+          </div>
           <div>
             <h3>Export JSON</h3>
             <textarea v-model="adminExportJson" rows="16" spellcheck="false"></textarea>
@@ -664,10 +718,12 @@ Steps:
 
 <script>
 import {
+  approveCocktail,
   createCocktail,
   createCocktailTryLog,
   exportAdminCocktails,
-  getMyPendingCocktails,
+  getAdminPendingCocktails,
+  getMyCocktails,
   getAmounts,
   getCocktailIngredients,
   getCocktailSources,
@@ -685,6 +741,7 @@ import {
   login,
   previewCocktailFromText,
   register,
+  rejectCocktail,
   setAuthToken,
   submitCocktailFromText,
   upsertUserInventory
@@ -754,6 +811,9 @@ export default {
       ingredientFilterSearch: '',
       selectedIngredientIds: [],
       cocktailListMode: 'all',
+      myDrinksOnly: false,
+      myCocktailSearch: '',
+      myCocktailStatusFilter: 'all',
       inventorySpiritFilter: '',
       makeableTriedFilter: 'all',
 
@@ -786,7 +846,8 @@ export default {
       addCocktailPreviewLoading: false,
       addCocktailSubmitLoading: false,
       lastReviewedRawText: '',
-      myPendingCocktails: [],
+      myCocktails: [],
+      adminPendingCocktails: [],
       reviewSubmittedModalOpen: false,
       newLog: {
         rating: null,
@@ -804,6 +865,7 @@ export default {
       adminImportJson: '',
       adminImportSummary: null,
       adminBusy: false,
+      adminModerationBusy: false,
       notImplementedModalOpen: false,
       notImplementedFeatureName: 'This feature'
     };
@@ -843,9 +905,22 @@ export default {
     },
     cocktailById() {
       const map = {};
-      this.cocktails.forEach((c) => {
-        map[c.id] = c;
-      });
+      const addToMap = (list) => {
+        (list || []).forEach((cocktail) => {
+          if (!cocktail || !cocktail.id) {
+            return;
+          }
+
+          map[cocktail.id] = cocktail;
+        });
+      };
+
+      // Include public browse cocktails plus user/admin overlays so pending/rejected
+      // entries still render in detail modal when selected from those lists.
+      addToMap(this.cocktails);
+      addToMap(this.allCocktails);
+      addToMap(this.myCocktails);
+      addToMap(this.adminPendingCocktails);
       return map;
     },
     selectedCocktail() {
@@ -864,8 +939,23 @@ export default {
     inventoryInStockSet() {
       return new Set(this.inventory.filter((x) => x.isInStock).map((x) => x.ingredientId));
     },
+    browseCocktails() {
+      if (!this.selectedUserId || !this.myCocktails.length) {
+        return this.cocktails;
+      }
+
+      const byId = new Map(this.cocktails.map((cocktail) => [Number(cocktail.id), cocktail]));
+      this.myCocktails.forEach((cocktail) => {
+        byId.set(Number(cocktail.id), cocktail);
+      });
+      return [...byId.values()];
+    },
     filteredCocktails() {
-      return this.cocktails.filter((cocktail) => {
+      return this.browseCocktails.filter((cocktail) => {
+        if (this.myDrinksOnly && !this.isMyDrink(cocktail)) {
+          return false;
+        }
+
         const matchesSearch = !this.cocktailSearch
           || cocktail.name.toLowerCase().includes(this.cocktailSearch.toLowerCase());
 
@@ -910,10 +1000,18 @@ export default {
         return [];
       }
 
-      return this.allCocktails.filter((c) => this.canMakeById(c.id));
+      const byId = new Map(this.allCocktails.map((cocktail) => [Number(cocktail.id), cocktail]));
+      this.myCocktails.forEach((cocktail) => {
+        byId.set(Number(cocktail.id), cocktail);
+      });
+      return [...byId.values()].filter((c) => this.canMakeById(c.id));
     },
     filteredMakeableCocktails() {
       return this.makeableCocktails.filter((cocktail) => {
+        if (this.myDrinksOnly && !this.isMyDrink(cocktail)) {
+          return false;
+        }
+
         const matchesSearch = !this.cocktailSearch
           || cocktail.name.toLowerCase().includes(this.cocktailSearch.toLowerCase());
         if (!matchesSearch) {
@@ -954,6 +1052,21 @@ export default {
     },
     displayedCocktails() {
       return this.visibleCocktails;
+    },
+    filteredMyCocktailsForPage() {
+      const search = (this.myCocktailSearch || '').trim().toLowerCase();
+      return this.myCocktails.filter((cocktail) => {
+        if (search && !(cocktail.name || '').toLowerCase().includes(search)) {
+          return false;
+        }
+
+        const status = (cocktail.moderationStatus || 'pending').toLowerCase();
+        if (this.myCocktailStatusFilter !== 'all' && status !== this.myCocktailStatusFilter) {
+          return false;
+        }
+
+        return true;
+      });
     },
     combinedCocktailListEmptyMessage() {
       if (this.cocktailListMode === 'makeable' && !this.selectedUserId) {
@@ -1065,6 +1178,9 @@ export default {
     },
     isAdminRoute() {
       return this.currentPath === '/admin';
+    },
+    isMyCocktailsRoute() {
+      return this.currentPath === '/my-cocktails';
     },
     preferredMyCocktailsSourceId() {
       const userAddedExact = this.sources.find((s) => (s.name || '').toLowerCase() === 'user added');
@@ -1190,6 +1306,13 @@ export default {
       this.currentPath = this.getCurrentPath();
       if (this.currentPath === '/admin' && this.isAdminUser) {
         this.openAdminModal();
+      } else if (this.currentPath === '/my-cocktails') {
+        if (!this.currentUser) {
+          this.error = 'Log in to access /my-cocktails.';
+          this.navigateTo('/', { replace: true });
+        } else {
+          this.activeModal = '';
+        }
       } else if (this.activeModal === 'admin') {
         this.activeModal = '';
       }
@@ -1254,6 +1377,9 @@ export default {
         if (this.isAdminRoute) {
           this.error = 'Log in as admin to access /admin.';
           this.navigateTo('/', { replace: true });
+        } else if (this.isMyCocktailsRoute) {
+          this.error = 'Log in to access /my-cocktails.';
+          this.navigateTo('/', { replace: true });
         }
         return;
       }
@@ -1266,6 +1392,12 @@ export default {
         this.currentUser = null;
         this.selectedUserId = 0;
         this.cocktailListMode = 'all';
+        if (this.isAdminRoute || this.isMyCocktailsRoute) {
+          this.error = this.isAdminRoute
+            ? 'Log in as admin to access /admin.'
+            : 'Log in to access /my-cocktails.';
+          this.navigateTo('/', { replace: true });
+        }
       }
     },
     async loginUser() {
@@ -1317,7 +1449,7 @@ export default {
 
       await this.loadInventory();
       await this.loadUserCocktailLogs();
-      await this.loadMyPendingCocktails();
+      await this.loadMyCocktails();
       if (this.selectedCocktailId) {
         await this.loadCocktailDetail();
       }
@@ -1329,6 +1461,9 @@ export default {
           this.error = 'Admin access is required for /admin.';
           this.navigateTo('/', { replace: true });
         }
+      } else if (this.isMyCocktailsRoute && !this.currentUser) {
+        this.error = 'Log in to access /my-cocktails.';
+        this.navigateTo('/', { replace: true });
       }
     },
     async logout() {
@@ -1341,12 +1476,18 @@ export default {
       this.activeModal = '';
       this.inventory = [];
       this.userCocktailLogs = [];
-      this.myPendingCocktails = [];
+      this.myCocktails = [];
+      this.adminPendingCocktails = [];
+      this.myDrinksOnly = false;
+      this.myCocktailSearch = '';
+      this.myCocktailStatusFilter = 'all';
       this.userSuccessMessage = 'Logged out.';
       if (this.selectedCocktailId) {
         await this.loadCocktailDetail();
       }
       if (this.isAdminRoute) {
+        this.navigateTo('/', { replace: true });
+      } else if (this.isMyCocktailsRoute) {
         this.navigateTo('/', { replace: true });
       }
       setTimeout(() => {
@@ -1398,6 +1539,18 @@ export default {
       if (!this.adminExportJson) {
         this.loadAdminExportPayload();
       }
+      this.loadAdminPendingCocktails();
+    },
+    async openMyCocktailsPage() {
+      if (!this.currentUser) {
+        this.openAccountModal('login');
+        return;
+      }
+
+      this.accountMenuOpen = false;
+      this.activeModal = '';
+      await this.loadMyCocktails();
+      this.navigateTo('/my-cocktails');
     },
     closeActiveModal() {
       if (this.activeModal === 'admin' && this.isAdminRoute) {
@@ -1454,10 +1607,66 @@ export default {
         this.cocktailIngredients = cocktailIngredients;
         this.allCocktails = [...allCocktails];
         await this.reloadCocktailsForIngredientFilters();
+        await this.loadAdminPendingCocktails();
       } catch (err) {
         this.error = this.extractError(err);
       } finally {
         this.adminBusy = false;
+      }
+    },
+    async loadAdminPendingCocktails() {
+      if (!this.isAdminUser) {
+        this.adminPendingCocktails = [];
+        return;
+      }
+
+      this.adminModerationBusy = true;
+      try {
+        this.adminPendingCocktails = await getAdminPendingCocktails();
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminModerationBusy = false;
+      }
+    },
+    async approvePendingCocktail(cocktailId) {
+      if (!this.isAdminUser || this.adminModerationBusy) {
+        return;
+      }
+
+      this.adminModerationBusy = true;
+      this.error = '';
+      try {
+        await approveCocktail(cocktailId);
+        await Promise.all([
+          this.loadAdminPendingCocktails(),
+          this.loadMyCocktails(),
+          this.reloadCocktailsForIngredientFilters()
+        ]);
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminModerationBusy = false;
+      }
+    },
+    async rejectPendingCocktail(cocktailId) {
+      if (!this.isAdminUser || this.adminModerationBusy) {
+        return;
+      }
+
+      this.adminModerationBusy = true;
+      this.error = '';
+      try {
+        await rejectCocktail(cocktailId);
+        await Promise.all([
+          this.loadAdminPendingCocktails(),
+          this.loadMyCocktails(),
+          this.reloadCocktailsForIngredientFilters()
+        ]);
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminModerationBusy = false;
       }
     },
     downloadAdminImportCsv() {
@@ -1684,7 +1893,7 @@ export default {
 
         await Promise.all([
           this.reloadCocktailsForIngredientFilters(),
-          this.loadMyPendingCocktails()
+          this.loadMyCocktails()
         ]);
         this.userSuccessMessage = `Cocktail "${created.name}" submitted for approval.`;
         this.activeModal = '';
@@ -1754,7 +1963,7 @@ export default {
 
         this.ingredients = ingredients;
         this.cocktailIngredients = cocktailIngredients;
-        await this.loadMyPendingCocktails();
+        await this.loadMyCocktails();
         this.userSuccessMessage = `Cocktail "${created.name}" submitted for approval.`;
         this.activeModal = '';
         setTimeout(() => {
@@ -1764,14 +1973,14 @@ export default {
         this.error = this.extractError(err);
       }
     },
-    async loadMyPendingCocktails() {
-      this.myPendingCocktails = [];
+    async loadMyCocktails() {
+      this.myCocktails = [];
       if (!this.selectedUserId) {
         return;
       }
 
       try {
-        this.myPendingCocktails = await getMyPendingCocktails();
+        this.myCocktails = await getMyCocktails();
       } catch (err) {
         this.error = this.extractError(err);
       }
@@ -1818,6 +2027,13 @@ export default {
     },
     hasTriedCocktail(cocktailId) {
       return this.triedCocktailIdSet.has(cocktailId);
+    },
+    isMyDrink(cocktail) {
+      if (!this.selectedUserId) {
+        return false;
+      }
+
+      return Number(cocktail?.submittedByUserId || 0) === Number(this.selectedUserId);
     },
     async toggleIngredientStock(ingredientId, isInStock) {
       if (!this.selectedUserId) {
@@ -1919,6 +2135,26 @@ export default {
     },
     isPopularCocktail(cocktail) {
       return Number(cocktail?.isPopular || 0) === 1;
+    },
+    moderationStatusLabel(status) {
+      const normalized = (status || 'pending').toLowerCase();
+      if (normalized === 'approved') {
+        return 'Approved';
+      }
+      if (normalized === 'rejected') {
+        return 'Rejected';
+      }
+      return 'Pending';
+    },
+    moderationStatusClass(status) {
+      const normalized = (status || 'pending').toLowerCase();
+      if (normalized === 'approved') {
+        return 'status-approved';
+      }
+      if (normalized === 'rejected') {
+        return 'status-rejected';
+      }
+      return 'status-pending';
     },
     matchesPopularFilter(cocktail) {
       if (!this.popularOnly) {
@@ -2505,6 +2741,21 @@ button:disabled {
   font-size: 0.75rem;
 }
 
+.pill.status-approved {
+  background: #d9f6e7;
+  color: #0d5a42;
+}
+
+.pill.status-pending {
+  background: #fff2cf;
+  color: #8a5a00;
+}
+
+.pill.status-rejected {
+  background: #ffe4e6;
+  color: #9f1239;
+}
+
 .tried-pill {
   margin-left: 0.4rem;
   background: #eef2ff;
@@ -2595,6 +2846,13 @@ button:disabled {
 
 .recipe-modal-grid {
   margin-top: 0.3rem;
+}
+
+.admin-block {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.75rem;
 }
 
 .admin-import-results {

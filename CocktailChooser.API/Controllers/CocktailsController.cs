@@ -48,6 +48,30 @@ namespace CocktailChooser.API.Controllers
             return Ok(cocktails);
         }
 
+        [HttpGet("mine")]
+        public async Task<ActionResult<IEnumerable<CocktailDto>>> GetMyCocktails()
+        {
+            if (!_currentUserContext.UserId.HasValue)
+            {
+                return Unauthorized();
+            }
+
+            var cocktails = await _cocktailService.GetMyCocktailsForUserAsync(_currentUserContext.UserId.Value);
+            return Ok(cocktails);
+        }
+
+        [HttpGet("admin/pending")]
+        public async Task<ActionResult<IEnumerable<CocktailDto>>> GetAdminPendingCocktails()
+        {
+            if (!IsAdminUser())
+            {
+                return Forbid();
+            }
+
+            var cocktails = await _cocktailService.GetPendingCocktailsForAdminAsync();
+            return Ok(cocktails);
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<CocktailDto>> GetCocktail(int id)
         {
@@ -152,7 +176,7 @@ namespace CocktailChooser.API.Controllers
                 return Forbid();
             }
 
-            var updated = await _cocktailService.ApproveCocktailAsync(id);
+            var updated = await _cocktailService.ApproveCocktailAsync(id, _currentUserContext.UserId!.Value);
             if (!updated)
             {
                 return NotFound();
@@ -162,14 +186,14 @@ namespace CocktailChooser.API.Controllers
         }
 
         [HttpPost("{id}/reject")]
-        public async Task<IActionResult> RejectCocktail(int id, [FromQuery] bool delete = true)
+        public async Task<IActionResult> RejectCocktail(int id)
         {
             if (!IsAdminUser())
             {
                 return Forbid();
             }
 
-            var updated = await _cocktailService.RejectCocktailAsync(id, delete);
+            var updated = await _cocktailService.RejectCocktailAsync(id);
             if (!updated)
             {
                 return NotFound();

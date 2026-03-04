@@ -69,6 +69,24 @@ export async function getMyPendingCocktails() {
   return data;
 }
 
+export async function getMyCocktails() {
+  const { data } = await api.get('/cocktails/mine');
+  return data;
+}
+
+export async function getAdminPendingCocktails() {
+  const { data } = await api.get('/cocktails/admin/pending');
+  return data;
+}
+
+export async function approveCocktail(cocktailId) {
+  await api.post(`/cocktails/${cocktailId}/approve`);
+}
+
+export async function rejectCocktail(cocktailId) {
+  await api.post(`/cocktails/${cocktailId}/reject`);
+}
+
 export async function getIngredients() {
   const { data } = await api.get('/ingredients');
   return data;

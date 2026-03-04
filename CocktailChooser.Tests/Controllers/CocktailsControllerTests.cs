@@ -149,6 +149,25 @@ namespace CocktailChooser.Tests.Controllers
         }
 
         [Fact]
+        public async Task GetMyCocktails_ReturnsOk_WhenUserAuthenticated()
+        {
+            _mockCurrentUserContext.SetupGet(x => x.UserId).Returns(42);
+            _mockService.Setup(s => s.GetMyCocktailsForUserAsync(42))
+                .ReturnsAsync(new List<CocktailDto>
+                {
+                    new() { Id = 2, Name = "My Submitted Drink", ModerationStatus = "rejected" }
+                });
+
+            var result = await _controller.GetMyCocktails();
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var payload = Assert.IsType<List<CocktailDto>>(okResult.Value);
+            Assert.Single(payload);
+            Assert.Equal("My Submitted Drink", payload[0].Name);
+            Assert.Equal("rejected", payload[0].ModerationStatus);
+        }
+
+        [Fact]
         public async Task PreviewFromText_ReturnsOk_WithPreviewPayload()
         {
             var request = new CocktailTextPreviewRequestDto { RawText = "Name: Test" };
@@ -204,7 +223,7 @@ namespace CocktailChooser.Tests.Controllers
         public async Task ApproveCocktail_ReturnsNoContent_WhenAdminApproves()
         {
             _mockCurrentUserContext.SetupGet(x => x.UserId).Returns(1);
-            _mockService.Setup(s => s.ApproveCocktailAsync(10)).ReturnsAsync(true);
+            _mockService.Setup(s => s.ApproveCocktailAsync(10, 1)).ReturnsAsync(true);
 
             var result = await _controller.ApproveCocktail(10);
 
@@ -215,9 +234,9 @@ namespace CocktailChooser.Tests.Controllers
         public async Task RejectCocktail_ReturnsNoContent_WhenAdminRejects()
         {
             _mockCurrentUserContext.SetupGet(x => x.UserId).Returns(1);
-            _mockService.Setup(s => s.RejectCocktailAsync(10, true)).ReturnsAsync(true);
+            _mockService.Setup(s => s.RejectCocktailAsync(10)).ReturnsAsync(true);
 
-            var result = await _controller.RejectCocktail(10, true);
+            var result = await _controller.RejectCocktail(10);
 
             Assert.IsType<NoContentResult>(result);
         }

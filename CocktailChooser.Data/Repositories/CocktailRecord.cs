@@ -12,6 +12,9 @@ public class CocktailRecord
     public int? TimePeriodId { get; set; }
     public int? IsPopular { get; set; }
     public int? IsApproved { get; set; }
+    public string? ApprovedUtc { get; set; }
+    public int? ApprovedByUserId { get; set; }
+    public string? RejectedUtc { get; set; }
     public int? IsUserSubmitted { get; set; }
     public int? SubmittedByUserId { get; set; }
     public int? CocktailSourceId { get; set; }
