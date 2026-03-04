@@ -1891,6 +1891,13 @@ export default {
           timePeriodIdOverride: this.newCocktailForm.timePeriodId ? Number(this.newCocktailForm.timePeriodId) : null
         });
 
+        const [ingredients, cocktailIngredients] = await Promise.all([
+          getIngredients(),
+          getCocktailIngredients()
+        ]);
+        this.ingredients = ingredients;
+        this.cocktailIngredients = cocktailIngredients;
+
         await Promise.all([
           this.reloadCocktailsForIngredientFilters(),
           this.loadMyCocktails()

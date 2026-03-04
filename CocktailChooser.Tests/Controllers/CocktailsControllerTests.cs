@@ -74,7 +74,7 @@ namespace CocktailChooser.Tests.Controllers
             var createdCocktailDto = new CocktailDto { Id = 1, Name = "Mojito" };
             _mockCurrentUserContext.SetupGet(x => x.UserId).Returns(1);
 
-            _mockService.Setup(s => s.CreateCocktailAsync(cocktailDto))
+            _mockService.Setup(s => s.CreateCocktailAsync(cocktailDto, 1))
                 .ReturnsAsync(createdCocktailDto);
 
             var result = await _controller.PostCocktail(cocktailDto);

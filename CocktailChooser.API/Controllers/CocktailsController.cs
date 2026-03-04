@@ -138,7 +138,7 @@ namespace CocktailChooser.API.Controllers
                 return Forbid();
             }
 
-            var newCocktail = await _cocktailService.CreateCocktailAsync(cocktailDto);
+            var newCocktail = await _cocktailService.CreateCocktailAsync(cocktailDto, _currentUserContext.UserId!.Value);
             return CreatedAtAction(nameof(GetCocktail), new { id = newCocktail.Id }, newCocktail);
         }
 
