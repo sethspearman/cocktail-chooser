@@ -113,7 +113,17 @@
             <option value="makeable">What Can I Drink</option>
             <option value="all">Show All Cocktails</option>
           </select>
-          <input v-model.trim="cocktailSearch" placeholder="Search cocktails" />
+          <div class="search-input-wrap">
+            <input v-model.trim="cocktailSearch" placeholder="Search cocktails" />
+            <button
+              v-if="cocktailSearch"
+              type="button"
+              class="search-clear-btn"
+              aria-label="Clear cocktail search"
+              @click="cocktailSearch = ''">
+              ×
+            </button>
+          </div>
           <select v-model="selectedSpirit">
             <option value="">All spirits</option>
             <option v-for="spirit in spirits" :key="spirit" :value="spirit">{{ spirit }}</option>
@@ -1891,6 +1901,13 @@ export default {
           timePeriodIdOverride: this.newCocktailForm.timePeriodId ? Number(this.newCocktailForm.timePeriodId) : null
         });
 
+        const [ingredients, cocktailIngredients] = await Promise.all([
+          getIngredients(),
+          getCocktailIngredients()
+        ]);
+        this.ingredients = ingredients;
+        this.cocktailIngredients = cocktailIngredients;
+
         await Promise.all([
           this.reloadCocktailsForIngredientFilters(),
           this.loadMyCocktails()
@@ -2471,6 +2488,34 @@ body {
 
 .toolbar-checkbox input[type='checkbox'] {
   margin: 0;
+}
+
+.search-input-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.search-input-wrap input {
+  padding-right: 2rem;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.2rem 0.3rem;
+}
+
+.search-clear-btn:hover {
+  color: var(--text);
 }
 
 input,

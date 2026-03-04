@@ -73,6 +73,13 @@ public class CocktailServiceTests
     public async Task UpdateCocktailAsync_DelegatesToRepository()
     {
         var dto = new CocktailDto { Id = 10, Name = "Negroni" };
+        _repositoryMock.Setup(r => r.GetByIdAsync(10))
+            .ReturnsAsync(new CocktailRecord
+            {
+                Id = 10,
+                Name = "Negroni",
+                IsApproved = 1
+            });
         _repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<CocktailRecord>()))
             .ReturnsAsync(true);
 
@@ -208,5 +215,88 @@ public class CocktailServiceTests
         Assert.Equal(1, result.IsUserSubmitted);
         Assert.Equal(42, result.SubmittedByUserId);
         _cocktailIngredientRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<CocktailIngredientRecord>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task SubmitFromTextAsync_AutoApproves_WhenSubmittedByAdminUser()
+    {
+        _ingredientRepositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<IngredientRecord>());
+        _repositoryMock.Setup(r => r.GetTimePeriodsAsync())
+            .ReturnsAsync(new List<LookupOptionRecord>());
+        _amountRepositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<AmountRecord>());
+        _recipeParserMock.Setup(r => r.Parse(It.IsAny<string>()))
+            .Returns(new List<OcrParsedRecipeDraft>
+            {
+                new()
+                {
+                    Ingredients = new List<OcrParsedIngredientDraft>(),
+                    Steps = new List<OcrParsedStepDraft>()
+                }
+            });
+        _ingredientRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<IngredientRecord>()))
+            .ReturnsAsync((IngredientRecord input) => new IngredientRecord { Id = 78, Name = input.Name });
+        _repositoryMock.Setup(r => r.CreateAsync(It.IsAny<CocktailRecord>()))
+            .ReturnsAsync((CocktailRecord input) => new CocktailRecord
+            {
+                Id = 56,
+                Name = input.Name,
+                Description = input.Description,
+                Method = input.Method,
+                TimePeriodId = input.TimePeriodId,
+                IsApproved = input.IsApproved,
+                ApprovedUtc = input.ApprovedUtc,
+                ApprovedByUserId = input.ApprovedByUserId,
+                IsUserSubmitted = input.IsUserSubmitted,
+                SubmittedByUserId = input.SubmittedByUserId,
+                CocktailSourceId = input.CocktailSourceId
+            });
+
+        var result = await _service.SubmitFromTextAsync(new CocktailTextSubmitRequestDto
+        {
+            RawText = """
+                Name: Admin Submission
+                Description: Should auto approve
+                Ingredients:
+                - 2 oz gin
+                Steps:
+                1. Shake with ice
+                """
+        }, userId: 1);
+
+        Assert.Equal("Admin Submission", result.Name);
+        Assert.Equal(1, result.IsApproved);
+        Assert.False(string.IsNullOrWhiteSpace(result.ApprovedUtc));
+        Assert.Equal(1, result.ApprovedByUserId);
+        Assert.Equal(1, result.IsUserSubmitted);
+        Assert.Equal(1, result.SubmittedByUserId);
+    }
+
+    [Fact]
+    public async Task CreateCocktailAsync_AutoApproves_WhenCreatedByAdminUser()
+    {
+        _repositoryMock.Setup(r => r.CreateAsync(It.IsAny<CocktailRecord>()))
+            .ReturnsAsync((CocktailRecord input) => new CocktailRecord
+            {
+                Id = 81,
+                Name = input.Name,
+                CanonicalKey = input.CanonicalKey,
+                IsApproved = input.IsApproved,
+                ApprovedUtc = input.ApprovedUtc,
+                ApprovedByUserId = input.ApprovedByUserId,
+                RejectedUtc = input.RejectedUtc
+            });
+
+        var result = await _service.CreateCocktailAsync(new CocktailDto
+        {
+            Name = "Admin Entered"
+        }, createdByUserId: 1);
+
+        Assert.Equal("Admin Entered", result.Name);
+        Assert.Equal(1, result.IsApproved);
+        Assert.False(string.IsNullOrWhiteSpace(result.ApprovedUtc));
+        Assert.Equal(1, result.ApprovedByUserId);
+        Assert.Equal("approved", result.ModerationStatus);
     }
 }

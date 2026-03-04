@@ -440,6 +440,8 @@ public class CocktailService : ICocktailService
         var stepLines = preview.Steps.ToList();
         var methodText = stepLines.Count > 0 ? string.Join(". ", stepLines) : null;
 
+        var isAdminSubmission = IsAdminUserId(userId);
+        var approvalUtc = isAdminSubmission ? DateTime.UtcNow.ToString("O") : null;
         var dto = new CocktailDto
         {
             Name = preview.Name!,
@@ -463,15 +465,15 @@ public class CocktailService : ICocktailService
             TimePeriodId = timePeriodId,
             CocktailSourceId = requestDto.CocktailSourceId,
             IsPopular = 0,
-            IsApproved = 0,
-            ApprovedUtc = null,
-            ApprovedByUserId = null,
+            IsApproved = isAdminSubmission ? 1 : 0,
+            ApprovedUtc = approvalUtc,
+            ApprovedByUserId = isAdminSubmission ? userId : null,
             RejectedUtc = null,
             IsUserSubmitted = 1,
             SubmittedByUserId = userId
         };
 
-        return await CreateCocktailAsync(dto);
+        return await CreateCocktailAsync(dto, userId);
     }
 
     public async Task<bool> ApproveCocktailAsync(int id, int approvedByUserId)
@@ -502,7 +504,7 @@ public class CocktailService : ICocktailService
         return await _cocktailRepository.UpdateAsync(existing);
     }
 
-    public async Task<CocktailDto> CreateCocktailAsync(CocktailDto cocktailDto)
+    public async Task<CocktailDto> CreateCocktailAsync(CocktailDto cocktailDto, int? createdByUserId = null)
     {
         if (string.IsNullOrWhiteSpace(cocktailDto.Name))
         {
@@ -514,7 +516,17 @@ public class CocktailService : ICocktailService
         cocktailDto.Method = NullIfWhiteSpace(cocktailDto.Method);
         cocktailDto.IngredientLines = NullIfWhiteSpace(cocktailDto.IngredientLines);
         cocktailDto.StepLines = NullIfWhiteSpace(cocktailDto.StepLines);
-        cocktailDto.IsApproved ??= 0;
+        if (createdByUserId.HasValue && IsAdminUserId(createdByUserId.Value))
+        {
+            cocktailDto.IsApproved = 1;
+            cocktailDto.ApprovedUtc = DateTime.UtcNow.ToString("O");
+            cocktailDto.ApprovedByUserId = createdByUserId.Value;
+            cocktailDto.RejectedUtc = null;
+        }
+        else
+        {
+            cocktailDto.IsApproved ??= 0;
+        }
         cocktailDto.IsUserSubmitted ??= 0;
         cocktailDto.CanonicalKey = await BuildUniqueCanonicalKeyAsync(cocktailDto);
 
@@ -1174,6 +1186,12 @@ public class CocktailService : ICocktailService
     private static bool IsApprovedForPublicRead(CocktailRecord cocktail)
     {
         return cocktail.IsApproved.GetValueOrDefault() == 1;
+    }
+
+    private static bool IsAdminUserId(int userId)
+    {
+        // MVP admin policy: first account (UserId=1) is treated as admin.
+        return userId == 1;
     }
 
     private async Task<string> BuildUniqueCanonicalKeyAsync(CocktailDto cocktailDto, int? existingCocktailId = null)

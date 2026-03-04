@@ -18,7 +18,7 @@ namespace CocktailChooser.API.Services
             int? offset = null,
             int? limit = null);
         Task<AdminCocktailImportResultDto> ImportAdminCocktailsAsync(AdminCocktailImportRequestDto request);
-        Task<CocktailDto> CreateCocktailAsync(CocktailDto cocktailDto);
+        Task<CocktailDto> CreateCocktailAsync(CocktailDto cocktailDto, int? createdByUserId = null);
         Task<CocktailTextPreviewResponseDto> PreviewFromTextAsync(CocktailTextPreviewRequestDto requestDto);
         Task<CocktailDto> SubmitFromTextAsync(CocktailTextSubmitRequestDto requestDto, int userId);
         Task<bool> ApproveCocktailAsync(int id, int approvedByUserId);
