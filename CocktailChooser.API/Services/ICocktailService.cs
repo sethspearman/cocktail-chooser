@@ -8,6 +8,8 @@ namespace CocktailChooser.API.Services
             IEnumerable<string>? includeIngredientNames = null,
             string? includeMode = null,
             string? alcoholFilter = null);
+        Task<IEnumerable<CocktailDto>> GetMyCocktailsForUserAsync(int userId);
+        Task<IEnumerable<CocktailDto>> GetPendingCocktailsForAdminAsync();
         Task<IEnumerable<CocktailDto>> GetPendingCocktailsForUserAsync(int userId);
         Task<CocktailDto?> GetCocktailByIdAsync(int id);
         Task<IEnumerable<AdminCocktailPortDto>> ExportAdminCocktailsAsync(
@@ -19,8 +21,8 @@ namespace CocktailChooser.API.Services
         Task<CocktailDto> CreateCocktailAsync(CocktailDto cocktailDto);
         Task<CocktailTextPreviewResponseDto> PreviewFromTextAsync(CocktailTextPreviewRequestDto requestDto);
         Task<CocktailDto> SubmitFromTextAsync(CocktailTextSubmitRequestDto requestDto, int userId);
-        Task<bool> ApproveCocktailAsync(int id);
-        Task<bool> RejectCocktailAsync(int id, bool delete);
+        Task<bool> ApproveCocktailAsync(int id, int approvedByUserId);
+        Task<bool> RejectCocktailAsync(int id);
         Task<bool> UpdateCocktailAsync(CocktailDto cocktailDto);
         Task<bool> DeleteCocktailAsync(int id);
     }

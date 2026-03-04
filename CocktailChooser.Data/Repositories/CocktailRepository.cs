@@ -22,6 +22,9 @@ public class CocktailRepository : ICocktailRepository
         TimePeriodId,
         IsPopular,
         IsApproved,
+        ApprovedUtc,
+        ApprovedByUserId,
+        RejectedUtc,
         IsUserSubmitted,
         SubmittedByUserId,
         CocktailSourceId
@@ -97,6 +100,9 @@ public class CocktailRepository : ICocktailRepository
                 TimePeriodId,
                 IsPopular,
                 IsApproved,
+                ApprovedUtc,
+                ApprovedByUserId,
+                RejectedUtc,
                 IsUserSubmitted,
                 SubmittedByUserId,
                 CocktailSourceId
@@ -112,6 +118,9 @@ public class CocktailRepository : ICocktailRepository
                 @TimePeriodId,
                 @IsPopular,
                 COALESCE(@IsApproved, 0),
+                @ApprovedUtc,
+                @ApprovedByUserId,
+                @RejectedUtc,
                 COALESCE(@IsUserSubmitted, 0),
                 @SubmittedByUserId,
                 @CocktailSourceId
@@ -138,6 +147,9 @@ public class CocktailRepository : ICocktailRepository
                 TimePeriodId = @TimePeriodId,
                 IsPopular = @IsPopular,
                 IsApproved = COALESCE(@IsApproved, IsApproved),
+                ApprovedUtc = @ApprovedUtc,
+                ApprovedByUserId = @ApprovedByUserId,
+                RejectedUtc = @RejectedUtc,
                 IsUserSubmitted = COALESCE(@IsUserSubmitted, IsUserSubmitted),
                 SubmittedByUserId = COALESCE(@SubmittedByUserId, SubmittedByUserId),
                 CocktailSourceId = @CocktailSourceId
@@ -180,6 +192,9 @@ public class CocktailRepository : ICocktailRepository
                     TimePeriodId = @TimePeriodId,
                     IsPopular = @IsPopular,
                     IsApproved = COALESCE(@IsApproved, IsApproved),
+                    ApprovedUtc = @ApprovedUtc,
+                    ApprovedByUserId = @ApprovedByUserId,
+                    RejectedUtc = @RejectedUtc,
                     IsUserSubmitted = COALESCE(@IsUserSubmitted, IsUserSubmitted),
                     SubmittedByUserId = @SubmittedByUserId,
                     CocktailSourceId = @CocktailSourceId
@@ -196,6 +211,9 @@ public class CocktailRepository : ICocktailRepository
                     importRecord.TimePeriodId,
                     importRecord.IsPopular,
                     importRecord.IsApproved,
+                    importRecord.ApprovedUtc,
+                    importRecord.ApprovedByUserId,
+                    importRecord.RejectedUtc,
                     importRecord.IsUserSubmitted,
                     importRecord.SubmittedByUserId,
                     importRecord.CocktailSourceId
@@ -217,6 +235,9 @@ public class CocktailRepository : ICocktailRepository
                     TimePeriodId,
                     IsPopular,
                     IsApproved,
+                    ApprovedUtc,
+                    ApprovedByUserId,
+                    RejectedUtc,
                     IsUserSubmitted,
                     SubmittedByUserId,
                     CocktailSourceId
@@ -232,6 +253,9 @@ public class CocktailRepository : ICocktailRepository
                     @TimePeriodId,
                     @IsPopular,
                     COALESCE(@IsApproved, 1),
+                    @ApprovedUtc,
+                    @ApprovedByUserId,
+                    @RejectedUtc,
                     COALESCE(@IsUserSubmitted, 0),
                     @SubmittedByUserId,
                     @CocktailSourceId
@@ -249,6 +273,9 @@ public class CocktailRepository : ICocktailRepository
                     importRecord.TimePeriodId,
                     importRecord.IsPopular,
                     importRecord.IsApproved,
+                    importRecord.ApprovedUtc,
+                    importRecord.ApprovedByUserId,
+                    importRecord.RejectedUtc,
                     importRecord.IsUserSubmitted,
                     importRecord.SubmittedByUserId,
                     importRecord.CocktailSourceId

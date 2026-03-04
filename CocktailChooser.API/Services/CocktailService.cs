@@ -181,8 +181,30 @@ public class CocktailService : ICocktailService
         var cocktails = await _cocktailRepository.GetAllAsync();
         return cocktails
             .Where(c => c.IsApproved.GetValueOrDefault() == 0
+                        && string.IsNullOrWhiteSpace(c.RejectedUtc)
                         && c.SubmittedByUserId.GetValueOrDefault() == userId)
             .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(MapToDto);
+    }
+
+    public async Task<IEnumerable<CocktailDto>> GetMyCocktailsForUserAsync(int userId)
+    {
+        var cocktails = await _cocktailRepository.GetAllAsync();
+        return cocktails
+            .Where(c => c.SubmittedByUserId.GetValueOrDefault() == userId
+                        && c.IsUserSubmitted.GetValueOrDefault() == 1)
+            .OrderByDescending(c => c.Id)
+            .Select(MapToDto);
+    }
+
+    public async Task<IEnumerable<CocktailDto>> GetPendingCocktailsForAdminAsync()
+    {
+        var cocktails = await _cocktailRepository.GetAllAsync();
+        return cocktails
+            .Where(c => c.IsUserSubmitted.GetValueOrDefault() == 1
+                        && c.IsApproved.GetValueOrDefault() == 0
+                        && string.IsNullOrWhiteSpace(c.RejectedUtc))
+            .OrderByDescending(c => c.Id)
             .Select(MapToDto);
     }
 
@@ -246,6 +268,9 @@ public class CocktailService : ICocktailService
                 TimePeriodId = cocktail.TimePeriodId,
                 IsPopular = cocktail.IsPopular,
                 IsApproved = cocktail.IsApproved,
+                ApprovedUtc = cocktail.ApprovedUtc,
+                ApprovedByUserId = cocktail.ApprovedByUserId,
+                RejectedUtc = cocktail.RejectedUtc,
                 IsUserSubmitted = cocktail.IsUserSubmitted,
                 SubmittedByUserId = cocktail.SubmittedByUserId,
                 CocktailSourceId = cocktail.CocktailSourceId,
@@ -303,6 +328,9 @@ public class CocktailService : ICocktailService
                     TimePeriodId = item.TimePeriodId,
                     IsPopular = item.IsPopular,
                     IsApproved = item.IsApproved,
+                    ApprovedUtc = item.ApprovedUtc,
+                    ApprovedByUserId = item.ApprovedByUserId,
+                    RejectedUtc = item.RejectedUtc,
                     IsUserSubmitted = item.IsUserSubmitted,
                     SubmittedByUserId = item.SubmittedByUserId,
                     CocktailSourceId = item.CocktailSourceId,
@@ -436,6 +464,9 @@ public class CocktailService : ICocktailService
             CocktailSourceId = requestDto.CocktailSourceId,
             IsPopular = 0,
             IsApproved = 0,
+            ApprovedUtc = null,
+            ApprovedByUserId = null,
+            RejectedUtc = null,
             IsUserSubmitted = 1,
             SubmittedByUserId = userId
         };
@@ -443,7 +474,7 @@ public class CocktailService : ICocktailService
         return await CreateCocktailAsync(dto);
     }
 
-    public async Task<bool> ApproveCocktailAsync(int id)
+    public async Task<bool> ApproveCocktailAsync(int id, int approvedByUserId)
     {
         var existing = await _cocktailRepository.GetByIdAsync(id);
         if (existing == null)
@@ -452,10 +483,13 @@ public class CocktailService : ICocktailService
         }
 
         existing.IsApproved = 1;
+        existing.ApprovedUtc = DateTime.UtcNow.ToString("O");
+        existing.ApprovedByUserId = approvedByUserId;
+        existing.RejectedUtc = null;
         return await _cocktailRepository.UpdateAsync(existing);
     }
 
-    public async Task<bool> RejectCocktailAsync(int id, bool delete)
+    public async Task<bool> RejectCocktailAsync(int id)
     {
         var existing = await _cocktailRepository.GetByIdAsync(id);
         if (existing == null)
@@ -463,12 +497,8 @@ public class CocktailService : ICocktailService
             return false;
         }
 
-        if (delete)
-        {
-            return await _cocktailRepository.DeleteAsync(id);
-        }
-
         existing.IsApproved = 0;
+        existing.RejectedUtc = DateTime.UtcNow.ToString("O");
         return await _cocktailRepository.UpdateAsync(existing);
     }
 
@@ -497,6 +527,19 @@ public class CocktailService : ICocktailService
 
     public async Task<bool> UpdateCocktailAsync(CocktailDto cocktailDto)
     {
+        var existing = await _cocktailRepository.GetByIdAsync(cocktailDto.Id);
+        if (existing == null)
+        {
+            return false;
+        }
+
+        cocktailDto.IsApproved ??= existing.IsApproved;
+        cocktailDto.ApprovedUtc ??= existing.ApprovedUtc;
+        cocktailDto.ApprovedByUserId ??= existing.ApprovedByUserId;
+        cocktailDto.RejectedUtc ??= existing.RejectedUtc;
+        cocktailDto.IsUserSubmitted ??= existing.IsUserSubmitted;
+        cocktailDto.SubmittedByUserId ??= existing.SubmittedByUserId;
+
         cocktailDto.CanonicalKey = await BuildUniqueCanonicalKeyAsync(cocktailDto, cocktailDto.Id);
         return await _cocktailRepository.UpdateAsync(MapToRecord(cocktailDto));
     }
@@ -1081,6 +1124,10 @@ public class CocktailService : ICocktailService
             TimePeriodId = cocktail.TimePeriodId,
             IsPopular = cocktail.IsPopular,
             IsApproved = cocktail.IsApproved,
+            ApprovedUtc = cocktail.ApprovedUtc,
+            ApprovedByUserId = cocktail.ApprovedByUserId,
+            RejectedUtc = cocktail.RejectedUtc,
+            ModerationStatus = GetModerationStatus(cocktail),
             IsUserSubmitted = cocktail.IsUserSubmitted,
             SubmittedByUserId = cocktail.SubmittedByUserId,
             CocktailSourceId = cocktail.CocktailSourceId
@@ -1100,10 +1147,28 @@ public class CocktailService : ICocktailService
             TimePeriodId = cocktail.TimePeriodId,
             IsPopular = cocktail.IsPopular,
             IsApproved = cocktail.IsApproved,
+            ApprovedUtc = cocktail.ApprovedUtc,
+            ApprovedByUserId = cocktail.ApprovedByUserId,
+            RejectedUtc = cocktail.RejectedUtc,
             IsUserSubmitted = cocktail.IsUserSubmitted,
             SubmittedByUserId = cocktail.SubmittedByUserId,
             CocktailSourceId = cocktail.CocktailSourceId
         };
+    }
+
+    private static string GetModerationStatus(CocktailRecord cocktail)
+    {
+        if (cocktail.IsApproved.GetValueOrDefault() == 1)
+        {
+            return "approved";
+        }
+
+        if (!string.IsNullOrWhiteSpace(cocktail.RejectedUtc))
+        {
+            return "rejected";
+        }
+
+        return "pending";
     }
 
     private static bool IsApprovedForPublicRead(CocktailRecord cocktail)

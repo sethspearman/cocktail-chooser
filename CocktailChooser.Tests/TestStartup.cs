@@ -45,6 +45,9 @@ public class TestStartup
                     TimePeriodId INTEGER,
                     IsPopular INTEGER DEFAULT 0,
                     IsApproved INTEGER NOT NULL DEFAULT 0,
+                    ApprovedUtc TEXT,
+                    ApprovedByUserId INTEGER,
+                    RejectedUtc TEXT,
                     IsUserSubmitted INTEGER NOT NULL DEFAULT 0,
                     SubmittedByUserId INTEGER,
                     CocktailSourceId INTEGER
