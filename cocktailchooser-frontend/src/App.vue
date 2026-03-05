@@ -660,10 +660,10 @@ Steps:
               </li>
             </ul>
           </div>
-          <div>
+          <div class="admin-export-panel">
             <h3>Export JSON</h3>
             <textarea v-model="adminExportJson" rows="16" spellcheck="false"></textarea>
-            <div class="modal-actions">
+            <div class="modal-actions admin-export-actions">
               <button
                 type="button"
                 class="menu-button"
@@ -677,6 +677,9 @@ Steps:
             <h3>Import JSON</h3>
             <textarea v-model="adminImportJson" rows="16" spellcheck="false"></textarea>
             <div class="modal-actions">
+              <button type="button" class="menu-button" :disabled="adminBusy" @click="openAdminImportFilePicker">
+                Load from File
+              </button>
               <button type="button" :disabled="adminBusy" @click="importAdminPayload">
                 {{ adminBusy ? 'Importing...' : 'Run Import' }}
               </button>
@@ -688,6 +691,12 @@ Steps:
                 Download CSV
               </button>
             </div>
+            <input
+              ref="adminImportFileInput"
+              type="file"
+              accept=".json,application/json"
+              class="admin-hidden-file-input"
+              @change="handleAdminImportFileSelected" />
             <p v-if="adminImportSummary" class="subtle">
               Created: {{ adminImportSummary.created }},
               Updated: {{ adminImportSummary.updated }},
@@ -1759,6 +1768,37 @@ export default {
         this.loadAdminExportPayload(),
         this.loadAdminPendingCocktails()
       ]);
+    },
+    openAdminImportFilePicker() {
+      if (this.adminBusy) {
+        return;
+      }
+
+      const input = this.$refs.adminImportFileInput;
+      if (input && typeof input.click === 'function') {
+        input.click();
+      }
+    },
+    async handleAdminImportFileSelected(event) {
+      const input = event?.target;
+      const file = input?.files?.[0];
+      if (!file) {
+        return;
+      }
+
+      this.error = '';
+      try {
+        const raw = await file.text();
+        JSON.parse(raw);
+        this.adminImportJson = raw;
+        this.adminImportSummary = null;
+      } catch (err) {
+        this.error = 'Selected file is not valid JSON. Import text was not changed.';
+      } finally {
+        if (input) {
+          input.value = '';
+        }
+      }
     },
     async loadAdminExportPayload() {
       if (!this.isAdminUser) {
@@ -3359,6 +3399,18 @@ button:disabled {
 
 .admin-result {
   background: #edf8f2;
+}
+
+.admin-hidden-file-input {
+  display: none;
+}
+
+.admin-export-panel textarea {
+  width: 100%;
+}
+
+.admin-export-actions {
+  justify-content: center;
 }
 
 .admin-import-results {
