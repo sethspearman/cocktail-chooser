@@ -221,6 +221,9 @@ public class CocktailRepositoryIntegrationTests : IDisposable
                 IngredientId INTEGER NOT NULL,
                 AmountId INTEGER,
                 AmountText TEXT,
+                CanonicalAmountValue REAL,
+                CanonicalAmountUnit TEXT,
+                AmountOriginalText TEXT,
                 SortOrder INTEGER
             );
             CREATE TABLE IF NOT EXISTS CocktailSteps (

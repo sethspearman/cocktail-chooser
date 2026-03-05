@@ -24,6 +24,9 @@ public class CocktailIngredientRepository : ICocktailIngredientRepository
                 ci.AmountId,
                 a.MeasurementName AS AmountName,
                 ci.AmountText,
+                ci.CanonicalAmountValue,
+                ci.CanonicalAmountUnit,
+                ci.AmountOriginalText,
                 ci.SortOrder
             FROM CocktailIngredients ci
             INNER JOIN Ingredients i ON i.Id = ci.IngredientId
@@ -47,6 +50,9 @@ public class CocktailIngredientRepository : ICocktailIngredientRepository
                 ci.AmountId,
                 a.MeasurementName AS AmountName,
                 ci.AmountText,
+                ci.CanonicalAmountValue,
+                ci.CanonicalAmountUnit,
+                ci.AmountOriginalText,
                 ci.SortOrder
             FROM CocktailIngredients ci
             INNER JOIN Ingredients i ON i.Id = ci.IngredientId
@@ -68,6 +74,9 @@ public class CocktailIngredientRepository : ICocktailIngredientRepository
                 IngredientId,
                 AmountId,
                 AmountText,
+                CanonicalAmountValue,
+                CanonicalAmountUnit,
+                AmountOriginalText,
                 SortOrder
             )
             VALUES
@@ -76,6 +85,9 @@ public class CocktailIngredientRepository : ICocktailIngredientRepository
                 @IngredientId,
                 @AmountId,
                 @AmountText,
+                @CanonicalAmountValue,
+                @CanonicalAmountUnit,
+                @AmountOriginalText,
                 @SortOrder
             );
             SELECT last_insert_rowid();
@@ -91,6 +103,9 @@ public class CocktailIngredientRepository : ICocktailIngredientRepository
                 ci.AmountId,
                 a.MeasurementName AS AmountName,
                 ci.AmountText,
+                ci.CanonicalAmountValue,
+                ci.CanonicalAmountUnit,
+                ci.AmountOriginalText,
                 ci.SortOrder
             FROM CocktailIngredients ci
             INNER JOIN Ingredients i ON i.Id = ci.IngredientId
