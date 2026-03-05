@@ -299,4 +299,53 @@ public class CocktailServiceTests
         Assert.Equal(1, result.ApprovedByUserId);
         Assert.Equal("approved", result.ModerationStatus);
     }
+
+    [Fact]
+    public async Task CreateCocktailAsync_StoresCanonicalAmountAndOriginalText_ForStructuredAmountText()
+    {
+        _repositoryMock.Setup(r => r.CreateAsync(It.IsAny<CocktailRecord>()))
+            .ReturnsAsync(new CocktailRecord
+            {
+                Id = 99,
+                Name = "Canonical Amount Test",
+                IsApproved = 1
+            });
+        _ingredientRepositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<IngredientRecord>
+            {
+                new() { Id = 7, Name = "Gin" }
+            });
+        _amountRepositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<AmountRecord>());
+        _recipeParserMock.Setup(r => r.Parse(It.IsAny<string>()))
+            .Returns(new List<OcrParsedRecipeDraft>
+            {
+                new()
+                {
+                    Ingredients = new List<OcrParsedIngredientDraft>(),
+                    Steps = new List<OcrParsedStepDraft>()
+                }
+            });
+
+        await _service.CreateCocktailAsync(new CocktailDto
+        {
+            Name = "Canonical Amount Test",
+            StructuredIngredients = new List<CocktailIngredientEntryDto>
+            {
+                new()
+                {
+                    IngredientName = "Gin",
+                    AmountText = "1.5 oz"
+                }
+            }
+        });
+
+        _cocktailIngredientRepositoryMock.Verify(
+            r => r.CreateAsync(It.Is<CocktailIngredientRecord>(x =>
+                x.AmountText == "1.5 oz"
+                && x.AmountOriginalText == "1.5 oz"
+                && x.CanonicalAmountValue == 1.5
+                && x.CanonicalAmountUnit == "oz")),
+            Times.Once);
+    }
 }

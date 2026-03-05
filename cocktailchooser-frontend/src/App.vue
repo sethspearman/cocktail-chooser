@@ -221,7 +221,7 @@
           <ul>
             <li v-for="item in selectedCocktailIngredients" :key="`ing-${item.id}`">
               {{ item.ingredientName }}
-              <span v-if="item.amountName || item.amountText" class="subtle">({{ displayAmount(item) }})</span>
+              <span v-if="item.displayAmount || item.amountName || item.amountText" class="subtle">({{ displayAmount(item) }})</span>
             </li>
           </ul>
 
@@ -292,7 +292,7 @@
               <ul>
                 <li v-for="item in selectedCocktailIngredients" :key="`print-ing-${item.id}`">
                   {{ item.ingredientName }}
-                  <span v-if="item.amountName || item.amountText" class="subtle">({{ displayAmount(item) }})</span>
+                  <span v-if="item.displayAmount || item.amountName || item.amountText" class="subtle">({{ displayAmount(item) }})</span>
                 </li>
               </ul>
             </div>
@@ -2258,7 +2258,7 @@ export default {
       return new Date(utc).toLocaleString();
     },
     displayAmount(item) {
-      const raw = (item?.amountName || item?.amountText || '').trim();
+      const raw = (item?.displayAmount || item?.amountName || item?.amountText || '').trim();
       if (!raw) {
         return '';
       }

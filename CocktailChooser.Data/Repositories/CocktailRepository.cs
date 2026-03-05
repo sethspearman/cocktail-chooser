@@ -301,7 +301,16 @@ public class CocktailRepository : ICocktailRepository
             var row = normalizedIngredients[i];
             var ingredientId = await ResolveOrCreateIngredientIdAsync(connection, tx, row.IngredientName);
             var amountId = await ResolveAmountIdAsync(connection, tx, row.AmountId, row.AmountText);
+            var amountReference = amountId.HasValue
+                ? await GetAmountLookupByIdAsync(connection, tx, amountId.Value)
+                : null;
             var amountText = amountId.HasValue ? null : row.AmountText;
+            var amountOriginalText = row.AmountText ?? amountReference?.MeasurementName;
+            var canonicalAmount = AmountCanonicalizer.Parse(amountOriginalText);
+            if (!canonicalAmount.HasData && amountReference is not null)
+            {
+                canonicalAmount = AmountCanonicalizer.FromAmountReference(amountReference.MeasurementName, amountReference.Ounces);
+            }
 
             await connection.ExecuteAsync(
                 """
@@ -311,6 +320,9 @@ public class CocktailRepository : ICocktailRepository
                     IngredientId,
                     AmountId,
                     AmountText,
+                    CanonicalAmountValue,
+                    CanonicalAmountUnit,
+                    AmountOriginalText,
                     SortOrder
                 )
                 VALUES
@@ -319,6 +331,9 @@ public class CocktailRepository : ICocktailRepository
                     @IngredientId,
                     @AmountId,
                     @AmountText,
+                    @CanonicalAmountValue,
+                    @CanonicalAmountUnit,
+                    @AmountOriginalText,
                     @SortOrder
                 );
                 """,
@@ -328,6 +343,9 @@ public class CocktailRepository : ICocktailRepository
                     IngredientId = ingredientId,
                     AmountId = amountId,
                     AmountText = amountText,
+                    CanonicalAmountValue = canonicalAmount.Value,
+                    CanonicalAmountUnit = canonicalAmount.Unit,
+                    AmountOriginalText = amountOriginalText,
                     SortOrder = i + 1
                 },
                 tx);
@@ -589,5 +607,31 @@ public class CocktailRepository : ICocktailRepository
             tx);
 
         return matchedAmountId.HasValue ? (int)matchedAmountId.Value : null;
+    }
+
+    private static async Task<AmountLookup?> GetAmountLookupByIdAsync(
+        SqliteConnection connection,
+        DbTransaction tx,
+        int amountId)
+    {
+        return await connection.QuerySingleOrDefaultAsync<AmountLookup>(
+            """
+            SELECT
+                Id,
+                MeasurementName,
+                Ounces
+            FROM Amounts
+            WHERE Id = @Id
+            LIMIT 1;
+            """,
+            new { Id = amountId },
+            tx);
+    }
+
+    private sealed class AmountLookup
+    {
+        public int Id { get; set; }
+        public string MeasurementName { get; set; } = string.Empty;
+        public double? Ounces { get; set; }
     }
 }

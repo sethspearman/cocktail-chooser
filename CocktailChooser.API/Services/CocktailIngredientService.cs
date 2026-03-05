@@ -36,6 +36,10 @@ public class CocktailIngredientService : ICocktailIngredientService
             AmountId = row.AmountId,
             AmountName = row.AmountName,
             AmountText = row.AmountText,
+            CanonicalAmountValue = row.CanonicalAmountValue,
+            CanonicalAmountUnit = row.CanonicalAmountUnit,
+            AmountOriginalText = row.AmountOriginalText,
+            DisplayAmount = AmountDisplayFormatter.FormatForIngredient(row.AmountOriginalText, row.AmountName, row.AmountText),
             SortOrder = row.SortOrder
         };
     }

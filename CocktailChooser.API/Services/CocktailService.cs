@@ -279,7 +279,7 @@ public class CocktailService : ICocktailService
                     {
                         IngredientName = x.IngredientName,
                         AmountId = x.AmountId,
-                        AmountText = x.AmountText
+                        AmountText = x.AmountOriginalText ?? x.AmountText
                     })
                     .ToList(),
                 StructuredSteps = stepRows
@@ -622,7 +622,10 @@ public class CocktailService : ICocktailService
                 var amountMatch = row.AmountId.HasValue
                     ? allAmounts.FirstOrDefault(a => a.Id == row.AmountId.Value)
                     : FindBestAmountMatch(row.AmountText, allAmounts);
-                var amountText = amountMatch == null ? row.AmountText : null;
+                var inputAmountText = NullIfWhiteSpace(row.AmountText);
+                var amountText = amountMatch == null ? inputAmountText : null;
+                var amountOriginalText = inputAmountText ?? amountMatch?.MeasurementName;
+                var canonicalAmount = ResolveCanonicalAmount(amountOriginalText, amountMatch);
 
                 await _cocktailIngredientRepository.CreateAsync(new CocktailIngredientRecord
                 {
@@ -630,6 +633,9 @@ public class CocktailService : ICocktailService
                     IngredientId = matchedIngredient.Id,
                     AmountId = amountMatch?.Id,
                     AmountText = amountText,
+                    CanonicalAmountValue = canonicalAmount.Value,
+                    CanonicalAmountUnit = canonicalAmount.Unit,
+                    AmountOriginalText = amountOriginalText,
                     SortOrder = row.SortOrder
                 });
             }
@@ -656,7 +662,10 @@ public class CocktailService : ICocktailService
                 }
 
                 var amountMatch = FindBestAmountMatch(parsedIngredient.RawAmount, allAmounts);
-                var amountText = amountMatch == null ? NullIfWhiteSpace(parsedIngredient.RawAmount) : null;
+                var rawAmountText = NullIfWhiteSpace(parsedIngredient.RawAmount);
+                var amountText = amountMatch == null ? rawAmountText : null;
+                var amountOriginalText = rawAmountText ?? amountMatch?.MeasurementName;
+                var canonicalAmount = ResolveCanonicalAmount(amountOriginalText, amountMatch);
 
                 await _cocktailIngredientRepository.CreateAsync(new CocktailIngredientRecord
                 {
@@ -664,6 +673,9 @@ public class CocktailService : ICocktailService
                     IngredientId = matchedIngredient.Id,
                     AmountId = amountMatch?.Id,
                     AmountText = amountText,
+                    CanonicalAmountValue = canonicalAmount.Value,
+                    CanonicalAmountUnit = canonicalAmount.Unit,
+                    AmountOriginalText = amountOriginalText,
                     SortOrder = parsedIngredient.SortOrder > 0 ? parsedIngredient.SortOrder : null
                 });
             }
@@ -966,6 +978,22 @@ public class CocktailService : ICocktailService
 
         var normalizedRaw = NormalizeAmount(cleaned);
         return amounts.FirstOrDefault(a => NormalizeAmount(a.MeasurementName) == normalizedRaw);
+    }
+
+    private static CanonicalAmount ResolveCanonicalAmount(string? amountOriginalText, AmountRecord? amountMatch)
+    {
+        var parsed = AmountCanonicalizer.Parse(amountOriginalText);
+        if (parsed.HasData)
+        {
+            return parsed;
+        }
+
+        if (amountMatch is null)
+        {
+            return CanonicalAmount.Empty;
+        }
+
+        return AmountCanonicalizer.FromAmountReference(amountMatch.MeasurementName, amountMatch.Ounces);
     }
 
     private static string NormalizeAmount(string input)
