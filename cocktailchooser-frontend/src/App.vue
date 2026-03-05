@@ -616,16 +616,32 @@ Steps:
       @click.self="closeActiveModal">
       <div class="modal-card modal-card-xl">
         <div class="modal-header">
-          <h2 id="admin-modal-title">Admin Import / Export</h2>
+          <h2 id="admin-modal-title">Admin</h2>
           <div class="menu-actions">
-            <button type="button" class="menu-button" :disabled="adminBusy" @click="loadAdminExportPayload">
-              {{ adminBusy ? 'Working...' : 'Refresh Export' }}
+            <button type="button" class="menu-button" :disabled="adminBusy || adminMaintenanceBusy" @click="refreshAdminActiveView">
+              {{ (adminBusy || adminMaintenanceBusy) ? 'Working...' : 'Refresh' }}
             </button>
-            <button type="button" class="menu-button" :disabled="adminBusy" @click="closeActiveModal">Close</button>
+            <button type="button" class="menu-button" :disabled="adminBusy || adminMaintenanceBusy" @click="closeActiveModal">Close</button>
           </div>
         </div>
+        <div class="menu-actions admin-tab-row">
+          <button
+            type="button"
+            class="menu-button"
+            :class="{ active: adminView === 'importExport' }"
+            @click="adminView = 'importExport'">
+            {{ adminView === 'importExport' ? '✓ Import / Export' : 'Import / Export' }}
+          </button>
+          <button
+            type="button"
+            class="menu-button"
+            :class="{ active: adminView === 'maintenance' }"
+            @click="adminView = 'maintenance'">
+            {{ adminView === 'maintenance' ? '✓ Maintenance' : 'Maintenance' }}
+          </button>
+        </div>
 
-        <div class="detail-grid recipe-modal-grid">
+        <div v-if="adminView === 'importExport'" class="detail-grid recipe-modal-grid">
           <div class="admin-block">
             <h3>Moderation Queue</h3>
             <p v-if="!adminPendingCocktails.length" class="subtle">No pending user submissions.</p>
@@ -705,6 +721,129 @@ Steps:
             </div>
           </div>
         </div>
+        <div v-else class="auth-stack">
+          <p class="subtle">Run a dry-run first, then apply merge when results look correct.</p>
+          <div class="detail-grid recipe-modal-grid">
+            <div class="admin-block">
+              <h3>Ingredient Duplicates</h3>
+              <p class="subtle">Click a row to auto-fill merge IDs (keep first, then remove).</p>
+              <p v-if="!ingredientDuplicateGroups.length" class="subtle">No duplicate ingredient groups found.</p>
+              <div v-else class="admin-duplicate-groups">
+                <div v-for="group in ingredientDuplicateGroups" :key="`ing-dup-${group.normalizedName}`" class="admin-duplicate-group">
+                  <div class="subheading">{{ group.normalizedName }}</div>
+                  <table class="admin-duplicate-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Cocktails</th>
+                        <th>My Bar</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="candidate in group.candidates"
+                        :key="`ing-cand-${candidate.ingredientId}`"
+                        class="admin-duplicate-row"
+                        @click="selectIngredientMergeCandidate(candidate.ingredientId)">
+                        <td>{{ candidate.ingredientId }}</td>
+                        <td>{{ candidate.name }}</td>
+                        <td>{{ candidate.cocktailUsageCount }}</td>
+                        <td>{{ candidate.userUsageCount }}</td>
+                        <td class="menu-actions">
+                          <button type="button" class="menu-button" @click.stop="ingredientMergeForm.keepIngredientId = String(candidate.ingredientId)">
+                            Keep
+                          </button>
+                          <button type="button" class="menu-button" @click.stop="ingredientMergeForm.removeIngredientId = String(candidate.ingredientId)">
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="admin-block">
+              <h3>Ingredient Merge</h3>
+              <div class="auth-stack">
+                <input v-model.trim="ingredientMergeForm.keepIngredientId" placeholder="Keep ingredient ID" />
+                <input v-model.trim="ingredientMergeForm.removeIngredientId" placeholder="Remove ingredient ID" />
+                <input v-model.trim="ingredientMergeForm.reason" placeholder="Reason (optional)" />
+                <div class="menu-actions">
+                  <button type="button" class="menu-button" :disabled="adminMaintenanceBusy" @click="runIngredientMergeDryRun">
+                    Dry Run
+                  </button>
+                  <button type="button" :disabled="adminMaintenanceBusy" @click="runIngredientMergeApply">
+                    Merge Ingredient
+                  </button>
+                </div>
+              </div>
+              <pre v-if="ingredientMergePreview" class="admin-preview">{{ JSON.stringify(ingredientMergePreview, null, 2) }}</pre>
+              <pre v-if="ingredientMergeResult" class="admin-result">{{ JSON.stringify(ingredientMergeResult, null, 2) }}</pre>
+            </div>
+            <div class="admin-block">
+              <h3>Cocktail Duplicates</h3>
+              <p class="subtle">Click a row to auto-fill merge IDs (keep first, then remove).</p>
+              <p v-if="!cocktailDuplicateGroups.length" class="subtle">No duplicate cocktail groups found.</p>
+              <div v-else class="admin-duplicate-groups">
+                <div v-for="group in cocktailDuplicateGroups" :key="`cocktail-dup-${group.normalizedName}`" class="admin-duplicate-group">
+                  <div class="subheading">{{ group.normalizedName }}</div>
+                  <table class="admin-duplicate-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Source</th>
+                        <th>Approved</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="candidate in group.candidates"
+                        :key="`cocktail-cand-${candidate.cocktailId}`"
+                        class="admin-duplicate-row"
+                        @click="selectCocktailMergeCandidate(candidate.cocktailId)">
+                        <td>{{ candidate.cocktailId }}</td>
+                        <td>{{ candidate.name }}</td>
+                        <td>{{ candidate.cocktailSourceId || '-' }}</td>
+                        <td>{{ Number(candidate.isApproved) === 1 ? 'Yes' : 'No' }}</td>
+                        <td class="menu-actions">
+                          <button type="button" class="menu-button" @click.stop="cocktailMergeForm.keepCocktailId = String(candidate.cocktailId)">
+                            Keep
+                          </button>
+                          <button type="button" class="menu-button" @click.stop="cocktailMergeForm.removeCocktailId = String(candidate.cocktailId)">
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="admin-block">
+              <h3>Cocktail Merge</h3>
+              <div class="auth-stack">
+                <input v-model.trim="cocktailMergeForm.keepCocktailId" placeholder="Keep cocktail ID" />
+                <input v-model.trim="cocktailMergeForm.removeCocktailId" placeholder="Remove cocktail ID" />
+                <input v-model.trim="cocktailMergeForm.reason" placeholder="Reason (optional)" />
+                <div class="menu-actions">
+                  <button type="button" class="menu-button" :disabled="adminMaintenanceBusy" @click="runCocktailMergeDryRun">
+                    Dry Run
+                  </button>
+                  <button type="button" :disabled="adminMaintenanceBusy" @click="runCocktailMergeApply">
+                    Merge Cocktail
+                  </button>
+                </div>
+              </div>
+              <pre v-if="cocktailMergePreview" class="admin-preview">{{ JSON.stringify(cocktailMergePreview, null, 2) }}</pre>
+              <pre v-if="cocktailMergeResult" class="admin-result">{{ JSON.stringify(cocktailMergeResult, null, 2) }}</pre>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -732,6 +871,8 @@ import {
   createCocktail,
   createCocktailTryLog,
   exportAdminCocktails,
+  getAdminCocktailDuplicates,
+  getAdminIngredientDuplicates,
   getAdminPendingCocktails,
   getMyCocktails,
   getAmounts,
@@ -749,6 +890,10 @@ import {
   getStoredAuthToken,
   importAdminCocktails,
   login,
+  mergeAdminCocktail,
+  mergeAdminIngredient,
+  previewAdminCocktailMerge,
+  previewAdminIngredientMerge,
   previewCocktailFromText,
   register,
   rejectCocktail,
@@ -874,8 +1019,26 @@ export default {
       adminExportJson: '',
       adminImportJson: '',
       adminImportSummary: null,
+      adminView: 'importExport',
       adminBusy: false,
       adminModerationBusy: false,
+      adminMaintenanceBusy: false,
+      ingredientDuplicateGroups: [],
+      cocktailDuplicateGroups: [],
+      ingredientMergeForm: {
+        keepIngredientId: '',
+        removeIngredientId: '',
+        reason: ''
+      },
+      cocktailMergeForm: {
+        keepCocktailId: '',
+        removeCocktailId: '',
+        reason: ''
+      },
+      ingredientMergePreview: null,
+      ingredientMergeResult: null,
+      cocktailMergePreview: null,
+      cocktailMergeResult: null,
       notImplementedModalOpen: false,
       notImplementedFeatureName: 'This feature'
     };
@@ -1286,6 +1449,20 @@ export default {
 
       const cocktailName = (newCocktail?.name || '').trim();
       document.title = cocktailName ? `Cocktail Chooser - ${cocktailName}` : 'Cocktail Chooser';
+    },
+    async adminView(newView) {
+      if (this.activeModal !== 'admin' || !this.isAdminUser) {
+        return;
+      }
+
+      if (newView === 'maintenance') {
+        await this.loadAdminMaintenanceData();
+      } else {
+        await Promise.all([
+          this.loadAdminExportPayload(),
+          this.loadAdminPendingCocktails()
+        ]);
+      }
     }
   },
   async created() {
@@ -1546,10 +1723,14 @@ export default {
       this.navigateTo('/admin');
       this.accountMenuOpen = false;
       this.activeModal = 'admin';
-      if (!this.adminExportJson) {
-        this.loadAdminExportPayload();
+      if (this.adminView === 'maintenance') {
+        this.loadAdminMaintenanceData();
+      } else {
+        if (!this.adminExportJson) {
+          this.loadAdminExportPayload();
+        }
+        this.loadAdminPendingCocktails();
       }
-      this.loadAdminPendingCocktails();
     },
     async openMyCocktailsPage() {
       if (!this.currentUser) {
@@ -1567,6 +1748,17 @@ export default {
         this.navigateTo('/');
       }
       this.activeModal = '';
+    },
+    async refreshAdminActiveView() {
+      if (this.adminView === 'maintenance') {
+        await this.loadAdminMaintenanceData();
+        return;
+      }
+
+      await Promise.all([
+        this.loadAdminExportPayload(),
+        this.loadAdminPendingCocktails()
+      ]);
     },
     async loadAdminExportPayload() {
       if (!this.isAdminUser) {
@@ -1637,6 +1829,162 @@ export default {
         this.error = this.extractError(err);
       } finally {
         this.adminModerationBusy = false;
+      }
+    },
+    async loadAdminMaintenanceData() {
+      if (!this.isAdminUser) {
+        return;
+      }
+
+      this.error = '';
+      this.adminMaintenanceBusy = true;
+      try {
+        const [ingredientDuplicates, cocktailDuplicates] = await Promise.all([
+          getAdminIngredientDuplicates(),
+          getAdminCocktailDuplicates()
+        ]);
+
+        this.ingredientDuplicateGroups = ingredientDuplicates?.groups || [];
+        this.cocktailDuplicateGroups = cocktailDuplicates?.groups || [];
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminMaintenanceBusy = false;
+      }
+    },
+    parsePositiveId(value, fieldName) {
+      const numeric = Number(value);
+      if (!Number.isInteger(numeric) || numeric <= 0) {
+        throw new Error(`${fieldName} must be a positive integer.`);
+      }
+
+      return numeric;
+    },
+    normalizeOptionalReason(reason) {
+      const trimmed = (reason || '').trim();
+      return trimmed || null;
+    },
+    autoFillMergeFormIds(form, keepField, removeField, idValue) {
+      const value = String(idValue);
+
+      if (!form[keepField] || form[keepField] === value) {
+        form[keepField] = value;
+        if (form[removeField] === value) {
+          form[removeField] = '';
+        }
+        return;
+      }
+
+      if (!form[removeField] || form[removeField] === value) {
+        form[removeField] = value;
+        return;
+      }
+
+      form[removeField] = value;
+      if (form[keepField] === form[removeField]) {
+        form[removeField] = '';
+      }
+    },
+    selectIngredientMergeCandidate(ingredientId) {
+      this.autoFillMergeFormIds(this.ingredientMergeForm, 'keepIngredientId', 'removeIngredientId', ingredientId);
+    },
+    selectCocktailMergeCandidate(cocktailId) {
+      this.autoFillMergeFormIds(this.cocktailMergeForm, 'keepCocktailId', 'removeCocktailId', cocktailId);
+    },
+    buildIngredientMergeRequest() {
+      const keepIngredientId = this.parsePositiveId(this.ingredientMergeForm.keepIngredientId, 'Keep ingredient ID');
+      const removeIngredientId = this.parsePositiveId(this.ingredientMergeForm.removeIngredientId, 'Remove ingredient ID');
+      if (keepIngredientId === removeIngredientId) {
+        throw new Error('Keep ingredient ID and remove ingredient ID must be different.');
+      }
+
+      return {
+        keepIngredientId,
+        removeIngredientId,
+        reason: this.normalizeOptionalReason(this.ingredientMergeForm.reason)
+      };
+    },
+    buildCocktailMergeRequest() {
+      const keepCocktailId = this.parsePositiveId(this.cocktailMergeForm.keepCocktailId, 'Keep cocktail ID');
+      const removeCocktailId = this.parsePositiveId(this.cocktailMergeForm.removeCocktailId, 'Remove cocktail ID');
+      if (keepCocktailId === removeCocktailId) {
+        throw new Error('Keep cocktail ID and remove cocktail ID must be different.');
+      }
+
+      return {
+        keepCocktailId,
+        removeCocktailId,
+        reason: this.normalizeOptionalReason(this.cocktailMergeForm.reason)
+      };
+    },
+    async runIngredientMergeDryRun() {
+      this.error = '';
+      this.ingredientMergeResult = null;
+      try {
+        const request = this.buildIngredientMergeRequest();
+        this.adminMaintenanceBusy = true;
+        this.ingredientMergePreview = await previewAdminIngredientMerge(request);
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminMaintenanceBusy = false;
+      }
+    },
+    async runIngredientMergeApply() {
+      this.error = '';
+      this.ingredientMergeResult = null;
+      try {
+        const request = this.buildIngredientMergeRequest();
+        this.adminMaintenanceBusy = true;
+        this.ingredientMergeResult = await mergeAdminIngredient(request);
+        await Promise.all([
+          this.loadAdminMaintenanceData(),
+          getIngredients().then((ingredients) => { this.ingredients = ingredients; }),
+          getCocktailIngredients().then((rows) => { this.cocktailIngredients = rows; })
+        ]);
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminMaintenanceBusy = false;
+      }
+    },
+    async runCocktailMergeDryRun() {
+      this.error = '';
+      this.cocktailMergeResult = null;
+      try {
+        const request = this.buildCocktailMergeRequest();
+        this.adminMaintenanceBusy = true;
+        this.cocktailMergePreview = await previewAdminCocktailMerge(request);
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminMaintenanceBusy = false;
+      }
+    },
+    async runCocktailMergeApply() {
+      this.error = '';
+      this.cocktailMergeResult = null;
+      try {
+        const request = this.buildCocktailMergeRequest();
+        this.adminMaintenanceBusy = true;
+        this.cocktailMergeResult = await mergeAdminCocktail(request);
+
+        const [cocktailIngredients, allCocktails] = await Promise.all([
+          getCocktailIngredients(),
+          getCocktails({ alcohol: this.virginOnly ? 'non-alcoholic' : 'all' })
+        ]);
+
+        this.cocktailIngredients = cocktailIngredients;
+        this.allCocktails = [...allCocktails];
+        await Promise.all([
+          this.reloadCocktailsForIngredientFilters(),
+          this.loadAdminMaintenanceData(),
+          this.loadAdminPendingCocktails()
+        ]);
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminMaintenanceBusy = false;
       }
     },
     async approvePendingCocktail(cocktailId) {
@@ -2952,6 +3300,65 @@ button:disabled {
   border-radius: 10px;
   background: #fff;
   padding: 0.75rem;
+}
+
+.admin-tab-row {
+  margin-bottom: 0.5rem;
+}
+
+.admin-duplicate-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  max-height: min(40vh, 22rem);
+  overflow-y: auto;
+}
+
+.admin-duplicate-group {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.55rem;
+  background: #fcfefe;
+}
+
+.admin-duplicate-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+
+.admin-duplicate-table th,
+.admin-duplicate-table td {
+  border: 1px solid var(--line);
+  padding: 0.25rem 0.3rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-duplicate-row {
+  cursor: pointer;
+}
+
+.admin-duplicate-row:hover {
+  background: #f3faf7;
+}
+
+.admin-preview,
+.admin-result {
+  margin: 0.55rem 0 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f7fafc;
+  padding: 0.55rem;
+  max-height: 10rem;
+  overflow: auto;
+  font-size: 0.74rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.admin-result {
+  background: #edf8f2;
 }
 
 .admin-import-results {
