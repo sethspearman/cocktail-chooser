@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
 using CocktailChooser.API.Auth;
 using CocktailChooser.API.Services;
 using CocktailChooser.Data.Migrations;
@@ -23,7 +24,33 @@ public class Startup
 
         services.AddControllers();
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(c =>
+        {
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT"
+            });
+
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+        });
         services.Configure<AuthOptions>(Configuration.GetSection("Auth"));
         services.AddScoped<ICurrentUserContext, CurrentUserContext>();
         services.AddSingleton<ITokenService, TokenService>();
@@ -40,6 +67,7 @@ public class Startup
         services.AddScoped<IUserIngredientRepository>(_ => new UserIngredientRepository(connectionString));
         services.AddScoped<ICocktailTryLogRepository>(_ => new CocktailTryLogRepository(connectionString));
         services.AddScoped<ICocktailGroupingRepository>(_ => new CocktailGroupingRepository(connectionString));
+        services.AddScoped<IAdminMaintenanceRepository>(_ => new AdminMaintenanceRepository(connectionString));
         services.AddScoped<ICocktailService, CocktailService>();
         services.AddScoped<IIngredientService, IngredientService>();
         services.AddScoped<ICocktailIngredientService, CocktailIngredientService>();
@@ -51,6 +79,7 @@ public class Startup
         services.AddScoped<IUserInventoryService, UserInventoryService>();
         services.AddScoped<ICocktailTryLogService, CocktailTryLogService>();
         services.AddScoped<ICocktailGroupingService, CocktailGroupingService>();
+        services.AddScoped<IAdminMaintenanceService, AdminMaintenanceService>();
         services.AddScoped<IOcrRecipeParser, HeuristicOcrRecipeParser>();
         services.AddScoped<IOcrImportService, OcrImportService>();
     }

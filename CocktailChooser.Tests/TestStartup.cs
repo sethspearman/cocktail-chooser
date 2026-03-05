@@ -133,6 +133,16 @@ public class TestStartup
                     CreatedUtc TEXT NOT NULL,
                     UpdatedUtc TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS AdminMaintenanceLogs (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    EntityType TEXT NOT NULL,
+                    OperationType TEXT NOT NULL,
+                    KeepEntityId INTEGER,
+                    RemovedEntityId INTEGER,
+                    DetailsJson TEXT,
+                    PerformedByUserId INTEGER NOT NULL,
+                    PerformedUtc TEXT NOT NULL
+                );
                 """);
         }
 
@@ -148,6 +158,7 @@ public class TestStartup
         services.AddScoped<IUserRepository>(_ => new UserRepository(connectionString));
         services.AddScoped<IUserIngredientRepository>(_ => new UserIngredientRepository(connectionString));
         services.AddScoped<ICocktailTryLogRepository>(_ => new CocktailTryLogRepository(connectionString));
+        services.AddScoped<IAdminMaintenanceRepository>(_ => new AdminMaintenanceRepository(connectionString));
         services.AddScoped<IOcrRecipeParser, HeuristicOcrRecipeParser>();
         services.AddScoped<ICocktailService, CocktailService>();
         services.AddScoped<IIngredientService, IngredientService>();
@@ -156,6 +167,7 @@ public class TestStartup
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserInventoryService, UserInventoryService>();
         services.AddScoped<ICocktailTryLogService, CocktailTryLogService>();
+        services.AddScoped<IAdminMaintenanceService, AdminMaintenanceService>();
     }
 
     public void Configure(IApplicationBuilder app)

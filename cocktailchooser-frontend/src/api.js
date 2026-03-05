@@ -236,3 +236,33 @@ export async function importAdminCocktails(payload) {
   const { data } = await api.post('/cocktails/admin/import', payload);
   return data;
 }
+
+export async function getAdminIngredientDuplicates() {
+  const { data } = await api.get('/admin/maintenance/ingredient-duplicates');
+  return data;
+}
+
+export async function getAdminCocktailDuplicates() {
+  const { data } = await api.get('/admin/maintenance/cocktail-duplicates');
+  return data;
+}
+
+export async function previewAdminIngredientMerge(payload) {
+  const { data } = await api.post('/admin/maintenance/ingredient-merge/dry-run', payload);
+  return data;
+}
+
+export async function mergeAdminIngredient(payload) {
+  const { data } = await api.post('/admin/maintenance/ingredient-merge', payload);
+  return data;
+}
+
+export async function previewAdminCocktailMerge(payload) {
+  const { data } = await api.post('/admin/maintenance/cocktail-merge/dry-run', payload);
+  return data;
+}
+
+export async function mergeAdminCocktail(payload) {
+  const { data } = await api.post('/admin/maintenance/cocktail-merge', payload);
+  return data;
+}
