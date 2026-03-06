@@ -107,12 +107,22 @@
 
     <section v-else class="grid">
       <article class="panel wide">
-        <div class="panel-title">What Can I Drink</div>
         <div class="toolbar">
-          <select v-model="cocktailListMode">
-            <option value="makeable">What Can I Drink</option>
-            <option value="all">Show All Cocktails</option>
-          </select>
+          <button
+            type="button"
+            class="menu-button advanced-toggle-button"
+            :title="advancedFiltersOpen ? 'Advanced Filters (Hide)' : 'Advanced Filters (Show)'"
+            :aria-label="advancedFiltersOpen ? 'Hide Advanced Filters' : 'Show Advanced Filters'"
+            @click="toggleAdvancedFilters">
+            <span class="advanced-toggle-chevron" aria-hidden="true">{{ advancedFiltersOpen ? '❮❮' : '❯❯' }}</span>
+            <svg class="advanced-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" />
+            </svg>
+          </button>
+          <label class="toolbar-checkbox">
+            <input v-model="onlyCocktailsICanMake" type="checkbox" />
+            Only Cocktails I Can Make
+          </label>
           <div class="search-input-wrap">
             <input v-model.trim="cocktailSearch" placeholder="Search cocktails" />
             <button
@@ -128,20 +138,17 @@
             <option value="">All spirits</option>
             <option v-for="spirit in spirits" :key="spirit" :value="spirit">{{ spirit }}</option>
           </select>
-          <select v-model="ingredientFilterMode">
-            <option value="all">Search Ingredients (All):</option>
-            <option value="any">Search Ingredients (Any):</option>
-          </select>
           <input
             v-model.trim="ingredientFilterSearch"
             list="cocktail-ingredient-filter-options"
             @change="addSelectedIngredientFilter"
             @keyup.enter.prevent="addSelectedIngredientFilter"
             placeholder="Find Ingredient..." />
-          <label class="toolbar-checkbox">
-            <input v-model="virginOnly" type="checkbox" />
-            Virgin drinks only
-          </label>
+          <button
+            :disabled="cocktailListMode !== 'makeable' || filteredMakeableCocktails.length === 0"
+            @click="pickRandomMakeableCocktail">
+            Pick One for Me
+          </button>
           <label class="toolbar-checkbox">
             <input v-model="popularOnly" type="checkbox" />
             Popular only
@@ -157,15 +164,14 @@
               :value="ingredient.name">
             </option>
           </datalist>
-          <select v-model="makeableTriedFilter" :disabled="cocktailListMode !== 'makeable'">
-            <option value="all">Show Tried and Untried</option>
-            <option value="untried">Show Untried Only</option>
-          </select>
-          <button
-            :disabled="cocktailListMode !== 'makeable' || filteredMakeableCocktails.length === 0"
-            @click="pickRandomMakeableCocktail">
-            Pick One for Me
-          </button>
+          <label class="toolbar-checkbox">
+            <input v-model="showUntriedOnly" type="checkbox" :disabled="cocktailListMode !== 'makeable'" />
+            Show Untried Only
+          </label>
+          <label class="toolbar-checkbox">
+            <input v-model="virginOnly" type="checkbox" />
+            Virgin drinks only
+          </label>
         </div>
         <div v-if="selectedIngredientFilters.length" class="toolbar">
           <span class="subtle">Ingredient filter ({{ ingredientFilterMode === 'all' ? 'ALL' : 'ANY' }}):</span>
@@ -256,6 +262,168 @@
     </section>
 
     <p v-if="error" class="error">{{ error }}</p>
+
+    <div v-if="advancedFiltersOpen && !isMyCocktailsRoute" class="advanced-filters-overlay" @click="closeAdvancedFilters"></div>
+    <aside v-if="advancedFiltersOpen && !isMyCocktailsRoute" class="advanced-filters-drawer open" aria-label="Advanced Filters" @click.stop>
+      <div class="advanced-filters-header">
+        <button
+          type="button"
+          class="advanced-collapse-hitarea"
+          title="Advanced Filters (Hide)"
+          aria-label="Hide Advanced Filters"
+          @click="closeAdvancedFilters">
+          <span class="menu-button advanced-collapse-button" aria-hidden="true">❮❮</span>
+          <strong>Advanced Filters</strong>
+        </button>
+        <div class="menu-actions advanced-header-actions">
+          <button type="button" class="menu-button" @click="resetAllFilters">Reset All Filters</button>
+        </div>
+      </div>
+      <div class="advanced-filters-body">
+        <p class="subtle">Core advanced filters are now wired into the main display pipeline.</p>
+
+        <div class="advanced-group">
+          <div class="subheading">Main Filters</div>
+          <div class="auth-stack">
+            <div class="search-input-wrap advanced-ingredient-search">
+              <input v-model.trim="cocktailSearch" placeholder="Search cocktails" />
+              <button
+                v-if="cocktailSearch"
+                type="button"
+                class="search-clear-btn"
+                aria-label="Clear cocktail search"
+                @click="cocktailSearch = ''">
+                ×
+              </button>
+            </div>
+            <label class="toolbar-checkbox">
+              <input v-model="onlyCocktailsICanMake" type="checkbox" />
+              Only Cocktails I Can Make
+            </label>
+            <select v-model="selectedSpirit">
+              <option value="">All spirits</option>
+              <option v-for="spirit in spirits" :key="`adv-spirit-${spirit}`" :value="spirit">{{ spirit }}</option>
+            </select>
+            <label class="toolbar-checkbox">
+              <input v-model="virginOnly" type="checkbox" />
+              Virgin drinks only
+            </label>
+            <label class="toolbar-checkbox">
+              <input v-model="popularOnly" type="checkbox" />
+              Popular only
+            </label>
+            <label class="toolbar-checkbox">
+              <input v-model="showUntriedOnly" type="checkbox" :disabled="filterState.mode !== 'CAN_MAKE'" />
+              Show Untried Only
+            </label>
+            <label class="toolbar-checkbox">
+              <input v-model="myDrinksOnly" type="checkbox" :disabled="!selectedUserId" />
+              My drinks only
+            </label>
+          </div>
+        </div>
+
+        <div class="advanced-group">
+          <div class="subheading">My</div>
+          <label class="toolbar-checkbox">
+            <input v-model="filterState.mySubmissionsOnly" type="checkbox" />
+            My drinks only
+          </label>
+          <label class="toolbar-checkbox">
+            <input v-model="filterState.myApprovedOnly" type="checkbox" disabled />
+            My Approved (next slice)
+          </label>
+        </div>
+
+        <div class="advanced-group">
+          <div class="subheading">Cocktail Time Period</div>
+          <div v-if="!timePeriodOptions.length" class="subtle">No time periods loaded.</div>
+          <label v-for="timePeriod in timePeriodOptions" :key="`adv-time-${timePeriod.id}`" class="toolbar-checkbox">
+            <input
+              :checked="filterState.selectedTimePeriodIds.includes(timePeriod.id)"
+              type="checkbox"
+              @change="toggleAdvancedTimePeriod(timePeriod.id)" />
+            {{ timePeriod.name }}
+          </label>
+        </div>
+
+        <div class="advanced-group">
+          <div class="subheading">Source</div>
+          <div v-if="!sources.length" class="subtle">No sources loaded.</div>
+          <label v-for="source in sources" :key="`adv-source-${source.id}`" class="toolbar-checkbox">
+            <input
+              :checked="filterState.selectedSourceIds.includes(source.id)"
+              type="checkbox"
+              @change="toggleAdvancedSource(source.id)" />
+            {{ source.name }}
+          </label>
+        </div>
+
+        <div class="advanced-group">
+          <div class="subheading">Flavor Profile</div>
+          <p class="subtle">Flavor profile filters will be wired in a follow-up slice.</p>
+        </div>
+
+        <div class="advanced-group">
+          <div class="subheading">Ingredients</div>
+          <select v-model="ingredientFilterMode" class="advanced-ingredient-mode-select">
+            <option value="all">Ingredient filter mode: All selected ingredients</option>
+            <option value="any">Ingredient filter mode: Any selected ingredient</option>
+          </select>
+          <div class="search-input-wrap advanced-ingredient-search">
+            <input v-model.trim="advancedIngredientSearch" placeholder="Search ingredients" />
+            <button
+              v-if="advancedIngredientSearch"
+              type="button"
+              class="search-clear-btn"
+              aria-label="Clear advanced ingredient search"
+              @click="advancedIngredientSearch = ''">
+              ×
+            </button>
+          </div>
+          <p class="subtle">Selected ingredients stay pinned to top. Showing top {{ advancedIngredientPreviewCount }} more by default.</p>
+          <label
+            v-for="ingredient in advancedSelectedIngredientOptions"
+            :key="`adv-selected-ing-${ingredient.id}`"
+            class="toolbar-checkbox advanced-selected-ingredient">
+            <input
+              :checked="true"
+              type="checkbox"
+              @change="toggleAdvancedIngredient(ingredient.id)" />
+            {{ ingredient.name }}
+          </label>
+          <div
+            v-if="advancedSelectedIngredientOptions.length > 0 && advancedUnselectedIngredientOptions.length > 0"
+            class="advanced-ingredient-divider">
+            Other Ingredients
+          </div>
+          <label
+            v-for="ingredient in advancedUnselectedIngredientOptions"
+            :key="`adv-ing-${ingredient.id}`"
+            class="toolbar-checkbox">
+            <input
+              :checked="false"
+              type="checkbox"
+              @change="toggleAdvancedIngredient(ingredient.id)" />
+            {{ ingredient.name }}
+          </label>
+          <button
+            v-if="!advancedIngredientsExpanded && advancedIngredientRemainderCount > 0"
+            type="button"
+            class="inline-link-button secondary-link advanced-ingredient-expand"
+            @click="advancedIngredientsExpanded = true">
+            See More ({{ advancedIngredientRemainderCount }})
+          </button>
+          <button
+            v-if="advancedIngredientsExpanded && advancedIngredientRemainderCount > 0"
+            type="button"
+            class="inline-link-button secondary-link advanced-ingredient-expand"
+            @click="advancedIngredientsExpanded = false">
+            Show Less
+          </button>
+        </div>
+      </div>
+    </aside>
 
     <div
       v-if="activeModal === 'recipe' && selectedCocktail"
@@ -912,6 +1080,21 @@ import {
 } from './api';
 
 const POPULAR_ONLY_STORAGE_KEY = 'cocktailchooser.popularOnly';
+const ADVANCED_INGREDIENT_PREVIEW_COUNT = 15;
+
+function createDefaultFilterState() {
+  return {
+    mode: 'SHOW_ALL',
+    searchText: '',
+    selectedTimePeriodIds: [],
+    selectedSourceIds: [],
+    selectedFlavorProfiles: [],
+    selectedIngredientIds: [],
+    includeUnapproved: false,
+    mySubmissionsOnly: false,
+    myApprovedOnly: false
+  };
+}
 
 const ALCOHOLIC_INGREDIENT_TOKENS = [
   'vodka',
@@ -970,16 +1153,20 @@ export default {
       ingredientSearch: '',
       selectedSpirit: '',
       virginOnly: false,
-      popularOnly: true,
+      popularOnly: false,
       ingredientFilterMode: 'all',
       ingredientFilterSearch: '',
       selectedIngredientIds: [],
       cocktailListMode: 'all',
+      filterState: createDefaultFilterState(),
+      advancedFiltersOpen: false,
+      advancedIngredientsExpanded: false,
+      advancedIngredientSearch: '',
       myDrinksOnly: false,
       myCocktailSearch: '',
       myCocktailStatusFilter: 'all',
       inventorySpiritFilter: '',
-      makeableTriedFilter: 'all',
+      showUntriedOnly: false,
 
       loginForm: {
         email: '',
@@ -1053,8 +1240,70 @@ export default {
     };
   },
   computed: {
+    onlyCocktailsICanMake: {
+      get() {
+        return this.cocktailListMode === 'makeable';
+      },
+      set(value) {
+        this.cocktailListMode = value ? 'makeable' : 'all';
+      }
+    },
+    advancedIngredientPreviewCount() {
+      return ADVANCED_INGREDIENT_PREVIEW_COUNT;
+    },
+    advancedSelectedIngredientIdSet() {
+      return new Set(this.selectedIngredientIds.map((id) => Number(id)));
+    },
     spirits() {
       return [...new Set(this.ingredients.map((x) => x.primarySpirit).filter(Boolean))].sort();
+    },
+    rankedIngredientsForAdvancedFilters() {
+      if (!this.ingredients.length) {
+        return [];
+      }
+
+      return [...this.ingredients]
+        .sort((a, b) => {
+          const byName = (a.name || '').localeCompare(b.name || '');
+          if (byName !== 0) {
+            return byName;
+          }
+
+          return Number(a.id || 0) - Number(b.id || 0);
+        });
+    },
+    filteredRankedIngredientsForAdvancedFilters() {
+      const search = (this.advancedIngredientSearch || '').trim().toLowerCase();
+      if (!search) {
+        return this.rankedIngredientsForAdvancedFilters;
+      }
+
+      return this.rankedIngredientsForAdvancedFilters
+        .filter((ingredient) => (ingredient.name || '').toLowerCase().includes(search));
+    },
+    advancedSelectedIngredientOptions() {
+      return this.filteredRankedIngredientsForAdvancedFilters
+        .filter((ingredient) => this.advancedSelectedIngredientIdSet.has(Number(ingredient.id)));
+    },
+    advancedUnselectedIngredientOptions() {
+      const unselected = this.filteredRankedIngredientsForAdvancedFilters
+        .filter((ingredient) => !this.advancedSelectedIngredientIdSet.has(Number(ingredient.id)));
+
+      if ((this.advancedIngredientSearch || '').trim().length > 0 || this.advancedIngredientsExpanded) {
+        return unselected;
+      }
+
+      return unselected.slice(0, this.advancedIngredientPreviewCount);
+    },
+    advancedIngredientRemainderCount() {
+      if ((this.advancedIngredientSearch || '').trim().length > 0) {
+        return 0;
+      }
+
+      const allUnselectedCount = this.rankedIngredientsForAdvancedFilters
+        .filter((ingredient) => !this.advancedSelectedIngredientIdSet.has(Number(ingredient.id))).length;
+      const remainder = allUnselectedCount - this.advancedUnselectedIngredientOptions.length;
+      return remainder > 0 ? remainder : 0;
     },
     ingredientFilterOptions() {
       return this.ingredients
@@ -1132,38 +1381,18 @@ export default {
       });
       return [...byId.values()];
     },
-    filteredCocktails() {
-      return this.browseCocktails.filter((cocktail) => {
-        if (this.myDrinksOnly && !this.isMyDrink(cocktail)) {
-          return false;
-        }
-
-        const matchesSearch = !this.cocktailSearch
-          || cocktail.name.toLowerCase().includes(this.cocktailSearch.toLowerCase());
-
-        if (!matchesSearch) {
-          return false;
-        }
-
-        if (!this.matchesPopularFilter(cocktail)) {
-          return false;
-        }
-
-        if (!this.matchesVirginFilter(cocktail.id)) {
-          return false;
-        }
-
-        if (!this.selectedSpirit) {
-          return this.matchesSelectedIngredientFilters(cocktail.id);
-        }
-
-        const rows = this.cocktailIngredientsByCocktail[cocktail.id] || [];
-        const matchesSpirit = rows.some((row) => row.primarySpirit === this.selectedSpirit);
-        if (!matchesSpirit) {
-          return false;
-        }
-
-        return this.matchesSelectedIngredientFilters(cocktail.id);
+    evaluatedBrowseCocktails() {
+      return this.browseCocktails.map((cocktail) => {
+        const ingredientRows = this.cocktailIngredientsByCocktail[cocktail.id] || [];
+        const missingIngredients = this.getMissingIngredients(cocktail.id);
+        const missingIngredientIds = missingIngredients.map((ingredient) => Number(ingredient.id));
+        return {
+          cocktail,
+          ingredientRows,
+          canMake: missingIngredientIds.length === 0,
+          missingCount: missingIngredientIds.length,
+          missingIngredientIds
+        };
       });
     },
     filteredInventoryIngredients() {
@@ -1188,52 +1417,38 @@ export default {
       });
       return [...byId.values()].filter((c) => this.canMakeById(c.id));
     },
-    filteredMakeableCocktails() {
-      return this.makeableCocktails.filter((cocktail) => {
-        if (this.myDrinksOnly && !this.isMyDrink(cocktail)) {
-          return false;
+    effectiveMode() {
+      const mode = (this.filterState.mode || '').toUpperCase();
+      if (mode === 'CAN_MAKE' || mode === 'ALMOST_UNLOCKED' || mode === 'SHOW_ALL') {
+        return mode;
+      }
+
+      return this.cocktailListMode === 'makeable' ? 'CAN_MAKE' : 'SHOW_ALL';
+    },
+    filteredCocktailEvaluationsIgnoringMode() {
+      return this.evaluatedBrowseCocktails.filter((evaluation) =>
+        this.matchesCocktailEvaluationFilters(evaluation));
+    },
+    displayedCocktailEvaluations() {
+      return this.filteredCocktailEvaluationsIgnoringMode.filter((evaluation) => {
+        if (this.effectiveMode === 'CAN_MAKE') {
+          return evaluation.canMake;
         }
 
-        const matchesSearch = !this.cocktailSearch
-          || cocktail.name.toLowerCase().includes(this.cocktailSearch.toLowerCase());
-        if (!matchesSearch) {
-          return false;
-        }
-
-        if (!this.matchesPopularFilter(cocktail)) {
-          return false;
-        }
-
-        if (!this.matchesVirginFilter(cocktail.id)) {
-          return false;
-        }
-
-        if (this.selectedSpirit) {
-          const rows = this.cocktailIngredientsByCocktail[cocktail.id] || [];
-          const matchesSpirit = rows.some((row) => row.primarySpirit === this.selectedSpirit);
-          if (!matchesSpirit) {
-            return false;
-          }
-        }
-
-        if (!this.matchesSelectedIngredientFilters(cocktail.id)) {
-          return false;
-        }
-
-        if (this.makeableTriedFilter === 'untried' && this.hasTriedCocktail(cocktail.id)) {
-          return false;
+        if (this.effectiveMode === 'ALMOST_UNLOCKED') {
+          return evaluation.missingCount === 1;
         }
 
         return true;
       });
     },
-    visibleCocktails() {
-      return this.cocktailListMode === 'all'
-        ? this.filteredCocktails
-        : this.filteredMakeableCocktails;
+    filteredMakeableCocktails() {
+      return this.filteredCocktailEvaluationsIgnoringMode
+        .filter((evaluation) => evaluation.canMake)
+        .map((evaluation) => evaluation.cocktail);
     },
     displayedCocktails() {
-      return this.visibleCocktails;
+      return this.displayedCocktailEvaluations.map((evaluation) => evaluation.cocktail);
     },
     filteredMyCocktailsForPage() {
       const search = (this.myCocktailSearch || '').trim().toLowerCase();
@@ -1251,7 +1466,7 @@ export default {
       });
     },
     combinedCocktailListEmptyMessage() {
-      if (this.cocktailListMode === 'makeable' && !this.selectedUserId) {
+      if (this.effectiveMode === 'CAN_MAKE' && !this.selectedUserId) {
         return 'Log in to see what you can make from My Bar.';
       }
 
@@ -1259,7 +1474,7 @@ export default {
         return '';
       }
 
-      if (this.cocktailListMode === 'all') {
+      if (this.effectiveMode === 'SHOW_ALL') {
         return 'No cocktails match your current filters.';
       }
 
@@ -1432,9 +1647,22 @@ export default {
     }
   },
   watch: {
+    cocktailListMode(value) {
+      this.filterState.mode = value === 'makeable' ? 'CAN_MAKE' : 'SHOW_ALL';
+    },
+    cocktailSearch(value) {
+      this.filterState.searchText = value || '';
+    },
+    myDrinksOnly(value) {
+      this.filterState.mySubmissionsOnly = !!value;
+    },
+    'filterState.mySubmissionsOnly'(value) {
+      this.myDrinksOnly = !!value;
+    },
     selectedIngredientIds: {
       deep: true,
       async handler() {
+        this.filterState.selectedIngredientIds = [...this.selectedIngredientIds];
         await this.reloadCocktailsForIngredientFilters();
       }
     },
@@ -1482,11 +1710,13 @@ export default {
   mounted() {
     if (typeof window !== 'undefined') {
       window.addEventListener('popstate', this.handlePopState);
+      window.addEventListener('keydown', this.handleGlobalKeydown);
     }
   },
   beforeUnmount() {
     if (typeof window !== 'undefined') {
       window.removeEventListener('popstate', this.handlePopState);
+      window.removeEventListener('keydown', this.handleGlobalKeydown);
     }
   },
   methods: {
@@ -1512,6 +1742,134 @@ export default {
       } else if (this.activeModal === 'admin') {
         this.activeModal = '';
       }
+    },
+    handleGlobalKeydown(event) {
+      if (event?.key !== 'Escape') {
+        return;
+      }
+
+      if (this.advancedFiltersOpen) {
+        this.closeAdvancedFilters();
+      }
+    },
+    openAdvancedFilters() {
+      this.advancedFiltersOpen = true;
+    },
+    toggleAdvancedFilters() {
+      this.advancedFiltersOpen = !this.advancedFiltersOpen;
+    },
+    closeAdvancedFilters() {
+      this.advancedFiltersOpen = false;
+    },
+    async resetAllFilters() {
+      this.filterState = createDefaultFilterState();
+      this.advancedIngredientsExpanded = false;
+      this.advancedIngredientSearch = '';
+
+      this.cocktailListMode = this.selectedUserId ? 'makeable' : 'all';
+      this.filterState.mode = this.cocktailListMode === 'makeable' ? 'CAN_MAKE' : 'SHOW_ALL';
+      this.cocktailSearch = '';
+      this.selectedSpirit = '';
+      this.ingredientFilterMode = 'all';
+      this.ingredientFilterSearch = '';
+      this.selectedIngredientIds = [];
+      this.virginOnly = false;
+      this.popularOnly = false;
+      this.myDrinksOnly = false;
+      this.showUntriedOnly = false;
+
+      await this.reloadCocktailsForIngredientFilters();
+    },
+    toggleAdvancedArrayItem(values, rawId) {
+      const id = Number(rawId);
+      const next = new Set(values.map((value) => Number(value)));
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+
+      return [...next.values()];
+    },
+    toggleAdvancedSource(sourceId) {
+      this.filterState.selectedSourceIds = this.toggleAdvancedArrayItem(this.filterState.selectedSourceIds, sourceId);
+    },
+    toggleAdvancedTimePeriod(timePeriodId) {
+      this.filterState.selectedTimePeriodIds = this.toggleAdvancedArrayItem(this.filterState.selectedTimePeriodIds, timePeriodId);
+    },
+    toggleAdvancedIngredient(ingredientId) {
+      this.selectedIngredientIds = this.toggleAdvancedArrayItem(this.selectedIngredientIds, ingredientId);
+      this.filterState.selectedIngredientIds = [...this.selectedIngredientIds];
+    },
+    matchesCocktailEvaluationFilters(evaluation) {
+      const cocktail = evaluation.cocktail;
+      const matchesMySubmission = !this.filterState.mySubmissionsOnly || this.isMyDrink(cocktail);
+      if (!matchesMySubmission) {
+        return false;
+      }
+
+      if (this.filterState.myApprovedOnly) {
+        const isMyApproved = this.isMyDrink(cocktail) && (cocktail.moderationStatus || '').toLowerCase() === 'approved';
+        if (!isMyApproved) {
+          return false;
+        }
+      }
+
+      const searchText = (this.filterState.searchText || this.cocktailSearch || '').toLowerCase();
+      if (searchText && !(cocktail.name || '').toLowerCase().includes(searchText)) {
+        return false;
+      }
+
+      if (!this.matchesPopularFilter(cocktail)) {
+        return false;
+      }
+
+      if (!this.matchesVirginFilter(cocktail.id)) {
+        return false;
+      }
+
+      if (this.selectedSpirit) {
+        const matchesSpirit = evaluation.ingredientRows.some((row) => row.primarySpirit === this.selectedSpirit);
+        if (!matchesSpirit) {
+          return false;
+        }
+      }
+
+      if (!this.matchesSelectedIngredientFilters(cocktail.id)) {
+        return false;
+      }
+
+      if (this.showUntriedOnly && evaluation.canMake && this.hasTriedCocktail(cocktail.id)) {
+        return false;
+      }
+
+      if (this.filterState.selectedSourceIds.length > 0) {
+        const sourceId = Number(cocktail.cocktailSourceId || 0);
+        if (!this.filterState.selectedSourceIds.map((id) => Number(id)).includes(sourceId)) {
+          return false;
+        }
+      }
+
+      if (this.filterState.selectedTimePeriodIds.length > 0) {
+        const timePeriodId = Number(cocktail.timePeriodId || 0);
+        if (!this.filterState.selectedTimePeriodIds.map((id) => Number(id)).includes(timePeriodId)) {
+          return false;
+        }
+      }
+
+      if (this.filterState.selectedFlavorProfiles.length > 0) {
+        const flavor = (cocktail.flavorProfile || '').trim().toLowerCase();
+        if (!flavor) {
+          return false;
+        }
+
+        const selected = this.filterState.selectedFlavorProfiles.map((value) => String(value).trim().toLowerCase());
+        if (!selected.includes(flavor)) {
+          return false;
+        }
+      }
+
+      return true;
     },
     navigateTo(path, { replace = false } = {}) {
       if (typeof window === 'undefined') {
@@ -2928,6 +3286,10 @@ body {
   white-space: nowrap;
 }
 
+.toolbar .toolbar-checkbox + .toolbar-checkbox {
+  margin-left: 0.5rem;
+}
+
 .toolbar-checkbox input[type='checkbox'] {
   margin: 0;
 }
@@ -2958,6 +3320,137 @@ body {
 
 .search-clear-btn:hover {
   color: var(--text);
+}
+
+.advanced-filters-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 26, 34, 0.3);
+  z-index: 4000;
+}
+
+.advanced-filters-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(32rem, 94vw);
+  height: 100dvh;
+  background: rgba(255, 255, 255, 0.98);
+  border-right: 1px solid var(--line);
+  box-shadow: 8px 0 24px rgba(16, 26, 34, 0.16);
+  z-index: 4001;
+  transform: translateX(-100%);
+  transition: transform 180ms ease;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.advanced-filters-drawer.open {
+  transform: translateX(0);
+}
+
+.advanced-filters-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.advanced-collapse-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.advanced-collapse-hitarea {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.advanced-collapse-hitarea strong {
+  font: inherit;
+}
+
+.advanced-filters-body {
+  padding: 0.75rem;
+  overflow-y: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.advanced-group {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.55rem;
+  background: #fff;
+}
+
+.advanced-group .toolbar-checkbox {
+  width: 100%;
+  white-space: normal;
+  align-items: flex-start;
+  line-height: 1.25;
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+}
+
+.advanced-group .toolbar-checkbox input[type='checkbox'] {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.advanced-header-actions {
+  justify-content: flex-end;
+}
+
+.advanced-ingredient-search {
+  width: 100%;
+  margin-bottom: 0.4rem;
+}
+
+.advanced-ingredient-search input {
+  width: 100%;
+}
+
+.advanced-ingredient-mode-select {
+  margin-bottom: 0.4rem;
+}
+
+.advanced-ingredient-expand {
+  margin-top: 0.55rem;
+}
+
+.advanced-selected-ingredient {
+  background: #eef8f3;
+  border-radius: 8px;
+  border: 1px solid #d6ece0;
+  padding-left: 0.35rem;
+}
+
+.advanced-ingredient-divider {
+  margin: 0.45rem 0 0.2rem;
+  padding-top: 0.45rem;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 input,
@@ -3065,6 +3558,25 @@ button:disabled {
 
 .menu-button {
   background: #fff;
+}
+
+.advanced-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+
+.advanced-toggle-chevron {
+  letter-spacing: -0.03em;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.advanced-toggle-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: currentColor;
 }
 
 .menu-button.active {
@@ -3481,6 +3993,13 @@ button:disabled {
 }
 
 @media (max-width: 900px) {
+  .advanced-filters-drawer {
+    width: 100vw;
+    max-width: 100vw;
+    border-right: none;
+    box-shadow: none;
+  }
+
   .info-bar {
     display: none;
   }
