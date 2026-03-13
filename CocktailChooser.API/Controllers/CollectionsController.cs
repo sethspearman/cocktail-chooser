@@ -27,6 +27,18 @@ public class CollectionsController : ControllerBase
         return Ok(collections);
     }
 
+    [HttpGet("mine")]
+    public async Task<ActionResult<IEnumerable<CollectionDto>>> GetMyCollections([FromQuery] bool includeSystem = true)
+    {
+        if (!_currentUserContext.UserId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        var collections = await _service.GetCollectionsAsync(includeSystem, _currentUserContext.UserId.Value);
+        return Ok(collections);
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<CollectionDto>> GetCollection(int id)
     {
@@ -60,7 +72,7 @@ public class CollectionsController : ControllerBase
             return Forbid();
         }
 
-        if (dto.IsSystemCollection == 0 && !dto.OwnerUserId.HasValue)
+        if (dto.IsSystemCollection == 0)
         {
             dto.OwnerUserId = _currentUserContext.UserId;
         }
@@ -87,6 +99,9 @@ public class CollectionsController : ControllerBase
         {
             return Forbid();
         }
+
+        dto.OwnerUserId = existing.OwnerUserId;
+        dto.IsSystemCollection = existing.IsSystemCollection;
 
         var updated = await _service.UpdateCollectionAsync(dto);
         if (!updated)
