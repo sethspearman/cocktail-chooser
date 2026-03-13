@@ -67,8 +67,12 @@ public class Startup
         services.AddScoped<IUserIngredientRepository>(_ => new UserIngredientRepository(connectionString));
         services.AddScoped<ICocktailTryLogRepository>(_ => new CocktailTryLogRepository(connectionString));
         services.AddScoped<ICocktailGroupingRepository>(_ => new CocktailGroupingRepository(connectionString));
+        services.AddScoped<ICocktailTagRepository>(_ => new CocktailTagRepository(connectionString));
+        services.AddScoped<ICollectionRepository>(_ => new CollectionRepository(connectionString));
         services.AddScoped<IAdminMaintenanceRepository>(_ => new AdminMaintenanceRepository(connectionString));
         services.AddScoped<ICocktailService, CocktailService>();
+        services.AddScoped<ICocktailTagService, CocktailTagService>();
+        services.AddScoped<ICollectionService, CollectionService>();
         services.AddScoped<IIngredientService, IngredientService>();
         services.AddScoped<ICocktailIngredientService, CocktailIngredientService>();
         services.AddScoped<ICocktailRecipeService, CocktailRecipeService>();

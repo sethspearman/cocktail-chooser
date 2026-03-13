@@ -50,6 +50,7 @@ public class CocktailService : ICocktailService
     private readonly ICocktailRecipeRepository _cocktailRecipeRepository;
     private readonly IAmountRepository _amountRepository;
     private readonly IRecipeSourceRepository _recipeSourceRepository;
+    private readonly ICocktailTagRepository _cocktailTagRepository;
     private readonly IOcrRecipeParser _recipeParser;
 
     public CocktailService(
@@ -59,6 +60,7 @@ public class CocktailService : ICocktailService
         ICocktailRecipeRepository cocktailRecipeRepository,
         IAmountRepository amountRepository,
         IRecipeSourceRepository recipeSourceRepository,
+        ICocktailTagRepository cocktailTagRepository,
         IOcrRecipeParser recipeParser)
     {
         _cocktailRepository = cocktailRepository;
@@ -67,13 +69,16 @@ public class CocktailService : ICocktailService
         _cocktailRecipeRepository = cocktailRecipeRepository;
         _amountRepository = amountRepository;
         _recipeSourceRepository = recipeSourceRepository;
+        _cocktailTagRepository = cocktailTagRepository;
         _recipeParser = recipeParser;
     }
 
     public async Task<IEnumerable<CocktailDto>> GetAllCocktailsAsync(
         IEnumerable<string>? includeIngredientNames = null,
         string? includeMode = null,
-        string? alcoholFilter = null)
+        string? alcoholFilter = null,
+        IEnumerable<string>? tags = null,
+        string? tagMode = null)
     {
         var cocktails = (await _cocktailRepository.GetAllAsync())
             .Where(IsApprovedForPublicRead)
@@ -84,8 +89,16 @@ public class CocktailService : ICocktailService
             .Where(x => x.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+        var requestedTags = (tags ?? Array.Empty<string>())
+            .Select(TagSlugNormalizer.Normalize)
+            .Where(x => x.Length > 0)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
 
         var normalizedMode = string.Equals(includeMode, "any", StringComparison.OrdinalIgnoreCase)
+            ? "any"
+            : "all";
+        var normalizedTagMode = string.Equals(tagMode, "any", StringComparison.OrdinalIgnoreCase)
             ? "any"
             : "all";
         var needsCocktailIngredientRows = requestedIngredientNames.Count > 0 || normalizedAlcoholFilter != "all";
@@ -109,9 +122,19 @@ public class CocktailService : ICocktailService
                 .ToList();
         }
 
+        if (requestedTags.Count > 0)
+        {
+            var matchingTaggedCocktailIds = await _cocktailTagRepository.GetCocktailIdsForTagsAsync(
+                requestedTags,
+                matchAll: normalizedTagMode == "all");
+            filteredCocktails = filteredCocktails
+                .Where(c => matchingTaggedCocktailIds.Contains(c.Id))
+                .ToList();
+        }
+
         if (requestedIngredientNames.Count == 0)
         {
-            return filteredCocktails.Select(MapToDto);
+            return await MapCocktailsWithTagsAsync(filteredCocktails);
         }
 
         var ingredients = (await _ingredientRepository.GetAllAsync()).ToList();
@@ -171,9 +194,13 @@ public class CocktailService : ICocktailService
             .Select(c => c.Id)
             .ToHashSet();
 
-        return filteredCocktails
+        var result = filteredCocktails
             .Where(c => matchingCocktailIds.Contains(c.Id))
-            .Select(MapToDto);
+            .Select(MapToDto)
+            .ToList();
+
+        await PopulateTagsAsync(result);
+        return result;
     }
 
     public async Task<IEnumerable<CocktailDto>> GetPendingCocktailsForUserAsync(int userId)
@@ -216,7 +243,9 @@ public class CocktailService : ICocktailService
             return null;
         }
 
-        return MapToDto(cocktail);
+        var dto = MapToDto(cocktail);
+        await PopulateTagsAsync(new List<CocktailDto> { dto });
+        return dto;
     }
 
     public async Task<IEnumerable<AdminCocktailPortDto>> ExportAdminCocktailsAsync(
@@ -1214,6 +1243,41 @@ public class CocktailService : ICocktailService
     private static bool IsApprovedForPublicRead(CocktailRecord cocktail)
     {
         return cocktail.IsApproved.GetValueOrDefault() == 1;
+    }
+
+    private async Task<List<CocktailDto>> MapCocktailsWithTagsAsync(IEnumerable<CocktailRecord> cocktails)
+    {
+        var dtoList = cocktails.Select(MapToDto).ToList();
+        await PopulateTagsAsync(dtoList);
+        return dtoList;
+    }
+
+    private async Task PopulateTagsAsync(IList<CocktailDto> cocktails)
+    {
+        if (cocktails.Count == 0)
+        {
+            return;
+        }
+
+        var tagsByCocktailId = await _cocktailTagRepository.GetCocktailTagsByCocktailIdsAsync(cocktails.Select(x => x.Id));
+        foreach (var cocktail in cocktails)
+        {
+            tagsByCocktailId.TryGetValue(cocktail.Id, out var rows);
+            cocktail.Tags = rows?.Select(MapTagToDto).ToList() ?? new List<TagDto>();
+        }
+    }
+
+    private static TagDto MapTagToDto(CocktailTagRecord row)
+    {
+        return new TagDto
+        {
+            Id = row.TagId,
+            TagTypeId = row.TagTypeId,
+            TagTypeName = row.TagTypeName,
+            Name = row.TagName,
+            NormalizedName = row.TagNormalizedName,
+            CreatedUtc = row.CreatedUtc
+        };
     }
 
     private static bool IsAdminUserId(int userId)

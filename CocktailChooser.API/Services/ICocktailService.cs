@@ -7,7 +7,9 @@ namespace CocktailChooser.API.Services
         Task<IEnumerable<CocktailDto>> GetAllCocktailsAsync(
             IEnumerable<string>? includeIngredientNames = null,
             string? includeMode = null,
-            string? alcoholFilter = null);
+            string? alcoholFilter = null,
+            IEnumerable<string>? tags = null,
+            string? tagMode = null);
         Task<IEnumerable<CocktailDto>> GetMyCocktailsForUserAsync(int userId);
         Task<IEnumerable<CocktailDto>> GetPendingCocktailsForAdminAsync();
         Task<IEnumerable<CocktailDto>> GetPendingCocktailsForUserAsync(int userId);

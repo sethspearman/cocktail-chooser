@@ -13,6 +13,7 @@ public class CocktailServiceTests
     private readonly Mock<ICocktailRecipeRepository> _cocktailRecipeRepositoryMock;
     private readonly Mock<IAmountRepository> _amountRepositoryMock;
     private readonly Mock<IRecipeSourceRepository> _recipeSourceRepositoryMock;
+    private readonly Mock<ICocktailTagRepository> _cocktailTagRepositoryMock;
     private readonly Mock<IOcrRecipeParser> _recipeParserMock;
     private readonly CocktailService _service;
 
@@ -24,9 +25,14 @@ public class CocktailServiceTests
         _cocktailRecipeRepositoryMock = new Mock<ICocktailRecipeRepository>();
         _amountRepositoryMock = new Mock<IAmountRepository>();
         _recipeSourceRepositoryMock = new Mock<IRecipeSourceRepository>();
+        _cocktailTagRepositoryMock = new Mock<ICocktailTagRepository>();
         _recipeParserMock = new Mock<IOcrRecipeParser>();
         _repositoryMock.Setup(r => r.IsCanonicalKeyInUseAsync(It.IsAny<string>(), It.IsAny<int?>()))
             .ReturnsAsync(false);
+        _cocktailTagRepositoryMock.Setup(r => r.GetCocktailTagsByCocktailIdsAsync(It.IsAny<IEnumerable<int>>()))
+            .ReturnsAsync(new Dictionary<int, List<CocktailTagRecord>>());
+        _cocktailTagRepositoryMock.Setup(r => r.GetCocktailIdsForTagsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
+            .ReturnsAsync(new HashSet<int>());
         _service = new CocktailService(
             _repositoryMock.Object,
             _ingredientRepositoryMock.Object,
@@ -34,6 +40,7 @@ public class CocktailServiceTests
             _cocktailRecipeRepositoryMock.Object,
             _amountRepositoryMock.Object,
             _recipeSourceRepositoryMock.Object,
+            _cocktailTagRepositoryMock.Object,
             _recipeParserMock.Object);
     }
 
@@ -149,6 +156,37 @@ public class CocktailServiceTests
 
         Assert.Single(result);
         Assert.Equal("Virgin Mule", result[0].Name);
+    }
+
+    [Fact]
+    public async Task GetAllCocktailsAsync_TagFilter_ReturnsOnlyMatchingTaggedCocktails()
+    {
+        _repositoryMock.Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<CocktailRecord>
+            {
+                new() { Id = 1, Name = "Negroni", IsApproved = 1 },
+                new() { Id = 2, Name = "Daiquiri", IsApproved = 1 }
+            });
+
+        _cocktailTagRepositoryMock.Setup(r => r.GetCocktailIdsForTagsAsync(
+                It.Is<IEnumerable<string>>(x => x.SequenceEqual(new[] { "bitter", "stirred" })),
+                true))
+            .ReturnsAsync(new HashSet<int> { 1 });
+        _cocktailTagRepositoryMock.Setup(r => r.GetCocktailTagsByCocktailIdsAsync(It.IsAny<IEnumerable<int>>()))
+            .ReturnsAsync(new Dictionary<int, List<CocktailTagRecord>>
+            {
+                [1] = new List<CocktailTagRecord>
+                {
+                    new() { CocktailId = 1, TagId = 10, TagTypeId = 1, TagTypeName = "Flavor Profile", TagName = "Bitter", TagNormalizedName = "bitter", CreatedUtc = "2026-03-13T00:00:00Z" },
+                    new() { CocktailId = 1, TagId = 20, TagTypeId = 7, TagTypeName = "Build Method", TagName = "Stirred", TagNormalizedName = "stirred", CreatedUtc = "2026-03-13T00:00:00Z" }
+                }
+            });
+
+        var result = (await _service.GetAllCocktailsAsync(tags: new[] { "bitter", "stirred" })).ToList();
+
+        Assert.Single(result);
+        Assert.Equal("Negroni", result[0].Name);
+        Assert.Equal(2, result[0].Tags!.Count);
     }
 
     [Fact]
