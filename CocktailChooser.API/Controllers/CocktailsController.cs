@@ -25,14 +25,20 @@ namespace CocktailChooser.API.Controllers
         public async Task<ActionResult<IEnumerable<CocktailDto>>> GetCocktails(
             [FromQuery] string? include = null,
             [FromQuery] string? mode = null,
-            [FromQuery] string? alcohol = null)
+            [FromQuery] string? alcohol = null,
+            [FromQuery] string? tags = null,
+            [FromQuery] string? tagMode = null)
         {
             var includeNames = string.IsNullOrWhiteSpace(include)
                 ? null
                 : include
                     .Split(',', System.StringSplitOptions.TrimEntries | System.StringSplitOptions.RemoveEmptyEntries);
+            var tagNames = string.IsNullOrWhiteSpace(tags)
+                ? null
+                : tags
+                    .Split(',', System.StringSplitOptions.TrimEntries | System.StringSplitOptions.RemoveEmptyEntries);
 
-            var cocktails = await _cocktailService.GetAllCocktailsAsync(includeNames, mode, alcohol);
+            var cocktails = await _cocktailService.GetAllCocktailsAsync(includeNames, mode, alcohol, tagNames, tagMode);
             return Ok(cocktails);
         }
 

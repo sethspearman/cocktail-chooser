@@ -210,6 +210,11 @@
         <button type="button" class="menu-button" @click="openRecipeModal">Print</button>
       </div>
       <p class="subtle">Source: {{ sourceNameFor(selectedCocktail.cocktailSourceId) }}</p>
+      <div v-if="selectedCocktail.tags && selectedCocktail.tags.length" class="tag-pill-row">
+        <span v-for="tag in selectedCocktail.tags" :key="`detail-tag-${tag.id}`" class="pill">
+          {{ tag.tagTypeName }}: {{ tag.name }}
+        </span>
+      </div>
 
       <div class="missing-panel">
         <strong>Missing Ingredients:</strong>
@@ -360,8 +365,25 @@
         </div>
 
         <div class="advanced-group">
-          <div class="subheading">Flavor Profile</div>
-          <p class="subtle">Flavor profile filters will be wired in a follow-up slice.</p>
+          <div class="subheading">Tags</div>
+          <select v-model="tagFilterMode" class="advanced-ingredient-mode-select">
+            <option value="all">Tag filter mode: All selected tags</option>
+            <option value="any">Tag filter mode: Any selected tag</option>
+          </select>
+          <p v-if="!advancedTagGroups.length" class="subtle">No tags loaded.</p>
+          <div v-for="group in advancedTagGroups" :key="`tag-group-${group.id}`" class="advanced-tag-group">
+            <strong>{{ group.name }}</strong>
+            <label
+              v-for="tag in group.tags"
+              :key="`adv-tag-${tag.id}`"
+              class="toolbar-checkbox">
+              <input
+                :checked="selectedTagNameSet.has(tag.normalizedName)"
+                type="checkbox"
+                @change="toggleAdvancedTag(tag.normalizedName)" />
+              {{ tag.name }}
+            </label>
+          </div>
         </div>
 
         <div class="advanced-group">
@@ -786,10 +808,10 @@ Steps:
         <div class="modal-header">
           <h2 id="admin-modal-title">Admin</h2>
           <div class="menu-actions">
-            <button type="button" class="menu-button" :disabled="adminBusy || adminMaintenanceBusy" @click="refreshAdminActiveView">
-              {{ (adminBusy || adminMaintenanceBusy) ? 'Working...' : 'Refresh' }}
+            <button type="button" class="menu-button" :disabled="adminBusy || adminMaintenanceBusy || adminTaxonomyBusy" @click="refreshAdminActiveView">
+              {{ (adminBusy || adminMaintenanceBusy || adminTaxonomyBusy) ? 'Working...' : 'Refresh' }}
             </button>
-            <button type="button" class="menu-button" :disabled="adminBusy || adminMaintenanceBusy" @click="closeActiveModal">Close</button>
+            <button type="button" class="menu-button" :disabled="adminBusy || adminMaintenanceBusy || adminTaxonomyBusy" @click="closeActiveModal">Close</button>
           </div>
         </div>
         <div class="menu-actions admin-tab-row">
@@ -799,6 +821,13 @@ Steps:
             :class="{ active: adminView === 'importExport' }"
             @click="adminView = 'importExport'">
             {{ adminView === 'importExport' ? '✓ Import / Export' : 'Import / Export' }}
+          </button>
+          <button
+            type="button"
+            class="menu-button"
+            :class="{ active: adminView === 'taxonomy' }"
+            @click="adminView = 'taxonomy'">
+            {{ adminView === 'taxonomy' ? '✓ Taxonomy' : 'Taxonomy' }}
           </button>
           <button
             type="button"
@@ -898,7 +927,7 @@ Steps:
             </div>
           </div>
         </div>
-        <div v-else class="auth-stack">
+        <div v-else-if="adminView === 'maintenance'" class="auth-stack">
           <p class="subtle">Run a dry-run first, then apply merge when results look correct.</p>
           <div class="detail-grid recipe-modal-grid">
             <div class="admin-block">
@@ -1021,6 +1050,115 @@ Steps:
             </div>
           </div>
         </div>
+        <div v-else class="auth-stack">
+          <p class="subtle">Manage seeded tags and system collections for discovery.</p>
+          <div class="detail-grid recipe-modal-grid">
+            <div class="admin-block">
+              <h3>Tag Management</h3>
+              <div class="auth-stack">
+                <select v-model="adminTagTypeId">
+                  <option value="">Select tag type</option>
+                  <option v-for="tagType in tagTypes" :key="`admin-tag-type-${tagType.id}`" :value="String(tagType.id)">
+                    {{ tagType.name }}
+                  </option>
+                </select>
+                <select v-model="adminTagId" :disabled="!adminTagsForSelectedType.length">
+                  <option value="">Select tag</option>
+                  <option v-for="tag in adminTagsForSelectedType" :key="`admin-tag-${tag.id}`" :value="String(tag.id)">
+                    {{ tag.name }}
+                  </option>
+                </select>
+                <input v-model.trim="adminTagCocktailSearch" placeholder="Search cocktails for tag assignment" />
+                <select v-model="adminTagAssignmentFilter">
+                  <option value="all">Show all cocktails</option>
+                  <option value="assigned">Show assigned</option>
+                  <option value="unassigned">Show unassigned</option>
+                </select>
+                <div class="menu-actions">
+                  <button type="button" class="menu-button" :disabled="adminTaxonomyBusy || !selectedAdminTag || !adminTagSelectedCocktailIds.length" @click="applyAdminTagSelection('assign')">
+                    Add Selected
+                  </button>
+                  <button type="button" class="menu-button" :disabled="adminTaxonomyBusy || !selectedAdminTag || !adminTagSelectedCocktailIds.length" @click="applyAdminTagSelection('remove')">
+                    Remove Selected
+                  </button>
+                </div>
+              </div>
+              <p v-if="!selectedAdminTag" class="subtle">Choose a tag type and tag to manage assignments.</p>
+              <div v-else class="admin-selection-list">
+                <label
+                  v-for="cocktail in filteredAdminTagCocktails"
+                  :key="`admin-tag-cocktail-${cocktail.id}`"
+                  class="admin-selection-row">
+                  <input
+                    :checked="adminTagSelectedCocktailIds.includes(Number(cocktail.id))"
+                    type="checkbox"
+                    @change="toggleAdminTagCocktailSelection(cocktail.id)" />
+                  <span>{{ cocktail.name }}</span>
+                  <span class="pill" :class="cocktailHasTag(cocktail, selectedAdminTag.normalizedName) ? 'pill-assigned' : 'pill-unassigned'">
+                    {{ cocktailHasTag(cocktail, selectedAdminTag.normalizedName) ? 'Assigned' : 'Unassigned' }}
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="admin-block">
+              <h3>System Collections</h3>
+              <div class="auth-stack">
+                <select v-model="adminSelectedCollectionId">
+                  <option value="">New system collection</option>
+                  <option v-for="collection in systemCollections" :key="`admin-collection-${collection.id}`" :value="String(collection.id)">
+                    {{ collection.name }}
+                  </option>
+                </select>
+                <input v-model.trim="adminCollectionForm.name" placeholder="Collection name" />
+                <textarea v-model.trim="adminCollectionForm.description" rows="3" placeholder="Collection description"></textarea>
+                <div class="menu-actions">
+                  <button type="button" class="menu-button" :disabled="adminTaxonomyBusy" @click="startNewAdminCollection">
+                    New
+                  </button>
+                  <button type="button" class="menu-button" :disabled="adminTaxonomyBusy || !adminCollectionForm.name.trim()" @click="saveAdminCollection">
+                    {{ Number(adminCollectionForm.id || 0) > 0 ? 'Save' : 'Create' }}
+                  </button>
+                  <button type="button" class="menu-button" :disabled="adminTaxonomyBusy || !adminSelectedCollectionId" @click="deleteAdminCollection">
+                    Delete
+                  </button>
+                </div>
+              </div>
+              <div class="auth-stack">
+                <input v-model.trim="adminCollectionCocktailSearch" placeholder="Search cocktails for collection membership" />
+                <select v-model="adminCollectionMembershipFilter">
+                  <option value="all">Show all cocktails</option>
+                  <option value="members">Show members</option>
+                  <option value="nonmembers">Show non-members</option>
+                </select>
+                <div class="menu-actions">
+                  <button type="button" class="menu-button" :disabled="adminTaxonomyBusy || !adminSelectedCollectionId || !adminCollectionSelectedCocktailIds.length" @click="applyAdminCollectionSelection('add')">
+                    Add Selected
+                  </button>
+                  <button type="button" class="menu-button" :disabled="adminTaxonomyBusy || !adminSelectedCollectionId || !adminCollectionSelectedCocktailIds.length" @click="applyAdminCollectionSelection('remove')">
+                    Remove Selected
+                  </button>
+                </div>
+              </div>
+              <div v-if="!adminSelectedCollectionId" class="subtle">Create or select a system collection to manage membership.</div>
+              <div v-else class="admin-selection-list">
+                <label
+                  v-for="cocktail in filteredAdminCollectionCocktails"
+                  :key="`admin-collection-cocktail-${cocktail.id}`"
+                  class="admin-selection-row">
+                  <input
+                    :checked="adminCollectionSelectedCocktailIds.includes(Number(cocktail.id))"
+                    type="checkbox"
+                    @change="toggleAdminCollectionCocktailSelection(cocktail.id)" />
+                  <span>{{ cocktail.name }}</span>
+                  <span class="pill" :class="selectedAdminCollectionCocktailIds.has(Number(cocktail.id)) ? 'pill-assigned' : 'pill-unassigned'">
+                    {{ selectedAdminCollectionCocktailIds.has(Number(cocktail.id)) ? 'In Collection' : 'Not in Collection' }}
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1044,9 +1182,13 @@ Steps:
 
 <script>
 import {
+  addCocktailToCollection,
   approveCocktail,
+  assignTagToCocktail,
   createCocktail,
+  createCollection,
   createCocktailTryLog,
+  deleteCollection,
   exportAdminCocktails,
   getAdminCocktailDuplicates,
   getAdminIngredientDuplicates,
@@ -1057,8 +1199,12 @@ import {
   getCocktailSources,
   getCocktailSteps,
   getCocktailTimePeriods,
+  getCollectionCocktails,
+  getCollections,
   getCurrentUser,
   getCocktailTryLogs,
+  getTags,
+  getTagTypes,
   getUserCocktailTryLogs,
   getCocktails,
   getGlassTypes,
@@ -1074,8 +1220,11 @@ import {
   previewCocktailFromText,
   register,
   rejectCocktail,
+  removeCocktailFromCollection,
+  removeTagFromCocktail,
   setAuthToken,
   submitCocktailFromText,
+  updateCollection,
   upsertUserInventory
 } from './api';
 
@@ -1089,6 +1238,7 @@ function createDefaultFilterState() {
     selectedTimePeriodIds: [],
     selectedSourceIds: [],
     selectedFlavorProfiles: [],
+    selectedTagNames: [],
     selectedIngredientIds: [],
     includeUnapproved: false,
     mySubmissionsOnly: false,
@@ -1137,6 +1287,10 @@ export default {
       cocktailIngredients: [],
       inventory: [],
       sources: [],
+      tagTypes: [],
+      tags: [],
+      systemCollections: [],
+      collectionCocktailsByCollectionId: {},
       amountOptions: [],
       glassTypeOptions: [],
       timePeriodOptions: [],
@@ -1155,6 +1309,7 @@ export default {
       virginOnly: false,
       popularOnly: false,
       ingredientFilterMode: 'all',
+      tagFilterMode: 'all',
       ingredientFilterSearch: '',
       selectedIngredientIds: [],
       cocktailListMode: 'all',
@@ -1219,6 +1374,21 @@ export default {
       adminBusy: false,
       adminModerationBusy: false,
       adminMaintenanceBusy: false,
+      adminTaxonomyBusy: false,
+      adminTagTypeId: '',
+      adminTagId: '',
+      adminTagCocktailSearch: '',
+      adminTagAssignmentFilter: 'all',
+      adminTagSelectedCocktailIds: [],
+      adminSelectedCollectionId: '',
+      adminCollectionForm: {
+        id: 0,
+        name: '',
+        description: ''
+      },
+      adminCollectionCocktailSearch: '',
+      adminCollectionMembershipFilter: 'all',
+      adminCollectionSelectedCocktailIds: [],
       ingredientDuplicateGroups: [],
       cocktailDuplicateGroups: [],
       ingredientMergeForm: {
@@ -1253,6 +1423,35 @@ export default {
     },
     advancedSelectedIngredientIdSet() {
       return new Set(this.selectedIngredientIds.map((id) => Number(id)));
+    },
+    selectedTagNameSet() {
+      return new Set((this.filterState.selectedTagNames || []).map((name) => String(name)));
+    },
+    tagsByType() {
+      const grouped = {};
+      this.tagTypes.forEach((tagType) => {
+        grouped[tagType.name] = [];
+      });
+      this.tags.forEach((tag) => {
+        if (!grouped[tag.tagTypeName]) {
+          grouped[tag.tagTypeName] = [];
+        }
+        grouped[tag.tagTypeName].push(tag);
+      });
+
+      Object.keys(grouped).forEach((key) => {
+        grouped[key] = grouped[key].slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      });
+
+      return grouped;
+    },
+    advancedTagGroups() {
+      return this.tagTypes
+        .map((tagType) => ({
+          ...tagType,
+          tags: this.tagsByType[tagType.name] || []
+        }))
+        .filter((group) => group.tags.length > 0);
     },
     spirits() {
       return [...new Set(this.ingredients.map((x) => x.primarySpirit).filter(Boolean))].sort();
@@ -1586,6 +1785,67 @@ export default {
       const fuzzy = this.sources.find((s) => (s.name || '').toLowerCase().includes('my cocktail'));
       return userAddedExact?.id || userAddedFuzzy?.id || exact?.id || fuzzy?.id || this.sources[0]?.id || 0;
     },
+    adminTagsForSelectedType() {
+      const selectedTypeId = Number(this.adminTagTypeId || 0);
+      return this.tags
+        .filter((tag) => !selectedTypeId || Number(tag.tagTypeId) === selectedTypeId)
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    },
+    selectedAdminTag() {
+      return this.adminTagsForSelectedType.find((tag) => Number(tag.id) === Number(this.adminTagId || 0)) || null;
+    },
+    filteredAdminTagCocktails() {
+      const selectedTag = this.selectedAdminTag;
+      const search = (this.adminTagCocktailSearch || '').trim().toLowerCase();
+      return [...this.allCocktails]
+        .filter((cocktail) => {
+          if (search && !(cocktail.name || '').toLowerCase().includes(search)) {
+            return false;
+          }
+
+          if (!selectedTag) {
+            return true;
+          }
+
+          const isAssigned = this.cocktailHasTag(cocktail, selectedTag.normalizedName);
+          if (this.adminTagAssignmentFilter === 'assigned') {
+            return isAssigned;
+          }
+          if (this.adminTagAssignmentFilter === 'unassigned') {
+            return !isAssigned;
+          }
+          return true;
+        })
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    },
+    selectedAdminCollection() {
+      return this.systemCollections.find((collection) => Number(collection.id) === Number(this.adminSelectedCollectionId || 0)) || null;
+    },
+    selectedAdminCollectionCocktailIds() {
+      const collectionId = Number(this.adminSelectedCollectionId || 0);
+      const rows = this.collectionCocktailsByCollectionId[collectionId] || [];
+      return new Set(rows.map((row) => Number(row.cocktailId)));
+    },
+    filteredAdminCollectionCocktails() {
+      const search = (this.adminCollectionCocktailSearch || '').trim().toLowerCase();
+      const memberIds = this.selectedAdminCollectionCocktailIds;
+      return [...this.allCocktails]
+        .filter((cocktail) => {
+          if (search && !(cocktail.name || '').toLowerCase().includes(search)) {
+            return false;
+          }
+
+          const isMember = memberIds.has(Number(cocktail.id));
+          if (this.adminCollectionMembershipFilter === 'members') {
+            return isMember;
+          }
+          if (this.adminCollectionMembershipFilter === 'nonmembers') {
+            return !isMember;
+          }
+          return true;
+        })
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    },
     canCreateCocktailEntry() {
       const hasIngredient = this.newCocktailForm.ingredientEntries.some((x) => (x.ingredientName || '').trim().length > 0);
       const hasStep = this.newCocktailForm.stepEntries.some((x) => (x.instruction || '').trim().length > 0);
@@ -1669,6 +1929,29 @@ export default {
     async ingredientFilterMode() {
       await this.reloadCocktailsForIngredientFilters();
     },
+    adminTagTypeId(newValue) {
+      const available = this.tags
+        .filter((tag) => !Number(newValue || 0) || Number(tag.tagTypeId) === Number(newValue))
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      this.adminTagId = available[0]?.id ? String(available[0].id) : '';
+      this.adminTagSelectedCocktailIds = [];
+    },
+    async adminSelectedCollectionId(newValue) {
+      this.adminCollectionSelectedCocktailIds = [];
+      if (!Number(newValue || 0)) {
+        return;
+      }
+
+      await this.loadCollectionCocktailsForAdmin(Number(newValue));
+      const selected = this.selectedAdminCollection;
+      if (selected) {
+        this.adminCollectionForm = {
+          id: selected.id,
+          name: selected.name || '',
+          description: selected.description || ''
+        };
+      }
+    },
     async virginOnly() {
       await this.reloadCocktailsForIngredientFilters();
     },
@@ -1694,6 +1977,8 @@ export default {
 
       if (newView === 'maintenance') {
         await this.loadAdminMaintenanceData();
+      } else if (newView === 'taxonomy') {
+        await this.loadAdminTaxonomyData();
       } else {
         await Promise.all([
           this.loadAdminExportPayload(),
@@ -1771,6 +2056,7 @@ export default {
       this.cocktailSearch = '';
       this.selectedSpirit = '';
       this.ingredientFilterMode = 'all';
+      this.tagFilterMode = 'all';
       this.ingredientFilterSearch = '';
       this.selectedIngredientIds = [];
       this.virginOnly = false;
@@ -1791,6 +2077,17 @@ export default {
 
       return [...next.values()];
     },
+    toggleStringArrayItem(values, rawValue) {
+      const value = String(rawValue || '');
+      const next = new Set(values.map((entry) => String(entry || '')));
+      if (next.has(value)) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
+
+      return [...next.values()];
+    },
     toggleAdvancedSource(sourceId) {
       this.filterState.selectedSourceIds = this.toggleAdvancedArrayItem(this.filterState.selectedSourceIds, sourceId);
     },
@@ -1800,6 +2097,12 @@ export default {
     toggleAdvancedIngredient(ingredientId) {
       this.selectedIngredientIds = this.toggleAdvancedArrayItem(this.selectedIngredientIds, ingredientId);
       this.filterState.selectedIngredientIds = [...this.selectedIngredientIds];
+    },
+    toggleAdvancedTag(tagName) {
+      this.filterState.selectedTagNames = this.toggleStringArrayItem(this.filterState.selectedTagNames || [], tagName);
+    },
+    cocktailHasTag(cocktail, normalizedName) {
+      return (cocktail?.tags || []).some((tag) => String(tag.normalizedName || '') === String(normalizedName || ''));
     },
     matchesCocktailEvaluationFilters(evaluation) {
       const cocktail = evaluation.cocktail;
@@ -1869,6 +2172,17 @@ export default {
         }
       }
 
+      if (this.filterState.selectedTagNames.length > 0) {
+        const assignedTagNames = new Set((cocktail.tags || []).map((tag) => String(tag.normalizedName || '')));
+        const selectedTags = this.filterState.selectedTagNames.map((name) => String(name));
+        const matchesTags = this.tagFilterMode === 'any'
+          ? selectedTags.some((name) => assignedTagNames.has(name))
+          : selectedTags.every((name) => assignedTagNames.has(name));
+        if (!matchesTags) {
+          return false;
+        }
+      }
+
       return true;
     },
     navigateTo(path, { replace = false } = {}) {
@@ -1903,14 +2217,16 @@ export default {
         document.title = 'Cocktail Chooser';
       }
       try {
-        const [cocktails, ingredients, cocktailIngredients, sources, amounts, glassTypes, timePeriods] = await Promise.all([
+        const [cocktails, ingredients, cocktailIngredients, sources, amounts, glassTypes, timePeriods, tagTypes, tags] = await Promise.all([
           getCocktails({ alcohol: this.virginOnly ? 'non-alcoholic' : 'all' }),
           getIngredients(),
           getCocktailIngredients(),
           getCocktailSources(),
           getAmounts(),
           getGlassTypes(),
-          getCocktailTimePeriods()
+          getCocktailTimePeriods(),
+          getTagTypes(),
+          getTags()
         ]);
 
         this.cocktails = [...cocktails];
@@ -1921,6 +2237,8 @@ export default {
         this.amountOptions = amounts;
         this.glassTypeOptions = glassTypes;
         this.timePeriodOptions = timePeriods;
+        this.tagTypes = tagTypes;
+        this.tags = tags;
         await this.restoreSession();
       } catch (err) {
         this.error = this.extractError(err);
@@ -2092,6 +2410,8 @@ export default {
       this.activeModal = 'admin';
       if (this.adminView === 'maintenance') {
         this.loadAdminMaintenanceData();
+      } else if (this.adminView === 'taxonomy') {
+        this.loadAdminTaxonomyData();
       } else {
         if (!this.adminExportJson) {
           this.loadAdminExportPayload();
@@ -2122,10 +2442,201 @@ export default {
         return;
       }
 
+      if (this.adminView === 'taxonomy') {
+        await this.loadAdminTaxonomyData();
+        return;
+      }
+
       await Promise.all([
         this.loadAdminExportPayload(),
         this.loadAdminPendingCocktails()
       ]);
+    },
+    async loadAdminTaxonomyData() {
+      if (!this.isAdminUser) {
+        return;
+      }
+
+      this.error = '';
+      this.adminTaxonomyBusy = true;
+      try {
+        const [tagTypes, tags, collections] = await Promise.all([
+          getTagTypes(),
+          getTags(),
+          getCollections({ includeSystem: true })
+        ]);
+
+        this.tagTypes = tagTypes;
+        this.tags = tags;
+        this.systemCollections = (collections || [])
+          .filter((collection) => Number(collection.isSystemCollection || 0) === 1)
+          .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        if (!this.adminTagTypeId && this.tagTypes.length > 0) {
+          this.adminTagTypeId = String(this.tagTypes[0].id);
+        }
+
+        if (!this.adminSelectedCollectionId && this.systemCollections.length > 0) {
+          this.adminSelectedCollectionId = String(this.systemCollections[0].id);
+        } else if (this.adminSelectedCollectionId) {
+          await this.loadCollectionCocktailsForAdmin(Number(this.adminSelectedCollectionId));
+        }
+
+        if (!this.adminSelectedCollectionId && this.systemCollections.length === 0) {
+          this.startNewAdminCollection();
+        }
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminTaxonomyBusy = false;
+      }
+    },
+    async refreshCocktailCatalog() {
+      const [allCocktails, filteredCocktails] = await Promise.all([
+        getCocktails({ alcohol: this.virginOnly ? 'non-alcoholic' : 'all' }),
+        this.buildFilteredCocktailRequest()
+      ]);
+      this.allCocktails = [...allCocktails];
+      this.cocktails = filteredCocktails;
+    },
+    async buildFilteredCocktailRequest() {
+      const include = this.selectedIngredientFilterNames;
+      const options = {
+        alcohol: this.virginOnly ? 'non-alcoholic' : 'all'
+      };
+
+      if (include.length > 0) {
+        options.include = include;
+        options.mode = this.ingredientFilterMode;
+      }
+
+      return getCocktails(options);
+    },
+    toggleAdminTagCocktailSelection(cocktailId) {
+      this.adminTagSelectedCocktailIds = this.toggleAdvancedArrayItem(this.adminTagSelectedCocktailIds, cocktailId);
+    },
+    async applyAdminTagSelection(action) {
+      if (!this.selectedAdminTag || this.adminTagSelectedCocktailIds.length === 0) {
+        return;
+      }
+
+      this.error = '';
+      this.adminTaxonomyBusy = true;
+      try {
+        await Promise.all(this.adminTagSelectedCocktailIds.map((cocktailId) => (
+          action === 'remove'
+            ? removeTagFromCocktail(cocktailId, this.selectedAdminTag.id)
+            : assignTagToCocktail(cocktailId, this.selectedAdminTag.id)
+        )));
+
+        await this.refreshCocktailCatalog();
+        this.adminTagSelectedCocktailIds = [];
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminTaxonomyBusy = false;
+      }
+    },
+    startNewAdminCollection() {
+      this.adminSelectedCollectionId = '';
+      this.adminCollectionForm = {
+        id: 0,
+        name: '',
+        description: ''
+      };
+      this.adminCollectionSelectedCocktailIds = [];
+    },
+    async loadCollectionCocktailsForAdmin(collectionId) {
+      if (!collectionId) {
+        return;
+      }
+
+      const cocktails = await getCollectionCocktails(collectionId);
+      this.collectionCocktailsByCollectionId = {
+        ...this.collectionCocktailsByCollectionId,
+        [collectionId]: cocktails || []
+      };
+    },
+    toggleAdminCollectionCocktailSelection(cocktailId) {
+      this.adminCollectionSelectedCocktailIds = this.toggleAdvancedArrayItem(this.adminCollectionSelectedCocktailIds, cocktailId);
+    },
+    async saveAdminCollection() {
+      if (!this.isAdminUser) {
+        return;
+      }
+
+      const payload = {
+        id: Number(this.adminCollectionForm.id || 0),
+        name: (this.adminCollectionForm.name || '').trim(),
+        description: (this.adminCollectionForm.description || '').trim() || null,
+        ownerUserId: null,
+        isSystemCollection: 1
+      };
+
+      if (!payload.name) {
+        this.error = 'Collection name is required.';
+        return;
+      }
+
+      this.error = '';
+      this.adminTaxonomyBusy = true;
+      try {
+        if (payload.id > 0) {
+          await updateCollection(payload.id, payload);
+        } else {
+          const created = await createCollection(payload);
+          this.adminSelectedCollectionId = String(created.id);
+        }
+
+        await this.loadAdminTaxonomyData();
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminTaxonomyBusy = false;
+      }
+    },
+    async deleteAdminCollection() {
+      const collectionId = Number(this.adminSelectedCollectionId || 0);
+      if (!collectionId) {
+        return;
+      }
+
+      this.error = '';
+      this.adminTaxonomyBusy = true;
+      try {
+        await deleteCollection(collectionId);
+        const { [collectionId]: removedCollectionCocktails, ...remaining } = this.collectionCocktailsByCollectionId;
+        void removedCollectionCocktails;
+        this.collectionCocktailsByCollectionId = remaining;
+        this.startNewAdminCollection();
+        await this.loadAdminTaxonomyData();
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminTaxonomyBusy = false;
+      }
+    },
+    async applyAdminCollectionSelection(action) {
+      const collectionId = Number(this.adminSelectedCollectionId || 0);
+      if (!collectionId || this.adminCollectionSelectedCocktailIds.length === 0) {
+        return;
+      }
+
+      this.error = '';
+      this.adminTaxonomyBusy = true;
+      try {
+        await Promise.all(this.adminCollectionSelectedCocktailIds.map((cocktailId) => (
+          action === 'remove'
+            ? removeCocktailFromCollection(collectionId, cocktailId)
+            : addCocktailToCollection(collectionId, cocktailId)
+        )));
+        await this.loadCollectionCocktailsForAdmin(collectionId);
+        this.adminCollectionSelectedCocktailIds = [];
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminTaxonomyBusy = false;
+      }
     },
     openAdminImportFilePicker() {
       if (this.adminBusy) {
@@ -2539,17 +3050,7 @@ export default {
       }
 
       try {
-        const include = this.selectedIngredientFilterNames;
-        const options = {
-          alcohol: this.virginOnly ? 'non-alcoholic' : 'all'
-        };
-
-        if (include.length > 0) {
-          options.include = include;
-          options.mode = this.ingredientFilterMode;
-        }
-
-        this.cocktails = await getCocktails(options);
+        this.cocktails = await this.buildFilteredCocktailRequest();
       } catch (err) {
         this.error = this.extractError(err);
       }
@@ -3415,6 +3916,17 @@ body {
   flex-shrink: 0;
 }
 
+.advanced-tag-group {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.advanced-tag-group strong {
+  margin-bottom: 0.2rem;
+}
+
 .advanced-header-actions {
   justify-content: flex-end;
 }
@@ -3852,6 +4364,61 @@ button:disabled {
   border-radius: 10px;
   background: #fff;
   padding: 0.75rem;
+}
+
+.admin-selection-list {
+  margin-top: 0.45rem;
+  max-height: min(38vh, 20rem);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfcfd;
+}
+
+.admin-selection-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid #e8edf3;
+  cursor: pointer;
+}
+
+.admin-selection-row:last-child {
+  border-bottom: none;
+}
+
+.admin-selection-row:hover {
+  background: #f4f8fb;
+}
+
+.admin-selection-row input[type='checkbox'] {
+  margin: 0;
+}
+
+.admin-selection-row span:nth-child(2) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.pill-assigned {
+  background: #e8f8f2;
+  border: 1px solid #9cd4bc;
+  color: #10694f;
+}
+
+.pill-unassigned {
+  background: #f6edf9;
+  border: 1px solid #d8c1e7;
+  color: #6f3f88;
+}
+
+.tag-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.55rem 0 0.8rem;
 }
 
 .admin-tab-row {

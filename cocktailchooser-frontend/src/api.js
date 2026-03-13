@@ -44,6 +44,12 @@ export async function getCocktails(options = {}) {
   if (options.alcohol) {
     params.alcohol = options.alcohol;
   }
+  if (Array.isArray(options.tags) && options.tags.length > 0) {
+    params.tags = options.tags.join(',');
+  }
+  if (options.tagMode) {
+    params.tagMode = options.tagMode;
+  }
 
   const { data } = await api.get('/cocktails', { params });
   return data;
@@ -265,4 +271,81 @@ export async function previewAdminCocktailMerge(payload) {
 export async function mergeAdminCocktail(payload) {
   const { data } = await api.post('/admin/maintenance/cocktail-merge', payload);
   return data;
+}
+
+export async function getTagTypes() {
+  const { data } = await api.get('/tags/types');
+  return data;
+}
+
+export async function getTags({ tagTypeId = null, tagType = null } = {}) {
+  const params = {};
+  if (tagTypeId) {
+    params.tagTypeId = tagTypeId;
+  }
+  if (tagType) {
+    params.tagType = tagType;
+  }
+
+  const { data } = await api.get('/tags', { params });
+  return data;
+}
+
+export async function getCocktailTags(cocktailId) {
+  const { data } = await api.get(`/tags/cocktails/${cocktailId}`);
+  return data;
+}
+
+export async function assignTagToCocktail(cocktailId, tagId) {
+  await api.post(`/tags/cocktails/${cocktailId}/${tagId}`);
+}
+
+export async function removeTagFromCocktail(cocktailId, tagId) {
+  await api.delete(`/tags/cocktails/${cocktailId}/${tagId}`);
+}
+
+export async function getCollections({ includeSystem = true, ownerUserId = null } = {}) {
+  const params = { includeSystem };
+  if (ownerUserId) {
+    params.ownerUserId = ownerUserId;
+  }
+
+  const { data } = await api.get('/collections', { params });
+  return data;
+}
+
+export async function getMyCollections({ includeSystem = true } = {}) {
+  const { data } = await api.get('/collections/mine', { params: { includeSystem } });
+  return data;
+}
+
+export async function getCollection(collectionId) {
+  const { data } = await api.get(`/collections/${collectionId}`);
+  return data;
+}
+
+export async function getCollectionCocktails(collectionId) {
+  const { data } = await api.get(`/collections/${collectionId}/cocktails`);
+  return data;
+}
+
+export async function createCollection(payload) {
+  const { data } = await api.post('/collections', payload);
+  return data;
+}
+
+export async function updateCollection(collectionId, payload) {
+  await api.put(`/collections/${collectionId}`, payload);
+}
+
+export async function deleteCollection(collectionId) {
+  await api.delete(`/collections/${collectionId}`);
+}
+
+export async function addCocktailToCollection(collectionId, cocktailId) {
+  await api.post(`/collections/${collectionId}/cocktails`, { cocktailId });
+}
+
+export async function removeCocktailFromCollection(collectionId, cocktailId) {
+  await api.delete(`/collections/${collectionId}/cocktails/${cocktailId}`);
 }

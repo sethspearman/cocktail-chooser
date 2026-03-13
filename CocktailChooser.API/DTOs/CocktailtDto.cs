@@ -35,5 +35,6 @@ namespace CocktailChooser.API.DTOs
         public int? IsUserSubmitted { get; set; }
         public int? SubmittedByUserId { get; set; }
         public int? CocktailSourceId { get; set; }
+        public List<TagDto>? Tags { get; set; }
     }
 }

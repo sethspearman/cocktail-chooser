@@ -143,6 +143,40 @@ public class TestStartup
                     PerformedByUserId INTEGER NOT NULL,
                     PerformedUtc TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS TagTypes (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL,
+                    Description TEXT,
+                    IsSeeded INTEGER NOT NULL DEFAULT 0,
+                    CreatedUtc TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS Tags (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    TagTypeId INTEGER NOT NULL,
+                    Name TEXT NOT NULL,
+                    NormalizedName TEXT NOT NULL,
+                    CreatedUtc TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS CocktailTags (
+                    CocktailId INTEGER NOT NULL,
+                    TagId INTEGER NOT NULL,
+                    CreatedUtc TEXT NOT NULL,
+                    PRIMARY KEY (CocktailId, TagId)
+                );
+                CREATE TABLE IF NOT EXISTS Collections (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL,
+                    Description TEXT,
+                    OwnerUserId INTEGER,
+                    IsSystemCollection INTEGER NOT NULL DEFAULT 0,
+                    CreatedUtc TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS CollectionCocktails (
+                    CollectionId INTEGER NOT NULL,
+                    CocktailId INTEGER NOT NULL,
+                    CreatedUtc TEXT NOT NULL,
+                    PRIMARY KEY (CollectionId, CocktailId)
+                );
                 """);
         }
 
@@ -158,9 +192,13 @@ public class TestStartup
         services.AddScoped<IUserRepository>(_ => new UserRepository(connectionString));
         services.AddScoped<IUserIngredientRepository>(_ => new UserIngredientRepository(connectionString));
         services.AddScoped<ICocktailTryLogRepository>(_ => new CocktailTryLogRepository(connectionString));
+        services.AddScoped<ICocktailTagRepository>(_ => new CocktailTagRepository(connectionString));
+        services.AddScoped<ICollectionRepository>(_ => new CollectionRepository(connectionString));
         services.AddScoped<IAdminMaintenanceRepository>(_ => new AdminMaintenanceRepository(connectionString));
         services.AddScoped<IOcrRecipeParser, HeuristicOcrRecipeParser>();
         services.AddScoped<ICocktailService, CocktailService>();
+        services.AddScoped<ICocktailTagService, CocktailTagService>();
+        services.AddScoped<ICollectionService, CollectionService>();
         services.AddScoped<IIngredientService, IngredientService>();
         services.AddScoped<ICocktailRecipeService, CocktailRecipeService>();
         services.AddScoped<IUserService, UserService>();
