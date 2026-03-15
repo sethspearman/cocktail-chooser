@@ -837,6 +837,12 @@ Steps:
             {{ adminView === 'maintenance' ? '✓ Maintenance' : 'Maintenance' }}
           </button>
         </div>
+        <div v-if="developerContactAction" class="admin-contact-row">
+          <a :href="developerContactAction.href" class="menu-button admin-contact-button">
+            {{ developerContactAction.label }}
+          </a>
+          <span class="subtle">{{ developerContactAction.description }}</span>
+        </div>
 
         <div v-if="adminView === 'importExport'" class="detail-grid recipe-modal-grid">
           <div class="admin-block">
@@ -1230,6 +1236,11 @@ import {
 
 const POPULAR_ONLY_STORAGE_KEY = 'cocktailchooser.popularOnly';
 const ADVANCED_INGREDIENT_PREVIEW_COUNT = 15;
+const DEVELOPER_CONTACT_MODE = String(process.env.VUE_APP_DEVELOPER_CONTACT_MODE || '').trim().toLowerCase();
+const DEVELOPER_CONTACT_EMAIL = String(process.env.VUE_APP_DEVELOPER_CONTACT_EMAIL || '').trim();
+const DEVELOPER_CONTACT_PHONE = String(process.env.VUE_APP_DEVELOPER_CONTACT_PHONE || '').trim();
+const DEVELOPER_CONTACT_SUBJECT = String(process.env.VUE_APP_DEVELOPER_CONTACT_SUBJECT || 'CocktailChooser admin note').trim();
+const DEVELOPER_CONTACT_BODY = String(process.env.VUE_APP_DEVELOPER_CONTACT_BODY || 'Hi, I have a note from the CocktailChooser admin panel.').trim();
 
 function createDefaultFilterState() {
   return {
@@ -1276,6 +1287,32 @@ const ALCOHOLIC_INGREDIENT_TOKENS = [
   'bitters',
   'creme de'
 ];
+
+function buildMailtoHref(email, subject, body) {
+  if (!email) {
+    return '';
+  }
+
+  const query = new URLSearchParams();
+  if (subject) {
+    query.set('subject', subject);
+  }
+  if (body) {
+    query.set('body', body);
+  }
+
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+  return `mailto:${email}${suffix}`;
+}
+
+function buildSmsHref(phone, body) {
+  if (!phone) {
+    return '';
+  }
+
+  const encodedBody = body ? encodeURIComponent(body) : '';
+  return encodedBody ? `sms:${phone}?&body=${encodedBody}` : `sms:${phone}`;
+}
 
 export default {
   name: 'App',
@@ -1771,6 +1808,36 @@ export default {
     },
     isAdminUser() {
       return Number(this.currentUser?.id || 0) === 1;
+    },
+    developerContactAction() {
+      const smsHref = buildSmsHref(DEVELOPER_CONTACT_PHONE, DEVELOPER_CONTACT_BODY);
+      const mailtoHref = buildMailtoHref(DEVELOPER_CONTACT_EMAIL, DEVELOPER_CONTACT_SUBJECT, DEVELOPER_CONTACT_BODY);
+
+      if (DEVELOPER_CONTACT_MODE === 'sms' && smsHref) {
+        return {
+          href: smsHref,
+          label: 'Send a message to the developer',
+          description: 'Opens your texting app.'
+        };
+      }
+
+      if (mailtoHref) {
+        return {
+          href: mailtoHref,
+          label: 'Send a message to the developer',
+          description: 'Opens your email app.'
+        };
+      }
+
+      if (smsHref) {
+        return {
+          href: smsHref,
+          label: 'Send a message to the developer',
+          description: 'Opens your texting app.'
+        };
+      }
+
+      return null;
     },
     isAdminRoute() {
       return this.currentPath === '/admin';
@@ -4423,6 +4490,18 @@ button:disabled {
 
 .admin-tab-row {
   margin-bottom: 0.5rem;
+}
+
+.admin-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.9rem;
+}
+
+.admin-contact-button {
+  text-decoration: none;
 }
 
 .admin-duplicate-groups {
