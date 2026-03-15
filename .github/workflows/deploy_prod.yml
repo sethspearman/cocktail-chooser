@@ -60,6 +60,11 @@ jobs:
       - name: Run deploy script
         run: ssh ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} "bash /opt/cocktailchooser/deploy.sh"
 
-      - name: Smoke test (HTTPs)
+      - name: Smoke test on server
         run: |
-          curl -I https://cocktailchooser.com
+          ssh ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} "curl -fI --retry 5 --retry-delay 2 --retry-connrefused http://127.0.0.1:5000/health"
+
+      - name: Smoke test public site
+        run: |
+          curl -fI --retry 5 --retry-delay 2 --retry-connrefused https://cocktailchooser.com
+          curl -fI --retry 5 --retry-delay 2 --retry-connrefused https://cocktailchooser.com/health
