@@ -62,9 +62,9 @@ jobs:
 
       - name: Smoke test on server
         run: |
-          ssh ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} "curl -fI --retry 5 --retry-delay 2 --retry-connrefused http://127.0.0.1:5000/health"
+          ssh ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} "curl -fsS --retry 5 --retry-delay 2 --retry-connrefused http://127.0.0.1:5000/health >/dev/null"
 
       - name: Smoke test public site
         run: |
-          curl -fI --retry 5 --retry-delay 2 --retry-connrefused https://cocktailchooser.com
-          curl -fI --retry 5 --retry-delay 2 --retry-connrefused https://cocktailchooser.com/health
+          curl -fsS --retry 5 --retry-delay 2 --retry-connrefused https://cocktailchooser.com >/dev/null
+          curl -fsS --retry 5 --retry-delay 2 --retry-connrefused https://cocktailchooser.com/health >/dev/null
