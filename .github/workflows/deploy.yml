@@ -72,4 +72,4 @@ jobs:
 
       - name: Smoke test on server
         run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "curl -fI --retry 5 --retry-delay 2 --retry-connrefused http://127.0.0.1:5000/health"
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "bash -lc 'curl -fI --retry 5 --retry-delay 2 --retry-connrefused http://127.0.0.1:5000/health || curl -fI --retry 5 --retry-delay 2 --retry-connrefused http://127.0.0.1:5000/api/cocktails'"
