@@ -32,6 +32,12 @@ jobs:
 
       - name: Build UI
         working-directory: cocktailchooser-frontend
+        env:
+          VUE_APP_DEVELOPER_CONTACT_MODE: ${{ secrets.DEVELOPER_CONTACT_MODE }}
+          VUE_APP_DEVELOPER_CONTACT_EMAIL: ${{ secrets.DEVELOPER_CONTACT_EMAIL }}
+          VUE_APP_DEVELOPER_CONTACT_PHONE: ${{ secrets.DEVELOPER_CONTACT_PHONE }}
+          VUE_APP_DEVELOPER_CONTACT_SUBJECT: ${{ secrets.DEVELOPER_CONTACT_SUBJECT }}
+          VUE_APP_DEVELOPER_CONTACT_BODY: ${{ secrets.DEVELOPER_CONTACT_BODY }}
         run: npm run build
 
       - name: Copy UI dist to out
