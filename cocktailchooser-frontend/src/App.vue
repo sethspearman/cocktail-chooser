@@ -4665,7 +4665,19 @@ button:disabled {
   .app-menu-dropdown {
     left: 0;
     right: auto;
+    width: min(24rem, calc(100vw - 2rem));
+    max-width: calc(100vw - 2rem);
+  }
+
+  .app-menu-dropdown .menu-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app-menu-dropdown .menu-actions .menu-button,
+  .app-menu-dropdown .menu-actions .menu-link-button {
     width: 100%;
+    justify-content: center;
   }
 
   .match-list {
