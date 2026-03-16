@@ -30,6 +30,9 @@
             <button v-if="isAdminUser" type="button" class="menu-button" @click="openAdminModal">Admin</button>
             <button type="button" class="menu-button" @click="openAddCocktailModal">Add a Cocktail</button>
             <button type="button" class="menu-button" @click="openMyBarModal">My Bar Checklist</button>
+            <a v-if="developerContactAction" :href="developerContactAction.href" class="menu-button menu-link-button">
+              {{ developerContactAction.label }}
+            </a>
           </div>
         </div>
       </div>
@@ -837,13 +840,6 @@ Steps:
             {{ adminView === 'maintenance' ? '✓ Maintenance' : 'Maintenance' }}
           </button>
         </div>
-        <div v-if="developerContactAction" class="admin-contact-row">
-          <a :href="developerContactAction.href" class="menu-button admin-contact-button">
-            {{ developerContactAction.label }}
-          </a>
-          <span class="subtle">{{ developerContactAction.description }}</span>
-        </div>
-
         <div v-if="adminView === 'importExport'" class="detail-grid recipe-modal-grid">
           <div class="admin-block">
             <h3>Moderation Queue</h3>
@@ -4492,16 +4488,11 @@ button:disabled {
   margin-bottom: 0.5rem;
 }
 
-.admin-contact-row {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  flex-wrap: wrap;
-  margin: 0 0 0.9rem;
-}
-
-.admin-contact-button {
+.menu-link-button {
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .admin-duplicate-groups {
