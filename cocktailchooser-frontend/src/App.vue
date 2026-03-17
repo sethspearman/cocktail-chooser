@@ -148,7 +148,7 @@
             @keyup.enter.prevent="addSelectedIngredientFilter"
             placeholder="Find Ingredient..." />
           <button
-            :disabled="cocktailListMode !== 'makeable' || filteredMakeableCocktails.length === 0"
+            :disabled="effectiveMode !== 'CAN_MAKE' || filteredMakeableCocktails.length === 0"
             @click="pickRandomMakeableCocktail">
             Pick One for Me
           </button>
@@ -200,7 +200,10 @@
             </span>
             <span v-if="isPopularCocktail(cocktail)" class="pill">Popular</span>
             <span v-if="isVirginCocktail(cocktail.id)" class="virgin-pill">Virgin</span>
-            <span v-if="cocktailListMode === 'all' && canMakeById(cocktail.id)" class="pill">Can make</span>
+            <span v-if="effectiveMode === 'SHOW_ALL' && canMakeById(cocktail.id)" class="pill">Can make</span>
+            <span v-if="effectiveMode === 'ALMOST_UNLOCKED' && getSingleMissingIngredient(cocktail.id)" class="pill almost-unlocked-pill">
+              Missing: {{ getSingleMissingIngredient(cocktail.id).name }}
+            </span>
             <span v-if="hasTriedCocktail(cocktail.id)" class="tried-pill" title="Tried / logged">Tried</span>
           </li>
         </ul>
@@ -304,10 +307,12 @@
                 ×
               </button>
             </div>
-            <label class="toolbar-checkbox">
-              <input v-model="onlyCocktailsICanMake" type="checkbox" />
-              Only Cocktails I Can Make
-            </label>
+            <select v-model="filterState.mode">
+              <option value="SHOW_ALL">Show all cocktails</option>
+              <option value="CAN_MAKE" :disabled="!selectedUserId">Only cocktails I can make</option>
+              <option value="ALMOST_UNLOCKED" :disabled="!selectedUserId">Almost unlocked (missing one ingredient)</option>
+            </select>
+            <p v-if="!selectedUserId" class="subtle">Log in and build My Bar to enable makeable and almost unlocked views.</p>
             <select v-model="selectedSpirit">
               <option value="">All spirits</option>
               <option v-for="spirit in spirits" :key="`adv-spirit-${spirit}`" :value="spirit">{{ spirit }}</option>
@@ -321,7 +326,7 @@
               Popular only
             </label>
             <label class="toolbar-checkbox">
-              <input v-model="showUntriedOnly" type="checkbox" :disabled="filterState.mode !== 'CAN_MAKE'" />
+              <input v-model="showUntriedOnly" type="checkbox" :disabled="effectiveMode !== 'CAN_MAKE'" />
               Show Untried Only
             </label>
             <label class="toolbar-checkbox">
@@ -1445,10 +1450,11 @@ export default {
   computed: {
     onlyCocktailsICanMake: {
       get() {
-        return this.cocktailListMode === 'makeable';
+        return this.effectiveMode === 'CAN_MAKE';
       },
       set(value) {
         this.cocktailListMode = value ? 'makeable' : 'all';
+        this.filterState.mode = value ? 'CAN_MAKE' : 'SHOW_ALL';
       }
     },
     advancedIngredientPreviewCount() {
@@ -1700,6 +1706,10 @@ export default {
     combinedCocktailListEmptyMessage() {
       if (this.effectiveMode === 'CAN_MAKE' && !this.selectedUserId) {
         return 'Log in to see what you can make from My Bar.';
+      }
+
+      if (this.effectiveMode === 'ALMOST_UNLOCKED' && !this.selectedUserId) {
+        return 'Log in to see cocktails that are one ingredient away from your My Bar.';
       }
 
       if (this.displayedCocktails.length > 0) {
@@ -2164,11 +2174,19 @@ export default {
     toggleAdvancedTag(tagName) {
       this.filterState.selectedTagNames = this.toggleStringArrayItem(this.filterState.selectedTagNames || [], tagName);
     },
+    getSingleMissingIngredient(cocktailId) {
+      const missing = this.getMissingIngredients(cocktailId);
+      return missing.length === 1 ? missing[0] : null;
+    },
     cocktailHasTag(cocktail, normalizedName) {
       return (cocktail?.tags || []).some((tag) => String(tag.normalizedName || '') === String(normalizedName || ''));
     },
     matchesCocktailEvaluationFilters(evaluation) {
       const cocktail = evaluation.cocktail;
+      if ((this.effectiveMode === 'CAN_MAKE' || this.effectiveMode === 'ALMOST_UNLOCKED') && !this.selectedUserId) {
+        return false;
+      }
+
       const matchesMySubmission = !this.filterState.mySubmissionsOnly || this.isMyDrink(cocktail);
       if (!matchesMySubmission) {
         return false;
@@ -4335,6 +4353,16 @@ button:disabled {
   background: #eef2ff;
   color: #2f3ea8;
   border: 1px solid #cfd7ff;
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.72rem;
+}
+
+.almost-unlocked-pill {
+  margin-left: 0.4rem;
+  background: #fff1e3;
+  color: #8a4c12;
+  border: 1px solid #efc08a;
   border-radius: 999px;
   padding: 0.05rem 0.45rem;
   font-size: 0.72rem;
