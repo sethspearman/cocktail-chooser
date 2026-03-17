@@ -1,5 +1,6 @@
 <template>
   <div class="app-shell">
+    <div v-if="accountMenuOpen" class="menu-overlay" @click="accountMenuOpen = false"></div>
     <div class="top-nav-row">
       <div class="app-menu" :class="{ open: accountMenuOpen }">
         <button
@@ -15,7 +16,7 @@
           <span class="menu-trigger-text">Menu</span>
         </button>
 
-        <div v-if="accountMenuOpen" class="app-menu-dropdown">
+        <div v-if="accountMenuOpen" class="app-menu-dropdown" @click.stop>
           <div class="menu-user-summary">
             <span class="user-icon">{{ currentUser ? currentUser.displayName.slice(0, 1).toUpperCase() : 'U' }}</span>
             <div>
@@ -152,14 +153,24 @@
             @click="pickRandomMakeableCocktail">
             Pick One for Me
           </button>
-          <label class="toolbar-checkbox">
-            <input v-model="popularOnly" type="checkbox" />
-            Popular only
-          </label>
-          <label class="toolbar-checkbox">
-            <input v-model="myDrinksOnly" type="checkbox" :disabled="!selectedUserId" />
-            My drinks only
-          </label>
+          <div class="toolbar-checkbox-cluster">
+            <label class="toolbar-checkbox">
+              <input v-model="popularOnly" type="checkbox" />
+              Popular only
+            </label>
+            <label class="toolbar-checkbox">
+              <input v-model="myDrinksOnly" type="checkbox" :disabled="!selectedUserId" />
+              My drinks only
+            </label>
+            <label class="toolbar-checkbox">
+              <input v-model="showUntriedOnly" type="checkbox" :disabled="cocktailListMode !== 'makeable'" />
+              Show Untried Only
+            </label>
+            <label class="toolbar-checkbox">
+              <input v-model="virginOnly" type="checkbox" />
+              Virgin drinks only
+            </label>
+          </div>
           <datalist id="cocktail-ingredient-filter-options">
             <option
               v-for="ingredient in ingredientFilterOptions"
@@ -167,14 +178,6 @@
               :value="ingredient.name">
             </option>
           </datalist>
-          <label class="toolbar-checkbox">
-            <input v-model="showUntriedOnly" type="checkbox" :disabled="cocktailListMode !== 'makeable'" />
-            Show Untried Only
-          </label>
-          <label class="toolbar-checkbox">
-            <input v-model="virginOnly" type="checkbox" />
-            Virgin drinks only
-          </label>
         </div>
         <div v-if="selectedIngredientFilters.length" class="toolbar">
           <span class="subtle">Ingredient filter ({{ ingredientFilterMode === 'all' ? 'ALL' : 'ANY' }}):</span>
@@ -313,6 +316,33 @@
               <option value="ALMOST_UNLOCKED" :disabled="!selectedUserId">Almost unlocked (missing one ingredient)</option>
             </select>
             <p v-if="!selectedUserId" class="subtle">Log in and build My Bar to enable makeable and almost unlocked views.</p>
+            <div v-if="effectiveMode === 'ALMOST_UNLOCKED'" class="advanced-unlock-summary">
+              <div class="advanced-unlock-summary-header">
+                <strong>Unlock Ingredients</strong>
+                <span class="subtle">Read-only summary for the filtered almost unlocked list.</span>
+              </div>
+              <div v-if="!almostUnlockedIngredientSummary.length" class="subtle">No single-ingredient unlocks match the current filters.</div>
+              <p v-if="almostUnlockedIngredientSummary.length && collapsedAlmostUnlockedIngredientCount > 0" class="subtle advanced-unlock-toggle-row">
+                Hiding {{ collapsedAlmostUnlockedIngredientCount }} ingredient{{ collapsedAlmostUnlockedIngredientCount === 1 ? '' : 's' }} that only unlock 1 recipe.
+                <button type="button" class="inline-link-button secondary-link" @click="showAllAlmostUnlockedIngredients = !showAllAlmostUnlockedIngredients">
+                  {{ showAllAlmostUnlockedIngredients ? 'Show Fewer' : 'Show All' }}
+                </button>
+              </p>
+              <table v-if="visibleAlmostUnlockedIngredientSummary.length" class="advanced-unlock-table">
+                <thead>
+                  <tr>
+                    <th>Ingredient</th>
+                    <th>Unlocks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in visibleAlmostUnlockedIngredientSummary" :key="`unlock-${row.ingredientId}`">
+                    <td>{{ row.ingredientName }}</td>
+                    <td>{{ row.cocktailCount }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <select v-model="selectedSpirit">
               <option value="">All spirits</option>
               <option v-for="spirit in spirits" :key="`adv-spirit-${spirit}`" :value="spirit">{{ spirit }}</option>
@@ -328,10 +358,6 @@
             <label class="toolbar-checkbox">
               <input v-model="showUntriedOnly" type="checkbox" :disabled="effectiveMode !== 'CAN_MAKE'" />
               Show Untried Only
-            </label>
-            <label class="toolbar-checkbox">
-              <input v-model="myDrinksOnly" type="checkbox" :disabled="!selectedUserId" />
-              My drinks only
             </label>
           </div>
         </div>
@@ -760,7 +786,17 @@ Steps:
         </p>
         <template v-if="selectedUserId">
           <div class="toolbar">
-            <input v-model.trim="ingredientSearch" placeholder="Search ingredients" />
+            <div class="search-input-wrap">
+              <input v-model.trim="ingredientSearch" placeholder="Search ingredients" />
+              <button
+                v-if="ingredientSearch"
+                type="button"
+                class="search-clear-btn"
+                aria-label="Clear ingredient search"
+                @click="ingredientSearch = ''">
+                ×
+              </button>
+            </div>
             <select v-model="inventorySpiritFilter">
               <option value="">All</option>
               <option v-for="spirit in spirits" :key="`inv-${spirit}`" :value="spirit">{{ spirit }}</option>
@@ -1401,6 +1437,7 @@ export default {
 
       userSuccessMessage: '',
       error: '',
+      showAllAlmostUnlockedIngredients: false,
       accountMenuOpen: false,
       accountMenuView: '',
       activeModal: '',
@@ -1687,6 +1724,50 @@ export default {
     },
     displayedCocktails() {
       return this.displayedCocktailEvaluations.map((evaluation) => evaluation.cocktail);
+    },
+    almostUnlockedIngredientSummary() {
+      if (this.effectiveMode !== 'ALMOST_UNLOCKED') {
+        return [];
+      }
+
+      const counts = new Map();
+      this.displayedCocktailEvaluations.forEach((evaluation) => {
+        if (evaluation.missingCount !== 1) {
+          return;
+        }
+
+        const ingredient = this.getSingleMissingIngredient(evaluation.cocktail.id);
+        if (!ingredient) {
+          return;
+        }
+
+        const key = Number(ingredient.id);
+        const existing = counts.get(key) || {
+          ingredientId: key,
+          ingredientName: ingredient.name,
+          cocktailCount: 0
+        };
+        existing.cocktailCount += 1;
+        counts.set(key, existing);
+      });
+
+      return [...counts.values()].sort((a, b) => {
+        if (b.cocktailCount !== a.cocktailCount) {
+          return b.cocktailCount - a.cocktailCount;
+        }
+
+        return (a.ingredientName || '').localeCompare(b.ingredientName || '');
+      });
+    },
+    collapsedAlmostUnlockedIngredientCount() {
+      return this.almostUnlockedIngredientSummary.filter((row) => row.cocktailCount <= 1).length;
+    },
+    visibleAlmostUnlockedIngredientSummary() {
+      if (this.showAllAlmostUnlockedIngredients) {
+        return this.almostUnlockedIngredientSummary;
+      }
+
+      return this.almostUnlockedIngredientSummary.filter((row) => row.cocktailCount > 1);
     },
     filteredMyCocktailsForPage() {
       const search = (this.myCocktailSearch || '').trim().toLowerCase();
@@ -1985,6 +2066,11 @@ export default {
     },
     cocktailSearch(value) {
       this.filterState.searchText = value || '';
+    },
+    'filterState.mode'(value) {
+      if (String(value || '').toUpperCase() !== 'ALMOST_UNLOCKED') {
+        this.showAllAlmostUnlockedIngredients = false;
+      }
     },
     myDrinksOnly(value) {
       this.filterState.mySubmissionsOnly = !!value;
@@ -3727,6 +3813,12 @@ body {
   padding: 1.25rem;
 }
 
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+}
+
 .top-nav-row {
   display: flex;
   justify-content: flex-start;
@@ -3866,6 +3958,13 @@ body {
   padding: 0.45rem 0.15rem;
   color: var(--muted);
   white-space: nowrap;
+}
+
+.toolbar-checkbox-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .toolbar .toolbar-checkbox + .toolbar-checkbox {
@@ -4027,6 +4126,48 @@ body {
 
 .advanced-ingredient-expand {
   margin-top: 0.55rem;
+}
+
+.advanced-unlock-summary {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffaf4;
+  padding: 0.6rem;
+}
+
+.advanced-unlock-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.45rem;
+}
+
+.advanced-unlock-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.advanced-unlock-table th,
+.advanced-unlock-table td {
+  padding: 0.3rem 0.15rem;
+  border-top: 1px solid #f0e0ca;
+  text-align: left;
+}
+
+.advanced-unlock-table th:last-child,
+.advanced-unlock-table td:last-child {
+  text-align: right;
+}
+
+.advanced-unlock-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.45rem;
 }
 
 .advanced-selected-ingredient {
@@ -4711,6 +4852,10 @@ button:disabled {
   .match-list {
     column-width: auto;
     column-count: 1;
+  }
+
+  .toolbar-checkbox-cluster {
+    width: 100%;
   }
 
   .admin-import-table {
