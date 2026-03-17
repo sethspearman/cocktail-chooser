@@ -28,6 +28,9 @@
             <button type="button" class="menu-button" @click="openAccountModal(currentUser ? 'overview' : 'login')">
               {{ currentUser ? 'Account' : 'Log in / Create account' }}
             </button>
+            <button type="button" class="menu-button" @click="openWhatsNewModal">
+              What's New
+            </button>
             <button v-if="isAdminUser" type="button" class="menu-button" @click="openAdminModal">Admin</button>
             <button type="button" class="menu-button" @click="openAddCocktailModal">Add a Cocktail</button>
             <button type="button" class="menu-button" @click="openMyBarModal">My Bar Checklist</button>
@@ -1206,6 +1209,28 @@ Steps:
     </div>
 
     <div
+      v-if="activeModal === 'whatsNew'"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="whats-new-modal-title"
+      @click.self="closeActiveModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="whats-new-modal-title">{{ whatsNewRelease.title }}</h2>
+        </div>
+        <p class="subtle">Version {{ whatsNewRelease.version }}</p>
+        <ul v-if="whatsNewRelease.items && whatsNewRelease.items.length" class="whats-new-list">
+          <li v-for="item in whatsNewRelease.items" :key="`whats-new-${item}`">{{ item }}</li>
+        </ul>
+        <p v-else class="subtle">No release notes are available for this version yet.</p>
+        <div class="modal-actions">
+          <button type="button" @click="closeActiveModal">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <div
       v-if="reviewSubmittedModalOpen"
       class="modal-backdrop"
       role="dialog"
@@ -1270,8 +1295,10 @@ import {
   updateCollection,
   upsertUserInventory
 } from './api';
+import releaseNotes from './release_notes.json';
 
 const POPULAR_ONLY_STORAGE_KEY = 'cocktailchooser.popularOnly';
+const LAST_SEEN_WHATS_NEW_VERSION_STORAGE_KEY = 'cocktailchooser.lastSeenWhatsNewVersion';
 const ADVANCED_INGREDIENT_PREVIEW_COUNT = 15;
 const DEVELOPER_CONTACT_MODE = String(process.env.VUE_APP_DEVELOPER_CONTACT_MODE || '').trim().toLowerCase();
 const DEVELOPER_CONTACT_EMAIL = String(process.env.VUE_APP_DEVELOPER_CONTACT_EMAIL || '').trim();
@@ -1485,6 +1512,9 @@ export default {
     };
   },
   computed: {
+    whatsNewRelease() {
+      return releaseNotes || { version: '', title: "What's New", items: [] };
+    },
     onlyCocktailsICanMake: {
       get() {
         return this.effectiveMode === 'CAN_MAKE';
@@ -2407,9 +2437,51 @@ export default {
         this.tagTypes = tagTypes;
         this.tags = tags;
         await this.restoreSession();
+        await this.maybeShowWhatsNewModal();
       } catch (err) {
         this.error = this.extractError(err);
       }
+    },
+    getLastSeenWhatsNewVersion() {
+      if (typeof window === 'undefined') {
+        return '';
+      }
+
+      return window.localStorage.getItem(LAST_SEEN_WHATS_NEW_VERSION_STORAGE_KEY) || '';
+    },
+    markCurrentWhatsNewVersionSeen() {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      const version = String(this.whatsNewRelease?.version || '').trim();
+      if (!version) {
+        return;
+      }
+
+      window.localStorage.setItem(LAST_SEEN_WHATS_NEW_VERSION_STORAGE_KEY, version);
+    },
+    async maybeShowWhatsNewModal() {
+      const version = String(this.whatsNewRelease?.version || '').trim();
+      if (!version || typeof window === 'undefined') {
+        return;
+      }
+
+      if (this.activeModal || this.isAdminRoute || this.isMyCocktailsRoute) {
+        return;
+      }
+
+      if (this.getLastSeenWhatsNewVersion() === version) {
+        return;
+      }
+
+      await this.$nextTick();
+      if (this.activeModal) {
+        return;
+      }
+
+      this.markCurrentWhatsNewVersionSeen();
+      this.activeModal = 'whatsNew';
     },
     async restoreSession() {
       if (!getStoredAuthToken()) {
@@ -2541,6 +2613,10 @@ export default {
     },
     openAccountView(view) {
       this.accountMenuView = view;
+    },
+    openWhatsNewModal() {
+      this.accountMenuOpen = false;
+      this.activeModal = 'whatsNew';
     },
     openAccountModal(defaultView = 'overview') {
       this.accountMenuOpen = false;
@@ -4403,6 +4479,15 @@ button:disabled {
 
 .modal-card p {
   margin: 0.35rem 0;
+}
+
+.whats-new-list {
+  margin: 0.75rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.whats-new-list li + li {
+  margin-top: 0.35rem;
 }
 
 .modal-actions {
