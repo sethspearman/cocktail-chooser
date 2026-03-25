@@ -127,7 +127,7 @@
     </section>
 
     <section v-else class="grid">
-      <article class="panel wide">
+      <article ref="browseTopPanel" class="panel wide">
         <div class="toolbar">
           <button
             type="button"
@@ -2733,10 +2733,30 @@ export default {
       this.navigateTo('/my-cocktails');
     },
     closeActiveModal() {
+      const closingModal = this.activeModal;
       if (this.activeModal === 'admin' && this.isAdminRoute) {
         this.navigateTo('/');
       }
       this.activeModal = '';
+      if (closingModal === 'recipe') {
+        this.scrollToBrowseTopIfMobile();
+      }
+    },
+    scrollToBrowseTopIfMobile() {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      if (!window.matchMedia('(max-width: 900px)').matches) {
+        return;
+      }
+
+      this.$nextTick(() => {
+        const target = this.$refs.browseTopPanel;
+        if (target && typeof target.scrollIntoView === 'function') {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
     },
     openQuickLogModal() {
       if (!this.selectedCocktailId) {
