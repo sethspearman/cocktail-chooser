@@ -34,12 +34,26 @@
             <button v-if="isAdminUser" type="button" class="menu-button" @click="openAdminModal">Admin</button>
             <button type="button" class="menu-button" @click="openAddCocktailModal">Add a Cocktail</button>
             <button type="button" class="menu-button" @click="openMyBarModal">My Bar Checklist</button>
+            <a
+              :href="BLOG_URL"
+              class="menu-button menu-link-button"
+              target="_blank"
+              rel="noopener noreferrer">
+              Blog
+            </a>
             <a v-if="developerContactAction" :href="developerContactAction.href" class="menu-button menu-link-button">
               {{ developerContactAction.label }}
             </a>
           </div>
         </div>
       </div>
+      <a
+        :href="BLOG_URL"
+        class="top-nav-link"
+        target="_blank"
+        rel="noopener noreferrer">
+        Blog
+      </a>
     </div>
 
     <section class="info-bar">
@@ -1300,6 +1314,7 @@ import releaseNotes from './release_notes.json';
 const POPULAR_ONLY_STORAGE_KEY = 'cocktailchooser.popularOnly';
 const LAST_SEEN_WHATS_NEW_VERSION_STORAGE_KEY = 'cocktailchooser.lastSeenWhatsNewVersion';
 const ADVANCED_INGREDIENT_PREVIEW_COUNT = 15;
+const BLOG_URL = 'https://blog.cocktailchooser.com';
 const DEVELOPER_CONTACT_MODE = String(process.env.VUE_APP_DEVELOPER_CONTACT_MODE || '').trim().toLowerCase();
 const DEVELOPER_CONTACT_EMAIL = String(process.env.VUE_APP_DEVELOPER_CONTACT_EMAIL || '').trim();
 const DEVELOPER_CONTACT_PHONE = String(process.env.VUE_APP_DEVELOPER_CONTACT_PHONE || '').trim();
@@ -1512,6 +1527,9 @@ export default {
     };
   },
   computed: {
+    BLOG_URL() {
+      return BLOG_URL;
+    },
     whatsNewRelease() {
       return releaseNotes || { version: '', title: "What's New", items: [] };
     },
@@ -3897,8 +3915,29 @@ body {
 
 .top-nav-row {
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   margin-bottom: 0.45rem;
+}
+
+.top-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0b5a85;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.top-nav-link:hover,
+.top-nav-link:focus-visible {
+  background: #fff;
+  color: #084766;
 }
 
 .info-bar {

@@ -1,0 +1,16 @@
+[Unit]
+Description=Ghost Blog
+After=network.target
+
+[Service]
+Type=simple
+User=ghostblog
+Group=ghostblog
+WorkingDirectory=/opt/ghost-blog
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node current/index.js
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

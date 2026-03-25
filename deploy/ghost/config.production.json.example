@@ -1,0 +1,22 @@
+{
+  "url": "https://blog.cocktailchooser.com",
+  "server": {
+    "host": "127.0.0.1",
+    "port": 2368
+  },
+  "database": {
+    "client": "sqlite3",
+    "connection": {
+      "filename": "content/data/ghost.db"
+    }
+  },
+  "paths": {
+    "contentPath": "/opt/ghost-blog/content"
+  },
+  "logging": {
+    "transports": [
+      "stdout"
+    ]
+  },
+  "process": "systemd"
+}
