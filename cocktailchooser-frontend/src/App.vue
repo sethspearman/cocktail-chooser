@@ -211,6 +211,16 @@
             Reset
           </button>
         </div>
+        <div v-if="showSelectedCocktailActionRow" class="selected-cocktail-row" data-tour="selected-cocktail-row">
+          <div class="selected-cocktail-copy">
+            <span class="subtle">Selected cocktail</span>
+            <strong>{{ selectedCocktail.name }}</strong>
+          </div>
+          <div class="selected-cocktail-actions">
+            <button type="button" class="menu-button" @click="scrollToSelectedCocktailPanel()">View Selected Cocktail</button>
+            <button type="button" class="menu-button" @click="openQuickLogModal">Log Cocktail</button>
+          </div>
+        </div>
         <div v-if="combinedCocktailListEmptyMessage" class="empty">{{ combinedCocktailListEmptyMessage }}</div>
         <ul v-else class="match-list">
           <li v-for="cocktail in displayedCocktails" :key="`match-${cocktail.id}`">
@@ -230,7 +240,7 @@
       </article>
     </section>
 
-    <section class="panel detail" v-if="selectedCocktail">
+    <section ref="selectedCocktailPanel" class="panel detail" v-if="selectedCocktail" data-tour="selected-cocktail-panel">
       <div class="detail-header">
         <div class="panel-title">{{ selectedCocktail.name }}</div>
         <button type="button" class="menu-button" @click="openRecipeModal">Print</button>
@@ -270,15 +280,15 @@
 
         <div>
           <h3>Log This Cocktail</h3>
-          <div class="log-form">
+          <form ref="selectedCocktailLogForm" class="log-form" data-tour="selected-cocktail-log-form" @submit.prevent="submitTryLog()">
             <select v-model.number="newLog.rating">
               <option :value="null">No rating</option>
               <option v-for="n in [1,2,3,4,5]" :key="`r-${n}`" :value="n">{{ n }} / 5</option>
             </select>
             <input type="datetime-local" v-model="newLog.triedOnLocal" />
             <textarea v-model.trim="newLog.comment" placeholder="Comment"></textarea>
-            <button :disabled="!selectedUserId" @click="submitTryLog">Save Log</button>
-          </div>
+            <button type="submit" :disabled="!selectedUserId">Save Log</button>
+          </form>
 
           <h3>Recent Logs</h3>
           <ul>
@@ -719,6 +729,34 @@ Steps:
         <p v-if="newCocktailForm.mode === 'structured'" class="subtle account-help">
           Defaults to <strong>User Added</strong> when available. Choose existing ingredients/amounts or type new ones.
         </p>
+      </div>
+    </div>
+
+    <div
+      v-if="activeModal === 'quickLog' && selectedCocktail"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="quick-log-modal-title"
+      @click.self="closeActiveModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="quick-log-modal-title">Log {{ selectedCocktail.name }}</h2>
+        </div>
+        <p class="subtle">Save a quick log now, then come back later if you want to add more detail.</p>
+        <form class="log-form" @submit.prevent="submitTryLog({ closeModal: true })">
+          <select v-model.number="newLog.rating">
+            <option :value="null">No rating</option>
+            <option v-for="n in [1,2,3,4,5]" :key="`quick-r-${n}`" :value="n">{{ n }} / 5</option>
+          </select>
+          <input type="datetime-local" v-model="newLog.triedOnLocal" />
+          <textarea v-model.trim="newLog.comment" placeholder="Comment"></textarea>
+          <div class="modal-actions">
+            <button type="button" class="menu-button" @click="closeActiveModal">Cancel</button>
+            <button type="submit" class="menu-button" :disabled="!selectedUserId">Save Log</button>
+          </div>
+          <p v-if="!selectedUserId" class="subtle">Log in to save cocktail logs.</p>
+        </form>
       </div>
     </div>
 
@@ -1851,6 +1889,9 @@ export default {
 
       return 'No cocktails match My Bar with these filters yet. Try another spirit or add more ingredients.';
     },
+    showSelectedCocktailActionRow() {
+      return Boolean(this.selectedCocktail && !this.activeModal && !this.isMyCocktailsRoute);
+    },
     selectedCocktailIngredients() {
       return this.cocktailIngredientsByCocktail[this.selectedCocktailId] || [];
     },
@@ -2696,6 +2737,51 @@ export default {
         this.navigateTo('/');
       }
       this.activeModal = '';
+    },
+    openQuickLogModal() {
+      if (!this.selectedCocktailId) {
+        return;
+      }
+
+      if (!this.selectedUserId) {
+        this.openAccountModal('login');
+        return;
+      }
+
+      const now = new Date();
+      const localDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
+        .toISOString()
+        .slice(0, 16);
+
+      if (!this.newLog.triedOnLocal) {
+        this.newLog.triedOnLocal = localDateTime;
+      }
+
+      if (!this.newLog.comment) {
+        this.newLog.comment = `Tried on ${now.toLocaleString()} `;
+      }
+
+      this.activeModal = 'quickLog';
+    },
+    scrollToSelectedCocktailPanel({ focusLog = false } = {}) {
+      this.$nextTick(() => {
+        const target = focusLog
+          ? this.$refs.selectedCocktailLogForm
+          : this.$refs.selectedCocktailPanel;
+
+        if (target && typeof target.scrollIntoView === 'function') {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        if (!focusLog) {
+          return;
+        }
+
+        const firstField = target?.querySelector?.('select, input, textarea, button');
+        if (firstField && typeof firstField.focus === 'function') {
+          firstField.focus({ preventScroll: true });
+        }
+      });
     },
     async refreshAdminActiveView() {
       if (this.adminView === 'maintenance') {
@@ -3726,9 +3812,16 @@ export default {
         this.error = this.extractError(err);
       }
     },
-    async submitTryLog() {
+    async submitTryLog({ closeModal = false, allowMissingRating = false } = {}) {
       if (!this.selectedUserId || !this.selectedCocktailId) {
         return;
+      }
+
+      if (this.newLog.rating == null && !allowMissingRating && typeof window !== 'undefined') {
+        const confirmed = window.confirm('Save this cocktail log without a rating?');
+        if (!confirmed) {
+          return;
+        }
       }
 
       try {
@@ -3747,6 +3840,9 @@ export default {
         this.newLog.rating = null;
         this.newLog.comment = '';
         this.newLog.triedOnLocal = '';
+        if (closeModal) {
+          this.activeModal = '';
+        }
 
         await this.loadUserCocktailLogs();
         await this.loadCocktailDetail();
@@ -4906,6 +5002,30 @@ button:disabled {
   gap: 0.4rem;
 }
 
+.selected-cocktail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(214, 234, 247, 0.96), rgba(244, 250, 254, 0.98));
+}
+
+.selected-cocktail-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.selected-cocktail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .empty {
   color: var(--muted);
 }
@@ -4949,6 +5069,11 @@ button:disabled {
 
   .my-bar-inline-hint {
     align-items: flex-start;
+  }
+
+  .selected-cocktail-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .menu-trigger {
