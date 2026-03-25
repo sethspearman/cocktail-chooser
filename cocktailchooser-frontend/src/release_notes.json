@@ -1,9 +1,9 @@
 {
-  "version": "0.9.0",
-  "title": "What's New in 0.9.0",
+  "version": "0.10.0",
+  "title": "What's New in 0.10.0",
   "items": [
-    "Added the Almost Unlocked filter for cocktails missing one ingredient.",
-    "Added an Unlock Ingredients summary that updates with your current filters.",
-    "Improved mobile and menu interactions across the app."
+    "Added a new Blog link so you can jump straight to blog.cocktailchooser.com from the app.",
+    "Made cocktail logging easier to discover with a selected-cocktail action row after you close a recipe.",
+    "Added a quick log modal with prefilled date and comment text for faster drink logging on mobile."
   ]
 }
