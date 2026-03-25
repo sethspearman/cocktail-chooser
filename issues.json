@@ -1,1 +1,278 @@
-[{"body":"## Overview\n\nIntroduce a lightweight **Onboarding Tour** to guide new users through the core features of Cocktail Chooser.\n\nThe app currently contains powerful features (filters, logging, persistent selection), but they are not immediately discoverable.\n\nThis tour will:\n\n- Highlight key UI areas\n- Guide users through the intended workflow\n- Reduce confusion on first use\n\nThe tour should be:\n\n- Short (4 steps)\n- Focused on actions, not explanations\n- Automatically shown on first launch (once per version)\n- Re-runnable from the menu\n\n---\n\n# Goals\n\n1. Help users quickly understand how to use the app\n2. Improve discoverability of logging and filters\n3. Establish the “your bar” mental model\n4. Reduce friction in first-time usage\n\n---\n\n# Tour Flow (4 Steps)\n\n## Step 1 — Menu (Account + Bar)\n\nHighlight: Main menu\n\nText:\n\nStart here. Create an account and add your ingredients so we can show you what you can make.\n\n---\n\n## Step 2 — Filters (Core Functionality)\n\nHighlight:\n\n- Only Cocktails I Can Make\n- Popular Only\n- Show Untried Only\n\nText:\n\nUse filters to narrow down your options.  \nTry “Only Cocktails I Can Make” to see drinks you can make right now.\n\nTip: “Untried Only” works best once you start logging drinks.\n\n---\n\n## Step 3 — Filter Button (Advanced Filtering)\n\nHighlight: Filter button\n\nText:\n\nTap here for advanced filtering like occasion, season, and more.\n\n---\n\n## Step 4 — Selected Cocktail + Logging Panel (Bottom Section)\n\nBehavior:\n\n- Automatically select a default cocktail (e.g. Old Fashioned)\n- Scroll the user to the bottom panel\n- Highlight the selected cocktail section\n\nText:\n\nWhen you select a cocktail, it stays here.  \nThis is where you can log, rate, and revisit it.\n\n---\n\n# Implementation Approach\n\n## Use Library (Recommended)\n\nUse a lightweight onboarding/tour library:\n\nOptions:\n\n- Shepherd.js\n- Intro.js\n- Driver.js (preferred for simplicity)\n\nRequirements:\n\n- Highlight DOM elements\n- Dim background\n- Tooltip positioning\n- Next / Previous navigation\n- Auto-scroll to elements\n\n---\n\n## Tour Behavior\n\n- Launch automatically on first app load (after feature release)\n- Can be dismissed at any time\n- Can be restarted from menu (e.g. “Help” or “Show Tutorial”)\n\n---\n\n## State Management\n\nUse localStorage:\n\nExample:\n\nonboarding_v1_completed = true\n\nFuture updates can increment version:\n\nonboarding_v2_completed\n\n---\n\n## Technical Notes\n\n- Ensure tour works on both mobile and desktop\n- Ensure proper z-index layering above modals and UI\n- Handle elements that may not yet be visible (scroll into view)\n- Step 4 requires programmatic selection of a cocktail\n\n---\n\n# Acceptance Criteria\n\n- Tour runs automatically for first-time users\n- Tour contains exactly 4 steps\n- Each step highlights the correct UI element\n- Step 4 scrolls to and highlights the selected cocktail panel\n- Tour can be dismissed at any time\n- Tour can be re-triggered from the menu\n- Tour works on mobile and desktop\n- Tour does not interfere with normal app usage after completion\n\n---\n\n# Notes\n\nThis feature focuses on **guiding user behavior**, not explaining the system.\n\nEach step should clearly answer:\n\n“What should I do next?”\n","labels":[{"id":"LA_kwDOMSKbs88AAAACZQvARA","name":"Type: Core Feature","description":"","color":"9c6b56"},{"id":"LA_kwDOMSKbs88AAAACZQvGwA","name":"Scope: MVP","description":"","color":"96f25c"},{"id":"LA_kwDOMSKbs88AAAACZQvRrg","name":"P1- High","description":"","color":"280844"},{"id":"LA_kwDOMSKbs88AAAACZQvbPw","name":"Type: UX","description":"","color":"631ab7"},{"id":"LA_kwDOMSKbs88AAAACaDBvvw","name":"_NEXT-UP","description":"","color":"60c06d"},{"id":"LA_kwDOMSKbs88AAAACaDCvwQ","name":"BATTERS_BOX","description":"","color":"c7fef8"}],"number":91,"state":"OPEN","title":"Introduce a lightweight **Onboarding Tour** to guide new users through the core features of Cocktail Chooser."},{"body":"## Overview\n\nWhen a user selects a cocktail from the list, the cocktail detail modal opens correctly and supports viewing and printing.\n\nHowever, after the modal is closed, users may not realize that:\n\n- the selected cocktail remains open below the cocktail list\n- the selected cocktail panel is where drink logging happens\n- logging is necessary to make Tried / Untried filters meaningful\n\nThis creates a usability problem where an important feature exists but is not discoverable.\n\n---\n\n# Goals\n\n1. Make it obvious that a cocktail remains selected after the modal is closed\n2. Make drink logging easy to discover\n3. Guide users from viewing a cocktail to logging it\n\n---\n\n# Problem\n\nCurrent behavior:\n\n- User opens cocktail from the list\n- User closes modal\n- User sees cocktail list again\n- User may assume the interaction is complete\n\nMissing affordance:\n\n- No clear indication that the selected cocktail is still available below the list\n- No obvious call-to-action to log the drink\n\nAs a result, users may never use drink logging, making the Tried / Untried features much less valuable.\n\n---\n\n# Proposed UX\n\nAfter the cocktail detail modal is closed, show a visible selected-cocktail action row near the top of the main list area.\n\nExample:\n\nSelected: Negroni\n\n[ Log Cocktail ]\n\nOptional future secondary action:\n\n[ View Selected Cocktail ]\n\nThe primary action should scroll the user to the selected cocktail panel where the logging controls already exist.\n\n---\n\n# Functional Requirements\n\n## Selected Cocktail Indicator\n\nDisplay the name of the currently selected cocktail after the modal closes.\n\nExample:\n\nSelected: Old Fashioned\n\n## Primary CTA\n\nShow a prominent button:\n\nLog Cocktail\n\nBehavior:\n- Scroll to the selected cocktail panel below the list\n- Bring logging controls into view\n\n## Persistence\n\nThe selected cocktail indicator should remain visible while a cocktail is selected.\n\nIt should update when a different cocktail is selected.\n\n---\n\n# Acceptance Criteria\n\n- After closing a cocktail modal, the UI clearly indicates which cocktail is currently selected\n- A visible `Log Cocktail` button is shown\n- Clicking the button scrolls the user to the selected cocktail panel\n- The workflow from view → log is clear on mobile and desktop\n- Existing logging functionality remains unchanged\n\n---\n\n# Notes\n\nThis issue is primarily about discoverability and usability, not about changing the logging model itself.\n\nThe goal is to surface an already-existing feature so users understand how to use it.\n","labels":[{"id":"LA_kwDOMSKbs88AAAACZQvGwA","name":"Scope: MVP","description":"","color":"96f25c"},{"id":"LA_kwDOMSKbs88AAAACZQvRrg","name":"P1- High","description":"","color":"280844"},{"id":"LA_kwDOMSKbs88AAAACZQvbPw","name":"Type: UX","description":"","color":"631ab7"},{"id":"LA_kwDOMSKbs88AAAACZQyO_w","name":"Type: Enhancement","description":"","color":"cf7519"},{"id":"LA_kwDOMSKbs88AAAACaDBvvw","name":"_NEXT-UP","description":"","color":"60c06d"},{"id":"LA_kwDOMSKbs88AAAACaDCn5A","name":"_WORKING_ON","description":"","color":"ca6603"}],"number":90,"state":"OPEN","title":"Improve Cocktail Logging discoverability / UX affordance"},{"body":"# Overview\n\nUsers frequently lack one ingredient required for a cocktail.\n\nExample:\n\nNegroni requires:\n\nGin  \nSweet Vermouth  \nCampari\n\nUser has:\n\nGin  \nSweet Vermouth  \n❌ Campari\n\nHowever they *do* have:\n\nAperol\n\nWhich is a reasonable substitute.\n\nA **Substitution Engine** would allow the app to suggest:\n\n\"Makeable with substitution\"\n\nor\n\n\"Try this variation\"\n\nThis improves usability and encourages experimentation.\n\n---\n\n# Goals\n\nAllow the app to:\n\n1. Suggest ingredient substitutions\n2. Mark cocktails as **Makeable with Substitution**\n3. Recommend acceptable alternatives when ingredients are missing\n\n---\n\n# Example UX\n\nCocktail Card:\n\nNegroni\n\nMissing: Campari\n\nSuggested substitution:\nAperol\n\nYou can make this variation.\n\n---\n\n# Functional Requirements\n\n## Substitution Mapping\n\nCreate a substitution table:\n\nSubstitutions\n\nColumns:\n\nId  \nIngredientId  \nSubstituteIngredientId  \nConfidenceScore (optional)  \nNotes (optional)\n\nExample rows:\n\nCampari → Aperol  \nCointreau → Triple Sec  \nLemon Juice → Lime Juice  \n\n---\n\n## Matching Logic\n\nCurrent engine:\n\n```\ncanMake = all ingredients present\n```\n\nNew logic:\n\n```\ncanMake = all ingredients present\nOR\ncanMakeWithSubstitution = missing ingredients have valid substitutions\n```\n\n---\n\n## Cocktail Evaluation Metadata\n\nExtend evaluation result:\n\n```\n{\n  cocktailId,\n  canMake,\n  missingIngredients,\n  substitutionsAvailable\n}\n```\n\n---\n\n# UI Behavior\n\nWhen substitution is possible:\n\nShow badge:\n\n```\nMakeable with Substitution\n```\n\nDetail view shows:\n\n```\nSubstitute Aperol for Campari\n```\n\n---\n\n# Acceptance Criteria\n\n- Substitution table created\n- Matching engine checks substitutions\n- Cocktails display substitution suggestions\n- Substitution does not modify original recipe\n- Feature can be disabled if desired\n\n---\n\n# Future Enhancements\n\n## Substitution Confidence\n\nScore substitutions:\n\nHigh\nMedium\nExperimental\n\n---\n\n## Flavor Graph\n\nEventually build an ingredient similarity network.\n\n---\n\n## User Custom Substitutions\n\nAllow users to define:\n\n\"My substitute for Campari\"\n\n---\n","labels":[{"id":"LA_kwDOMSKbs88AAAACZQvARA","name":"Type: Core Feature","description":"","color":"9c6b56"},{"id":"LA_kwDOMSKbs88AAAACZQvkEQ","name":"P2 - Medium","description":"","color":"2b72db"},{"id":"LA_kwDOMSKbs88AAAACZQvz6A","name":"Scope: Nice-to-Have","description":"","color":"f4022d"},{"id":"LA_kwDOMSKbs88AAAACZQwUPw","name":"Type: Strategy","description":"","color":"7f3374"}],"number":81,"state":"OPEN","title":"Ingredient Substitution Engine"},{"body":"This document captures ideas extracted from research discussions and product brainstorming.\nThese are **not yet formal issues** but represent potential future enhancements.\n\nWhen an idea is selected for development, create a GitHub issue and link it here.\n\n---\n\n# Discovery & Recommendation\n\n## Ingredient Substitution Engine\nAllow users to substitute ingredients they do not have with similar ingredients.\n\nExamples:\n\nCampari → Aperol  \nCointreau → Triple Sec  \nLemon Juice → Lime Juice (sometimes)\n\nThis would allow cocktails to appear as:\n\n\"Makeable with Substitution\"\n\nor\n\n\"Try This Variation\"\n\nPotential impact:\n- increases cocktail discovery\n- reduces friction when users are missing ingredients\n\nThis idea should become a **formal issue**.\n\n---\n\n## Ingredient Similarity Graph\n\nFuture enhancement to substitution engine.\n\nStore ingredient relationships such as:\n\nCampari\n  → Aperol\n  → Cappelletti\n\nSweet Vermouth\n  → Punt e Mes\n  → Carpano Antica\n\nThis could enable:\n- substitution suggestions\n- flavor-based discovery\n- “similar cocktails” recommendations\n\n---\n\n## Flavor Profile Tags\n\nAdd optional tags:\n\n- bitter\n- citrus\n- herbal\n- boozy\n- refreshing\n- spirit-forward\n\nPotential uses:\n\nFilters:\n```\nShow me bitter cocktails\n```\n\nOr:\n\n```\nRecommend something similar to a Negroni\n```\n\n---\n\n## Cocktail Difficulty Rating\n\nSimple indicator:\n\n- Easy\n- Intermediate\n- Advanced\n\nFactors:\n\n- ingredient count\n- required tools\n- technique\n\nHelps beginners.\n\n---\n\n## Cocktail Preparation Time\n\nDisplay:\n\nPrep time: 2 minutes\n\nDerived from:\n\n- shake\n- stir\n- garnish complexity\n\nUseful for:\n\n```\nQuick drink filter\n```\n\n---\n\n## Glassware Recommendation Mode\n\nIf a user doesn't own a glass:\n\n```\nBest glass: Coupe\nAlternate: Martini glass\n```\n\n---\n\n## Garnish Intelligence\n\nShow garnish substitutions.\n\nExample:\n\nOrange twist → Lemon twist\n\nOptional feature:\n\n```\nHide cocktails requiring garnishes I don't have\n```\n\n---\n\n## Cocktail History Expansion\n\nOptional expandable panel:\n\n- origin\n- classic vs modern\n- historical notes\n\nYou already store some of this.\n\n---\n\n## Bar Completeness Score\n\nExample:\n\nYou can make **72 of 420 cocktails**\n\nBar completeness: **17%**\n\nGamifies bar building.\n\n---\n\n## Social / Sharing (Future)\n\nAllow users to share:\n\n\"My Bar\"\n\nExample link:\n\ncocktailchooser.com/bar/seth\n\nFriends can see what you can make.\n\n---\n\n# Admin / Data Quality\n\n## Ingredient Alias Mapping\n\nExample:\n\n```\nFresh Lime Juice\nLime Juice\nLime\n```\n\nCanonical:\n\n```\nLime Juice\n```\n\nPrevents duplicates.\n\n---\n\n## Recipe Variant Detection\n\nExample:\n\nTwo Negroni recipes:\n\n- Book A\n- Book B\n\nAllow grouping of variants.\n\nRelated to Issue #39.\n\n---\n\n# Long-Term Vision Ideas\n\n## Flavor Recommendation Engine\n\nExample:\n\nUser likes:\n\nNegroni  \nBoulevardier  \n\nSuggest:\n\nOld Pal  \nCardinale  \n\nUses shared ingredients or flavor tags.\n\n---\n\n## AI Cocktail Generator\n\nInput:\n\n\"I want something citrusy with bourbon\"\n\nGenerate:\n\nNew cocktail or suggested recipe.\n\n---\n","labels":[{"id":"LA_kwDOMSKbs88AAAACZQvkEQ","name":"P2 - Medium","description":"","color":"2b72db"},{"id":"LA_kwDOMSKbs88AAAACZQvoSw","name":"Scope: Post-MVP","description":"","color":"f57cbb"}],"number":80,"state":"OPEN","title":"Cocktail Chooser Idea Backlog"},{"body":"\n## Overview\n\nIngredient names currently have **inconsistent casing** in the database.\n\nExamples observed:\n\n- `Gin`\n- `gin`\n- `Lime Juice`\n- `lime juice`\n- `Simple Syrup`\n- `simple syrup`\n\nThis creates several problems:\n\n- Duplicate-looking ingredients\n- Poor visual consistency in the UI\n- Increased risk of duplicate ingredients during imports\n- Harder canonicalization later\n\nThis issue standardizes ingredient casing and ensures **future imports are normalized automatically**.\n\n---\n\n# Goals\n\n1. Normalize all existing ingredient names in the database.\n2. Enforce a consistent casing rule going forward.\n3. Ensure **imported JSON ingredients are automatically normalized**.\n\n---\n\n# Casing Standard\n\nAdopt **Title Case** for ingredient names.\n\nExamples:\n\n| Current | Normalized |\n|-------|-------------|\n| gin | Gin |\n| lime juice | Lime Juice |\n| simple syrup | Simple Syrup |\n| orange bitters | Orange Bitters |\n\nRules:\n\n- First letter of each word capitalized\n- Trim whitespace\n- `NormalizedName` column remains lowercase for comparisons\n\n---\n\n# Database Migration\n\nSince the database already contains a `NormalizedName` column, the migration can safely rebuild the display name from that value.\n\nSteps:\n\n1. Read all rows from `Ingredients`\n2. Convert `NormalizedName` to Title Case\n3. Update the `Name` column\n\nPseudo-logic:\n\n```\ndisplayName = TitleCase(NormalizedName)\nUPDATE Ingredients SET Name = displayName\n```\n\nMigration must:\n\n- Be **idempotent**\n- Leave `NormalizedName` untouched\n- Not introduce duplicates\n\n---\n\n# Import Pipeline Enforcement\n\nThe **Import JSON** feature must normalize ingredient names before insertion.\n\nSteps:\n\n1. Trim whitespace\n2. Convert to lowercase to create `NormalizedName`\n3. Generate `Name` using Title Case\n4. Check for existing ingredient using `NormalizedName`\n5. Reuse existing ingredient ID if found\n\nPseudo-logic:\n\n```\nnormalized = importName.trim().toLowerCase()\ndisplayName = TitleCase(normalized)\n\ningredient = findIngredientByNormalizedName(normalized)\n\nif not found:\n    create ingredient(Name=displayName, NormalizedName=normalized)\n```\n\nThis guarantees imports cannot introduce casing inconsistencies.\n\n---\n\n# Acceptance Criteria\n\n- Existing ingredient rows are normalized via migration\n- Ingredient names display consistently in the UI\n- Import pipeline automatically normalizes casing\n- Import cannot create casing duplicates\n- No breaking changes to existing cocktails\n\n---\n\n# Optional Enhancements (Post-MVP)\n\nPossible future improvements:\n\n- Ingredient **canonicalization layer**\n- Ingredient **alias mapping**\n\nExample:\n\n```\nLime Juice\nFresh Lime Juice\nLime\n```\n\nThese could map to a canonical ingredient later.\n\n---\n\n# Labels\n\nSuggested:\n\n- `P1 - High`\n- `Scope: MVP`\n- `Type: Refactor`\n- `Type: Data`\n","labels":[{"id":"LA_kwDOMSKbs88AAAACZQvGwA","name":"Scope: MVP","description":"","color":"96f25c"},{"id":"LA_kwDOMSKbs88AAAACZQvRrg","name":"P1- High","description":"","color":"280844"},{"id":"LA_kwDOMSKbs88AAAACZQv-xA","name":"Type: Refactor","description":"","color":"75bfb3"},{"id":"LA_kwDOMSKbs88AAAACaVKkCA","name":"Type: Data","description":"","color":"0ca2ce"}],"number":78,"state":"OPEN","title":"Normalize Ingredient Casing (Migration + Import Sanitization)"},{"body":"## Overview\n\nIntroduce a **Build Your Bar** progress panel that helps users\nunderstand how their current ingredient collection translates into\ncocktail capability.\n\nThis feature turns the cocktail catalog into a **progression\nexperience**, helping users discover:\n\n-   What they can make now\n-   What they are close to unlocking\n-   Which ingredient purchase unlocks the most cocktails\n\nThe goal is to create a **reward loop**:\n\nAdd ingredient → unlock cocktails → try drinks → repeat.\n\nThis dramatically increases user engagement while remaining genuinely\nuseful.\n\n------------------------------------------------------------------------\n\n# MVP Goals\n\nAdd a **Build Your Bar** panel that displays:\n\n-   Cocktails the user can make\n-   Cocktails that are **Almost Unlocked** (missing one ingredient)\n-   Best next ingredient to buy\n\nThis panel should encourage exploration without overwhelming the user.\n\n------------------------------------------------------------------------\n\n# UI / UX Requirements\n\n### Placement\n\nThe panel should appear near the top of the main screen, ideally above\nthe cocktail list or near filter controls.\n\nExample layout:\n\nBuild Your Bar\n\nYou can make: 42 cocktails\\\nAlmost unlocked: 18 cocktails\n\nBest next bottle:\\\nCampari → unlocks 18 cocktails\n\nOptional:\n\nTop 3 next bottles: 1. Campari → unlocks 18 2. Cointreau → unlocks 15 3.\nGreen Chartreuse → unlocks 12\n\n------------------------------------------------------------------------\n\n# Functional Requirements\n\n### 1) Makeable Cocktail Count\n\nUse the existing ingredient matching engine.\n\nDefinition:\n\ncanMake === true\n\nDisplay the total number of cocktails that can currently be made.\n\n------------------------------------------------------------------------\n\n### 2) Almost Unlocked Count\n\nUse the ingredient evaluation metadata.\n\nDefinition:\n\nmissingCount === 1\n\nDisplay the number of cocktails that are exactly one ingredient away.\n\nThis integrates directly with the **Almost Unlocked filter** defined in\nIssue #54.\n\n------------------------------------------------------------------------\n\n### 3) Best Ingredient to Buy\n\nDetermine which missing ingredient unlocks the most cocktails.\n\nAlgorithm:\n\n1.  Identify cocktails where missingCount === 1\n2.  Count occurrences of each missing ingredient\n3.  Sort descending\n4.  Recommend the ingredient unlocking the most cocktails\n\nExample output:\n\nCampari unlocks 18 cocktails\n\n------------------------------------------------------------------------\n\n# Data Model Dependencies\n\nThis feature relies on the ingredient evaluation metadata:\n\n{ cocktail, ingredientIds, canMake, missingCount, missingIngredientIds }\n\nThe panel should use the **same evaluated cocktail dataset** used by the\nfiltering system.\n\n------------------------------------------------------------------------\n\n# Performance Considerations\n\nThe unlock calculation should operate on the already-computed\nevaluatedCocktails list.\n\nAvoid recomputing ingredient comparisons.\n\nUse a simple aggregation pass over cocktails where:\n\nmissingCount === 1\n\n------------------------------------------------------------------------\n\n# Acceptance Criteria\n\n-   A **Build Your Bar panel** appears in the UI\n-   Displays makeable cocktail count\n-   Displays almost-unlocked cocktail count\n-   Displays best next ingredient to buy\n-   Updates automatically when ingredient selections change\n-   Uses the existing ingredient evaluation pipeline\n\n------------------------------------------------------------------------\n\n# Future Enhancements\n\nPossible extensions:\n\n### Bar Progress Meter\n\nYou can make 42 / 320 cocktails\\\nBar completeness: 13%\n\n### Spirit Progress Breakdown\n\nGin cocktails: 18\\\nBourbon cocktails: 14\\\nRum cocktails: 11\n\n### Unlock Notifications\n\nWhen a new ingredient is added:\n\nYou unlocked 7 new cocktails!\n\n### Ingredient Roadmap\n\nNext upgrades for your bar:\n\nCampari → +18 cocktails\\\nCointreau → +15 cocktails\\\nGreen Chartreuse → +12 cocktails\n\n### Achievement System\n\nExamples:\n\n-   Unlock 25 cocktails\n-   Try 10 classics\n-   Build a 20-bottle bar\n\n------------------------------------------------------------------------\n\n# Labels\n\nSuggested:\n\n-   P2 - Medium\n-   Scope: Nice-to-Have\n-   Type: Core Feature\n-   Type: UX\n","labels":[{"id":"LA_kwDOMSKbs88AAAACaDBvvw","name":"_NEXT-UP","description":"","color":"60c06d"},{"id":"LA_kwDOMSKbs88AAAACaDCvwQ","name":"BATTERS_BOX","description":"","color":"c7fef8"}],"number":76,"state":"OPEN","title":"Build Your Bar: Progress Panel + Unlock Stats"},{"body":"**Labels:** P3 - Low, Scope: Nice-to-Have, Type: UX, Type: Enhancement\n\n## Problem\n\nNeed lightweight way to communicate:\n- Announcements\n- Feedback requests\n- Sponsor links (future)\n\n## Acceptance Criteria\n\n- Add `SiteMessages` table:\n  - Id\n  - MessageText (or Markdown)\n  - IsActive\n  - StartUtc\n  - EndUtc\n  - Audience (optional)\n- Endpoint: GET /site-message/current\n- Banner displayed at top of page\n- Dismissible (store dismissal in local storage)\n\n## Implementation Notes\n\n- Start simple: one active message at a time\n- Expand to targeting later if needed","labels":[{"id":"LA_kwDOMSKbs88AAAACZQvbPw","name":"Type: UX","description":"","color":"631ab7"},{"id":"LA_kwDOMSKbs88AAAACZQvuiA","name":"P3 - Low","description":"","color":"bbab05"},{"id":"LA_kwDOMSKbs88AAAACZQvz6A","name":"Scope: Nice-to-Have","description":"","color":"f4022d"},{"id":"LA_kwDOMSKbs88AAAACZQyO_w","name":"Type: Enhancement","description":"","color":"cf7519"}],"number":66,"state":"OPEN","title":"Global Site Banner Message"},{"body":"Description:\n\n- Improve exclusion of previously logged cocktails.\n- Option:\n   - “Exclude cocktails I’ve had in last X days.”\n- Improve randomness weighting (optional later).\n\nPriority: Medium-High","labels":[{"id":"LA_kwDOMSKbs88AAAACZQvRrg","name":"P1- High","description":"","color":"280844"},{"id":"LA_kwDOMSKbs88AAAACZQvbPw","name":"Type: UX","description":"","color":"631ab7"},{"id":"LA_kwDOMSKbs88AAAACZQvoSw","name":"Scope: Post-MVP","description":"","color":"f57cbb"}],"number":44,"state":"OPEN","title":"Improve “Surprise Me” & Decision Flow"},{"body":"Add a Novice Mode...and create tooltips for common mixology terms, phrases, glass types  etc.\n\nThese tooltips could only be available in NOVICE mode.\n\nAlso, could I have longer form training text.  And what about the mixology tools.","labels":[{"id":"LA_kwDOMSKbs88AAAACZQvbPw","name":"Type: UX","description":"","color":"631ab7"},{"id":"LA_kwDOMSKbs88AAAACZQvuiA","name":"P3 - Low","description":"","color":"bbab05"},{"id":"LA_kwDOMSKbs88AAAACZQvz6A","name":"Scope: Nice-to-Have","description":"","color":"f4022d"}],"number":41,"state":"OPEN","title":"Add a Novice Mode...and create tooltips for common mixology terms, phrases, glass types  etc."}]
+[
+    {
+        "body": "## Overview\n\nIntroduce a lightweight **Onboarding Tour** to guide new users through the core features of Cocktail Chooser.\n\nThe app currently contains powerful features (filters, logging, persistent selection), but they are not immediately discoverable.\n\nThis tour will:\n\n- Highlight key UI areas\n- Guide users through the intended workflow\n- Reduce confusion on first use\n\nThe tour should be:\n\n- Short (4 steps)\n- Focused on actions, not explanations\n- Automatically shown on first launch (once per version)\n- Re-runnable from the menu\n\n---\n\n# Goals\n\n1. Help users quickly understand how to use the app\n2. Improve discoverability of logging and filters\n3. Establish the “your bar” mental model\n4. Reduce friction in first-time usage\n\n---\n\n# Tour Flow (4 Steps)\n\n## Step 1 — Menu (Account + Bar)\n\nHighlight: Main menu\n\nText:\n\nStart here. Create an account and add your ingredients so we can show you what you can make.\n\n---\n\n## Step 2 — Filters (Core Functionality)\n\nHighlight:\n\n- Only Cocktails I Can Make\n- Popular Only\n- Show Untried Only\n\nText:\n\nUse filters to narrow down your options.  \nTry “Only Cocktails I Can Make” to see drinks you can make right now.\n\nTip: “Untried Only” works best once you start logging drinks.\n\n---\n\n## Step 3 — Filter Button (Advanced Filtering)\n\nHighlight: Filter button\n\nText:\n\nTap here for advanced filtering like occasion, season, and more.\n\n---\n\n## Step 4 — Selected Cocktail + Logging Panel (Bottom Section)\n\nBehavior:\n\n- Automatically select a default cocktail (e.g. Old Fashioned)\n- Scroll the user to the bottom panel\n- Highlight the selected cocktail section\n\nText:\n\nWhen you select a cocktail, it stays here.  \nThis is where you can log, rate, and revisit it.\n\n---\n\n# Implementation Approach\n\n## Use Library (Recommended)\n\nUse a lightweight onboarding/tour library:\n\nOptions:\n\n- Shepherd.js\n- Intro.js\n- Driver.js (preferred for simplicity)\n\nRequirements:\n\n- Highlight DOM elements\n- Dim background\n- Tooltip positioning\n- Next / Previous navigation\n- Auto-scroll to elements\n\n---\n\n## Tour Behavior\n\n- Launch automatically on first app load (after feature release)\n- Can be dismissed at any time\n- Can be restarted from menu (e.g. “Help” or “Show Tutorial”)\n\n---\n\n## State Management\n\nUse localStorage:\n\nExample:\n\nonboarding_v1_completed = true\n\nFuture updates can increment version:\n\nonboarding_v2_completed\n\n---\n\n## Technical Notes\n\n- Ensure tour works on both mobile and desktop\n- Ensure proper z-index layering above modals and UI\n- Handle elements that may not yet be visible (scroll into view)\n- Step 4 requires programmatic selection of a cocktail\n\n---\n\n# Acceptance Criteria\n\n- Tour runs automatically for first-time users\n- Tour contains exactly 4 steps\n- Each step highlights the correct UI element\n- Step 4 scrolls to and highlights the selected cocktail panel\n- Tour can be dismissed at any time\n- Tour can be re-triggered from the menu\n- Tour works on mobile and desktop\n- Tour does not interfere with normal app usage after completion\n\n---\n\n# Notes\n\nThis feature focuses on **guiding user behavior**, not explaining the system.\n\nEach step should clearly answer:\n\n“What should I do next?”\n",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvARA",
+                "name": "Type: Core Feature",
+                "description": "",
+                "color": "9c6b56"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvGwA",
+                "name": "Scope: MVP",
+                "description": "",
+                "color": "96f25c"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvRrg",
+                "name": "P1- High",
+                "description": "",
+                "color": "280844"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvbPw",
+                "name": "Type: UX",
+                "description": "",
+                "color": "631ab7"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACaDBvvw",
+                "name": "_NEXT-UP",
+                "description": "",
+                "color": "60c06d"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACaDCvwQ",
+                "name": "BATTERS_BOX",
+                "description": "",
+                "color": "c7fef8"
+            }
+        ],
+        "number": 91,
+        "state": "OPEN",
+        "title": "Introduce a lightweight **Onboarding Tour** to guide new users through the core features of Cocktail Chooser."
+    },
+    {
+        "body": "## Overview\n\nWhen a user selects a cocktail from the list, the cocktail detail modal opens correctly and supports viewing and printing.\n\nHowever, after the modal is closed, users may not realize that:\n\n- the selected cocktail remains open below the cocktail list\n- the selected cocktail panel is where drink logging happens\n- logging is necessary to make Tried / Untried filters meaningful\n\nThis creates a usability problem where an important feature exists but is not discoverable.\n\n---\n\n# Goals\n\n1. Make it obvious that a cocktail remains selected after the modal is closed\n2. Make drink logging easy to discover\n3. Guide users from viewing a cocktail to logging it\n\n---\n\n# Problem\n\nCurrent behavior:\n\n- User opens cocktail from the list\n- User closes modal\n- User sees cocktail list again\n- User may assume the interaction is complete\n\nMissing affordance:\n\n- No clear indication that the selected cocktail is still available below the list\n- No obvious call-to-action to log the drink\n\nAs a result, users may never use drink logging, making the Tried / Untried features much less valuable.\n\n---\n\n# Proposed UX\n\nAfter the cocktail detail modal is closed, show a visible selected-cocktail action row near the top of the main list area.\n\nExample:\n\nSelected: Negroni\n\n[ Log Cocktail ]\n\nOptional future secondary action:\n\n[ View Selected Cocktail ]\n\nThe primary action should scroll the user to the selected cocktail panel where the logging controls already exist.\n\n---\n\n# Functional Requirements\n\n## Selected Cocktail Indicator\n\nDisplay the name of the currently selected cocktail after the modal closes.\n\nExample:\n\nSelected: Old Fashioned\n\n## Primary CTA\n\nShow a prominent button:\n\nLog Cocktail\n\nBehavior:\n- Scroll to the selected cocktail panel below the list\n- Bring logging controls into view\n\n## Persistence\n\nThe selected cocktail indicator should remain visible while a cocktail is selected.\n\nIt should update when a different cocktail is selected.\n\n---\n\n# Acceptance Criteria\n\n- After closing a cocktail modal, the UI clearly indicates which cocktail is currently selected\n- A visible `Log Cocktail` button is shown\n- Clicking the button scrolls the user to the selected cocktail panel\n- The workflow from view → log is clear on mobile and desktop\n- Existing logging functionality remains unchanged\n\n---\n\n# Notes\n\nThis issue is primarily about discoverability and usability, not about changing the logging model itself.\n\nThe goal is to surface an already-existing feature so users understand how to use it.\n",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvGwA",
+                "name": "Scope: MVP",
+                "description": "",
+                "color": "96f25c"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvRrg",
+                "name": "P1- High",
+                "description": "",
+                "color": "280844"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvbPw",
+                "name": "Type: UX",
+                "description": "",
+                "color": "631ab7"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQyO_w",
+                "name": "Type: Enhancement",
+                "description": "",
+                "color": "cf7519"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACaDBvvw",
+                "name": "_NEXT-UP",
+                "description": "",
+                "color": "60c06d"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACaDCn5A",
+                "name": "_WORKING_ON",
+                "description": "",
+                "color": "ca6603"
+            }
+        ],
+        "number": 90,
+        "state": "OPEN",
+        "title": "Improve Cocktail Logging discoverability / UX affordance"
+    },
+    {
+        "body": "# Overview\n\nUsers frequently lack one ingredient required for a cocktail.\n\nExample:\n\nNegroni requires:\n\nGin  \nSweet Vermouth  \nCampari\n\nUser has:\n\nGin  \nSweet Vermouth  \n❌ Campari\n\nHowever they *do* have:\n\nAperol\n\nWhich is a reasonable substitute.\n\nA **Substitution Engine** would allow the app to suggest:\n\n\"Makeable with substitution\"\n\nor\n\n\"Try this variation\"\n\nThis improves usability and encourages experimentation.\n\n---\n\n# Goals\n\nAllow the app to:\n\n1. Suggest ingredient substitutions\n2. Mark cocktails as **Makeable with Substitution**\n3. Recommend acceptable alternatives when ingredients are missing\n\n---\n\n# Example UX\n\nCocktail Card:\n\nNegroni\n\nMissing: Campari\n\nSuggested substitution:\nAperol\n\nYou can make this variation.\n\n---\n\n# Functional Requirements\n\n## Substitution Mapping\n\nCreate a substitution table:\n\nSubstitutions\n\nColumns:\n\nId  \nIngredientId  \nSubstituteIngredientId  \nConfidenceScore (optional)  \nNotes (optional)\n\nExample rows:\n\nCampari → Aperol  \nCointreau → Triple Sec  \nLemon Juice → Lime Juice  \n\n---\n\n## Matching Logic\n\nCurrent engine:\n\n```\ncanMake = all ingredients present\n```\n\nNew logic:\n\n```\ncanMake = all ingredients present\nOR\ncanMakeWithSubstitution = missing ingredients have valid substitutions\n```\n\n---\n\n## Cocktail Evaluation Metadata\n\nExtend evaluation result:\n\n```\n{\n  cocktailId,\n  canMake,\n  missingIngredients,\n  substitutionsAvailable\n}\n```\n\n---\n\n# UI Behavior\n\nWhen substitution is possible:\n\nShow badge:\n\n```\nMakeable with Substitution\n```\n\nDetail view shows:\n\n```\nSubstitute Aperol for Campari\n```\n\n---\n\n# Acceptance Criteria\n\n- Substitution table created\n- Matching engine checks substitutions\n- Cocktails display substitution suggestions\n- Substitution does not modify original recipe\n- Feature can be disabled if desired\n\n---\n\n# Future Enhancements\n\n## Substitution Confidence\n\nScore substitutions:\n\nHigh\nMedium\nExperimental\n\n---\n\n## Flavor Graph\n\nEventually build an ingredient similarity network.\n\n---\n\n## User Custom Substitutions\n\nAllow users to define:\n\n\"My substitute for Campari\"\n\n---\n",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvARA",
+                "name": "Type: Core Feature",
+                "description": "",
+                "color": "9c6b56"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvkEQ",
+                "name": "P2 - Medium",
+                "description": "",
+                "color": "2b72db"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvz6A",
+                "name": "Scope: Nice-to-Have",
+                "description": "",
+                "color": "f4022d"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQwUPw",
+                "name": "Type: Strategy",
+                "description": "",
+                "color": "7f3374"
+            }
+        ],
+        "number": 81,
+        "state": "OPEN",
+        "title": "Ingredient Substitution Engine"
+    },
+    {
+        "body": "This document captures ideas extracted from research discussions and product brainstorming.\nThese are **not yet formal issues** but represent potential future enhancements.\n\nWhen an idea is selected for development, create a GitHub issue and link it here.\n\n---\n\n# Discovery & Recommendation\n\n## Ingredient Substitution Engine\nAllow users to substitute ingredients they do not have with similar ingredients.\n\nExamples:\n\nCampari → Aperol  \nCointreau → Triple Sec  \nLemon Juice → Lime Juice (sometimes)\n\nThis would allow cocktails to appear as:\n\n\"Makeable with Substitution\"\n\nor\n\n\"Try This Variation\"\n\nPotential impact:\n- increases cocktail discovery\n- reduces friction when users are missing ingredients\n\nThis idea should become a **formal issue**.\n\n---\n\n## Ingredient Similarity Graph\n\nFuture enhancement to substitution engine.\n\nStore ingredient relationships such as:\n\nCampari\n  → Aperol\n  → Cappelletti\n\nSweet Vermouth\n  → Punt e Mes\n  → Carpano Antica\n\nThis could enable:\n- substitution suggestions\n- flavor-based discovery\n- “similar cocktails” recommendations\n\n---\n\n## Flavor Profile Tags\n\nAdd optional tags:\n\n- bitter\n- citrus\n- herbal\n- boozy\n- refreshing\n- spirit-forward\n\nPotential uses:\n\nFilters:\n```\nShow me bitter cocktails\n```\n\nOr:\n\n```\nRecommend something similar to a Negroni\n```\n\n---\n\n## Cocktail Difficulty Rating\n\nSimple indicator:\n\n- Easy\n- Intermediate\n- Advanced\n\nFactors:\n\n- ingredient count\n- required tools\n- technique\n\nHelps beginners.\n\n---\n\n## Cocktail Preparation Time\n\nDisplay:\n\nPrep time: 2 minutes\n\nDerived from:\n\n- shake\n- stir\n- garnish complexity\n\nUseful for:\n\n```\nQuick drink filter\n```\n\n---\n\n## Glassware Recommendation Mode\n\nIf a user doesn't own a glass:\n\n```\nBest glass: Coupe\nAlternate: Martini glass\n```\n\n---\n\n## Garnish Intelligence\n\nShow garnish substitutions.\n\nExample:\n\nOrange twist → Lemon twist\n\nOptional feature:\n\n```\nHide cocktails requiring garnishes I don't have\n```\n\n---\n\n## Cocktail History Expansion\n\nOptional expandable panel:\n\n- origin\n- classic vs modern\n- historical notes\n\nYou already store some of this.\n\n---\n\n## Bar Completeness Score\n\nExample:\n\nYou can make **72 of 420 cocktails**\n\nBar completeness: **17%**\n\nGamifies bar building.\n\n---\n\n## Social / Sharing (Future)\n\nAllow users to share:\n\n\"My Bar\"\n\nExample link:\n\ncocktailchooser.com/bar/seth\n\nFriends can see what you can make.\n\n---\n\n# Admin / Data Quality\n\n## Ingredient Alias Mapping\n\nExample:\n\n```\nFresh Lime Juice\nLime Juice\nLime\n```\n\nCanonical:\n\n```\nLime Juice\n```\n\nPrevents duplicates.\n\n---\n\n## Recipe Variant Detection\n\nExample:\n\nTwo Negroni recipes:\n\n- Book A\n- Book B\n\nAllow grouping of variants.\n\nRelated to Issue #39.\n\n---\n\n# Long-Term Vision Ideas\n\n## Flavor Recommendation Engine\n\nExample:\n\nUser likes:\n\nNegroni  \nBoulevardier  \n\nSuggest:\n\nOld Pal  \nCardinale  \n\nUses shared ingredients or flavor tags.\n\n---\n\n## AI Cocktail Generator\n\nInput:\n\n\"I want something citrusy with bourbon\"\n\nGenerate:\n\nNew cocktail or suggested recipe.\n\n---\n",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvkEQ",
+                "name": "P2 - Medium",
+                "description": "",
+                "color": "2b72db"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvoSw",
+                "name": "Scope: Post-MVP",
+                "description": "",
+                "color": "f57cbb"
+            }
+        ],
+        "number": 80,
+        "state": "OPEN",
+        "title": "Cocktail Chooser Idea Backlog"
+    },
+    {
+        "body": "\n## Overview\n\nIngredient names currently have **inconsistent casing** in the database.\n\nExamples observed:\n\n- `Gin`\n- `gin`\n- `Lime Juice`\n- `lime juice`\n- `Simple Syrup`\n- `simple syrup`\n\nThis creates several problems:\n\n- Duplicate-looking ingredients\n- Poor visual consistency in the UI\n- Increased risk of duplicate ingredients during imports\n- Harder canonicalization later\n\nThis issue standardizes ingredient casing and ensures **future imports are normalized automatically**.\n\n---\n\n# Goals\n\n1. Normalize all existing ingredient names in the database.\n2. Enforce a consistent casing rule going forward.\n3. Ensure **imported JSON ingredients are automatically normalized**.\n\n---\n\n# Casing Standard\n\nAdopt **Title Case** for ingredient names.\n\nExamples:\n\n| Current | Normalized |\n|-------|-------------|\n| gin | Gin |\n| lime juice | Lime Juice |\n| simple syrup | Simple Syrup |\n| orange bitters | Orange Bitters |\n\nRules:\n\n- First letter of each word capitalized\n- Trim whitespace\n- `NormalizedName` column remains lowercase for comparisons\n\n---\n\n# Database Migration\n\nSince the database already contains a `NormalizedName` column, the migration can safely rebuild the display name from that value.\n\nSteps:\n\n1. Read all rows from `Ingredients`\n2. Convert `NormalizedName` to Title Case\n3. Update the `Name` column\n\nPseudo-logic:\n\n```\ndisplayName = TitleCase(NormalizedName)\nUPDATE Ingredients SET Name = displayName\n```\n\nMigration must:\n\n- Be **idempotent**\n- Leave `NormalizedName` untouched\n- Not introduce duplicates\n\n---\n\n# Import Pipeline Enforcement\n\nThe **Import JSON** feature must normalize ingredient names before insertion.\n\nSteps:\n\n1. Trim whitespace\n2. Convert to lowercase to create `NormalizedName`\n3. Generate `Name` using Title Case\n4. Check for existing ingredient using `NormalizedName`\n5. Reuse existing ingredient ID if found\n\nPseudo-logic:\n\n```\nnormalized = importName.trim().toLowerCase()\ndisplayName = TitleCase(normalized)\n\ningredient = findIngredientByNormalizedName(normalized)\n\nif not found:\n    create ingredient(Name=displayName, NormalizedName=normalized)\n```\n\nThis guarantees imports cannot introduce casing inconsistencies.\n\n---\n\n# Acceptance Criteria\n\n- Existing ingredient rows are normalized via migration\n- Ingredient names display consistently in the UI\n- Import pipeline automatically normalizes casing\n- Import cannot create casing duplicates\n- No breaking changes to existing cocktails\n\n---\n\n# Optional Enhancements (Post-MVP)\n\nPossible future improvements:\n\n- Ingredient **canonicalization layer**\n- Ingredient **alias mapping**\n\nExample:\n\n```\nLime Juice\nFresh Lime Juice\nLime\n```\n\nThese could map to a canonical ingredient later.\n\n---\n\n# Labels\n\nSuggested:\n\n- `P1 - High`\n- `Scope: MVP`\n- `Type: Refactor`\n- `Type: Data`\n",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvGwA",
+                "name": "Scope: MVP",
+                "description": "",
+                "color": "96f25c"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvRrg",
+                "name": "P1- High",
+                "description": "",
+                "color": "280844"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQv-xA",
+                "name": "Type: Refactor",
+                "description": "",
+                "color": "75bfb3"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACaVKkCA",
+                "name": "Type: Data",
+                "description": "",
+                "color": "0ca2ce"
+            }
+        ],
+        "number": 78,
+        "state": "OPEN",
+        "title": "Normalize Ingredient Casing (Migration + Import Sanitization)"
+    },
+    {
+        "body": "## Overview\n\nIntroduce a **Build Your Bar** progress panel that helps users\nunderstand how their current ingredient collection translates into\ncocktail capability.\n\nThis feature turns the cocktail catalog into a **progression\nexperience**, helping users discover:\n\n-   What they can make now\n-   What they are close to unlocking\n-   Which ingredient purchase unlocks the most cocktails\n\nThe goal is to create a **reward loop**:\n\nAdd ingredient → unlock cocktails → try drinks → repeat.\n\nThis dramatically increases user engagement while remaining genuinely\nuseful.\n\n------------------------------------------------------------------------\n\n# MVP Goals\n\nAdd a **Build Your Bar** panel that displays:\n\n-   Cocktails the user can make\n-   Cocktails that are **Almost Unlocked** (missing one ingredient)\n-   Best next ingredient to buy\n\nThis panel should encourage exploration without overwhelming the user.\n\n------------------------------------------------------------------------\n\n# UI / UX Requirements\n\n### Placement\n\nThe panel should appear near the top of the main screen, ideally above\nthe cocktail list or near filter controls.\n\nExample layout:\n\nBuild Your Bar\n\nYou can make: 42 cocktails\\\nAlmost unlocked: 18 cocktails\n\nBest next bottle:\\\nCampari → unlocks 18 cocktails\n\nOptional:\n\nTop 3 next bottles: 1. Campari → unlocks 18 2. Cointreau → unlocks 15 3.\nGreen Chartreuse → unlocks 12\n\n------------------------------------------------------------------------\n\n# Functional Requirements\n\n### 1) Makeable Cocktail Count\n\nUse the existing ingredient matching engine.\n\nDefinition:\n\ncanMake === true\n\nDisplay the total number of cocktails that can currently be made.\n\n------------------------------------------------------------------------\n\n### 2) Almost Unlocked Count\n\nUse the ingredient evaluation metadata.\n\nDefinition:\n\nmissingCount === 1\n\nDisplay the number of cocktails that are exactly one ingredient away.\n\nThis integrates directly with the **Almost Unlocked filter** defined in\nIssue #54.\n\n------------------------------------------------------------------------\n\n### 3) Best Ingredient to Buy\n\nDetermine which missing ingredient unlocks the most cocktails.\n\nAlgorithm:\n\n1.  Identify cocktails where missingCount === 1\n2.  Count occurrences of each missing ingredient\n3.  Sort descending\n4.  Recommend the ingredient unlocking the most cocktails\n\nExample output:\n\nCampari unlocks 18 cocktails\n\n------------------------------------------------------------------------\n\n# Data Model Dependencies\n\nThis feature relies on the ingredient evaluation metadata:\n\n{ cocktail, ingredientIds, canMake, missingCount, missingIngredientIds }\n\nThe panel should use the **same evaluated cocktail dataset** used by the\nfiltering system.\n\n------------------------------------------------------------------------\n\n# Performance Considerations\n\nThe unlock calculation should operate on the already-computed\nevaluatedCocktails list.\n\nAvoid recomputing ingredient comparisons.\n\nUse a simple aggregation pass over cocktails where:\n\nmissingCount === 1\n\n------------------------------------------------------------------------\n\n# Acceptance Criteria\n\n-   A **Build Your Bar panel** appears in the UI\n-   Displays makeable cocktail count\n-   Displays almost-unlocked cocktail count\n-   Displays best next ingredient to buy\n-   Updates automatically when ingredient selections change\n-   Uses the existing ingredient evaluation pipeline\n\n------------------------------------------------------------------------\n\n# Future Enhancements\n\nPossible extensions:\n\n### Bar Progress Meter\n\nYou can make 42 / 320 cocktails\\\nBar completeness: 13%\n\n### Spirit Progress Breakdown\n\nGin cocktails: 18\\\nBourbon cocktails: 14\\\nRum cocktails: 11\n\n### Unlock Notifications\n\nWhen a new ingredient is added:\n\nYou unlocked 7 new cocktails!\n\n### Ingredient Roadmap\n\nNext upgrades for your bar:\n\nCampari → +18 cocktails\\\nCointreau → +15 cocktails\\\nGreen Chartreuse → +12 cocktails\n\n### Achievement System\n\nExamples:\n\n-   Unlock 25 cocktails\n-   Try 10 classics\n-   Build a 20-bottle bar\n\n------------------------------------------------------------------------\n\n# Labels\n\nSuggested:\n\n-   P2 - Medium\n-   Scope: Nice-to-Have\n-   Type: Core Feature\n-   Type: UX\n",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACaDBvvw",
+                "name": "_NEXT-UP",
+                "description": "",
+                "color": "60c06d"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACaDCvwQ",
+                "name": "BATTERS_BOX",
+                "description": "",
+                "color": "c7fef8"
+            }
+        ],
+        "number": 76,
+        "state": "OPEN",
+        "title": "Build Your Bar: Progress Panel + Unlock Stats"
+    },
+    {
+        "body": "**Labels:** P3 - Low, Scope: Nice-to-Have, Type: UX, Type: Enhancement\n\n## Problem\n\nNeed lightweight way to communicate:\n- Announcements\n- Feedback requests\n- Sponsor links (future)\n\n## Acceptance Criteria\n\n- Add `SiteMessages` table:\n  - Id\n  - MessageText (or Markdown)\n  - IsActive\n  - StartUtc\n  - EndUtc\n  - Audience (optional)\n- Endpoint: GET /site-message/current\n- Banner displayed at top of page\n- Dismissible (store dismissal in local storage)\n\n## Implementation Notes\n\n- Start simple: one active message at a time\n- Expand to targeting later if needed",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvbPw",
+                "name": "Type: UX",
+                "description": "",
+                "color": "631ab7"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvuiA",
+                "name": "P3 - Low",
+                "description": "",
+                "color": "bbab05"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvz6A",
+                "name": "Scope: Nice-to-Have",
+                "description": "",
+                "color": "f4022d"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQyO_w",
+                "name": "Type: Enhancement",
+                "description": "",
+                "color": "cf7519"
+            }
+        ],
+        "number": 66,
+        "state": "OPEN",
+        "title": "Global Site Banner Message"
+    },
+    {
+        "body": "Description:\n\n- Improve exclusion of previously logged cocktails.\n- Option:\n   - “Exclude cocktails I’ve had in last X days.”\n- Improve randomness weighting (optional later).\n\nPriority: Medium-High",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvRrg",
+                "name": "P1- High",
+                "description": "",
+                "color": "280844"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvbPw",
+                "name": "Type: UX",
+                "description": "",
+                "color": "631ab7"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvoSw",
+                "name": "Scope: Post-MVP",
+                "description": "",
+                "color": "f57cbb"
+            }
+        ],
+        "number": 44,
+        "state": "OPEN",
+        "title": "Improve “Surprise Me” & Decision Flow"
+    },
+    {
+        "body": "Add a Novice Mode...and create tooltips for common mixology terms, phrases, glass types  etc.\n\nThese tooltips could only be available in NOVICE mode.\n\nAlso, could I have longer form training text.  And what about the mixology tools.",
+        "labels": [
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvbPw",
+                "name": "Type: UX",
+                "description": "",
+                "color": "631ab7"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvuiA",
+                "name": "P3 - Low",
+                "description": "",
+                "color": "bbab05"
+            },
+            {
+                "id": "LA_kwDOMSKbs88AAAACZQvz6A",
+                "name": "Scope: Nice-to-Have",
+                "description": "",
+                "color": "f4022d"
+            }
+        ],
+        "number": 41,
+        "state": "OPEN",
+        "title": "Add a Novice Mode...and create tooltips for common mixology terms, phrases, glass types  etc."
+    }
+]
