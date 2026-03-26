@@ -1,0 +1,54 @@
+TagCategory,TagName,NormalizedName,AssignmentCount
+Aesthetic,Classic,classic,0
+Aesthetic,Colorful,colorful,0
+Aesthetic,Dramatic,dramatic,0
+Aesthetic,Elegant,elegant,0
+Aesthetic,Festive,festive,0
+Aesthetic,Layered,layered,0
+Aesthetic,Minimal,minimal,0
+Aesthetic,Photogenic,photogenic,0
+Aesthetic,Tiki,tiki,0
+"Build Method","Dry Shake",dry-shake,0
+"Build Method",Layered,layered,0
+"Build Method",Rolled,rolled,0
+"Build Pattern",2:1:1,2-1-1,0
+"Build Pattern",3:2:1,3-2-1,0
+"Build Pattern","Fortified Wine Forward",fortified-wine-forward,0
+"Build Pattern","Split Base",split-base,0
+"Cocktail Family",Daisy,daisy,0
+"Cocktail Family",Lowball,lowball,0
+"Cocktail Family",Mist,mist,0
+"Cocktail Family",Pousse-Cafe,pousse-cafe,0
+"Cocktail Family",Puff,puff,0
+"Cocktail Family",Sangaree,sangaree,0
+"Cocktail Family","Tall Drink",tall-drink,0
+"Flavor Profile","Coffee / Chocolate",coffee-chocolate,0
+"Flavor Profile",Floral,floral,0
+"Flavor Profile",Fruity,fruity,0
+"Flavor Profile",Herbal,herbal,0
+"Flavor Profile",Savory,savory,0
+"Flavor Profile",Smoky,smoky,0
+"Flavor Profile",Sweet,sweet,0
+Mood,Adventurous,adventurous,0
+Mood,Bold,bold,0
+Mood,Celebratory,celebratory,0
+Mood,Chill,chill,0
+Mood,Contemplative,contemplative,0
+Mood,Festive,festive,0
+Mood,Flirty,flirty,0
+Mood,Late-Night,late-night,0
+Mood,Romantic,romantic,0
+Occasion,"After Dinner",after-dinner,0
+Occasion,"Date Night",date-night,0
+Occasion,"Dinner Party",dinner-party,0
+Occasion,"Game Day",game-day,0
+Occasion,Holiday,holiday,0
+Occasion,Nightcap,nightcap,0
+Occasion,Party,party,0
+Occasion,Patio,patio,0
+Strength,Medium,medium,0
+Texture,Effervescent,effervescent,0
+Texture,Icy,icy,0
+Texture,Light,light,0
+Texture,Silky,silky,0
+Texture,Thick,thick,0

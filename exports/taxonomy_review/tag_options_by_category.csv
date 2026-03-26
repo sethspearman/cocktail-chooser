@@ -1,0 +1,114 @@
+TagCategory,TagName,NormalizedName
+Aesthetic,Classic,classic
+Aesthetic,Colorful,colorful
+Aesthetic,Dramatic,dramatic
+Aesthetic,Elegant,elegant
+Aesthetic,Festive,festive
+Aesthetic,Layered,layered
+Aesthetic,Minimal,minimal
+Aesthetic,Photogenic,photogenic
+Aesthetic,Tiki,tiki
+"Build Method",Blended,blended
+"Build Method",Built,built
+"Build Method","Dry Shake",dry-shake
+"Build Method",Layered,layered
+"Build Method",Muddled,muddled
+"Build Method",Rolled,rolled
+"Build Method",Shaken,shaken
+"Build Method",Stirred,stirred
+"Build Method",Swizzled,swizzled
+"Build Pattern",2:1:1,2-1-1
+"Build Pattern",3:2:1,3-2-1
+"Build Pattern","Complex Spec",complex-spec
+"Build Pattern","Egg White / Foam",egg-white-foam
+"Build Pattern","Equal Parts",equal-parts
+"Build Pattern","Fortified Wine Forward",fortified-wine-forward
+"Build Pattern","Frozen Cocktail",frozen-cocktail
+"Build Pattern","Hot Cocktail",hot-cocktail
+"Build Pattern","Long Drink",long-drink
+"Build Pattern","Over Crushed Ice",over-crushed-ice
+"Build Pattern","Served Up",served-up
+"Build Pattern","Short Drink",short-drink
+"Build Pattern","Simple 2-Ingredient",simple-2-ingredient
+"Build Pattern","Simple 3-Ingredient",simple-3-ingredient
+"Build Pattern","Simple 4-Ingredient",simple-4-ingredient
+"Build Pattern","Spirit + Citrus + Sweet",spirit-citrus-sweet
+"Build Pattern",Spirit-Forward,spirit-forward
+"Build Pattern","Split Base",split-base
+"Build Pattern","Tiki Multi-Ingredient",tiki-multi-ingredient
+"Build Pattern","Topped With Soda",topped-with-soda
+"Cocktail Family",Buck,buck
+"Cocktail Family",Cobbler,cobbler
+"Cocktail Family",Collins,collins
+"Cocktail Family",Cooler,cooler
+"Cocktail Family",Crusta,crusta
+"Cocktail Family",Daisy,daisy
+"Cocktail Family",Fizz,fizz
+"Cocktail Family",Flip,flip
+"Cocktail Family",Highball,highball
+"Cocktail Family",Julep,julep
+"Cocktail Family",Lowball,lowball
+"Cocktail Family",Mist,mist
+"Cocktail Family",Pousse-Cafe,pousse-cafe
+"Cocktail Family",Puff,puff
+"Cocktail Family",Rickey,rickey
+"Cocktail Family",Sangaree,sangaree
+"Cocktail Family",Sling,sling
+"Cocktail Family",Smash,smash
+"Cocktail Family",Sour,sour
+"Cocktail Family",Swizzle,swizzle
+"Cocktail Family","Tall Drink",tall-drink
+"Flavor Profile",Bitter,bitter
+"Flavor Profile",Citrusy,citrusy
+"Flavor Profile","Coffee / Chocolate",coffee-chocolate
+"Flavor Profile",Creamy,creamy
+"Flavor Profile",Fizzy,fizzy
+"Flavor Profile",Floral,floral
+"Flavor Profile",Fruity,fruity
+"Flavor Profile",Herbal,herbal
+"Flavor Profile",Refreshing,refreshing
+"Flavor Profile",Savory,savory
+"Flavor Profile",Smoky,smoky
+"Flavor Profile",Sour,sour
+"Flavor Profile",Spicy,spicy
+"Flavor Profile",Sweet,sweet
+"Flavor Profile",Tropical,tropical
+"Flavor Profile",Warming,warming
+Mood,Adventurous,adventurous
+Mood,Bold,bold
+Mood,Brunchy,brunchy
+Mood,Celebratory,celebratory
+Mood,Chill,chill
+Mood,Contemplative,contemplative
+Mood,Cozy,cozy
+Mood,Festive,festive
+Mood,Flirty,flirty
+Mood,Late-Night,late-night
+Mood,Playful,playful
+Mood,Poolside,poolside
+Mood,Romantic,romantic
+Mood,Sophisticated,sophisticated
+Occasion,"After Dinner",after-dinner
+Occasion,Aperitif,aperitif
+Occasion,Brunch,brunch
+Occasion,"Date Night",date-night
+Occasion,"Dinner Party",dinner-party
+Occasion,"Game Day",game-day
+Occasion,Holiday,holiday
+Occasion,Nightcap,nightcap
+Occasion,Party,party
+Occasion,Patio,patio
+Occasion,Summer,summer
+Occasion,Winter,winter
+Strength,High-Octane,high-octane
+Strength,Low-ABV,low-abv
+Strength,Medium,medium
+Strength,Sessionable,sessionable
+Strength,Spirit-Forward,spirit-forward
+Texture,Creamy,creamy
+Texture,Effervescent,effervescent
+Texture,Frothy,frothy
+Texture,Icy,icy
+Texture,Light,light
+Texture,Silky,silky
+Texture,Thick,thick
