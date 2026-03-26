@@ -7,6 +7,7 @@
           class="menu-trigger"
           type="button"
           aria-label="Open navigation menu"
+          data-tour="main-menu"
           @click="toggleAccountMenu">
           <span class="hamburger-icon" aria-hidden="true">
             <span></span>
@@ -30,6 +31,9 @@
             </button>
             <button type="button" class="menu-button" @click="openWhatsNewModal">
               What's New
+            </button>
+            <button type="button" class="menu-button" @click="startOnboardingTour({ force: true })">
+              Show Tutorial
             </button>
             <button v-if="isAdminUser" type="button" class="menu-button" @click="openAdminModal">Admin</button>
             <button type="button" class="menu-button" @click="openAddCocktailModal">Add a Cocktail</button>
@@ -128,10 +132,11 @@
 
     <section v-else class="grid">
       <article ref="browseTopPanel" class="panel wide">
-        <div class="toolbar">
+        <div class="toolbar" data-tour="core-filters">
           <button
             type="button"
             class="menu-button advanced-toggle-button"
+            data-tour="advanced-filters-button"
             :title="advancedFiltersOpen ? 'Advanced Filters (Hide)' : 'Advanced Filters (Show)'"
             :aria-label="advancedFiltersOpen ? 'Hide Advanced Filters' : 'Show Advanced Filters'"
             @click="toggleAdvancedFilters">
@@ -1297,6 +1302,7 @@ Steps:
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -1347,12 +1353,16 @@ import {
   updateCollection,
   upsertUserInventory
 } from './api';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 import releaseNotes from './release_notes.json';
 
 const POPULAR_ONLY_STORAGE_KEY = 'cocktailchooser.popularOnly';
 const LAST_SEEN_WHATS_NEW_VERSION_STORAGE_KEY = 'cocktailchooser.lastSeenWhatsNewVersion';
+const LAST_COMPLETED_ONBOARDING_TOUR_VERSION_STORAGE_KEY = 'cocktailchooser.lastCompletedOnboardingTourVersion';
 const ADVANCED_INGREDIENT_PREVIEW_COUNT = 15;
 const BLOG_URL = 'https://blog.cocktailchooser.com';
+const ONBOARDING_TOUR_VERSION = '1';
 const DEVELOPER_CONTACT_MODE = String(process.env.VUE_APP_DEVELOPER_CONTACT_MODE || '').trim().toLowerCase();
 const DEVELOPER_CONTACT_EMAIL = String(process.env.VUE_APP_DEVELOPER_CONTACT_EMAIL || '').trim();
 const DEVELOPER_CONTACT_PHONE = String(process.env.VUE_APP_DEVELOPER_CONTACT_PHONE || '').trim();
@@ -1509,6 +1519,8 @@ export default {
       myCocktails: [],
       adminPendingCocktails: [],
       reviewSubmittedModalOpen: false,
+      onboardingDriver: null,
+      onboardingTourMarkCompleteOnDestroy: true,
       newLog: {
         rating: null,
         comment: '',
@@ -1567,6 +1579,52 @@ export default {
   computed: {
     BLOG_URL() {
       return BLOG_URL;
+    },
+    onboardingTourSteps() {
+      return [
+        {
+          element: '[data-tour="main-menu"]',
+          popover: {
+            title: 'Menu',
+            description: 'Create an account and manage your bar.',
+            side: 'bottom',
+            align: 'start'
+          }
+        },
+        {
+          element: '[data-tour="core-filters"]',
+          popover: {
+            title: 'Filters',
+            description: 'Filter by what you can make, popularity, and what you’ve tried.',
+            side: 'bottom',
+            align: 'start'
+          }
+        },
+        {
+          element: '[data-tour="advanced-filters-button"]',
+          popover: {
+            title: 'Advanced Filters',
+            description: 'Open more filters for season, source, and other ways to browse.',
+            side: 'bottom',
+            align: 'center'
+          },
+          onNextClick: async () => {
+            await this.ensureTourSelectedCocktail();
+            this.scrollToSelectedCocktailPanel();
+            await new Promise((resolve) => window.setTimeout(resolve, 250));
+            this.onboardingDriver?.moveNext();
+          }
+        },
+        {
+          element: () => document.querySelector('[data-tour="selected-cocktail-panel"]'),
+          popover: {
+            title: 'Selected Cocktail',
+            description: 'Selected cocktails will be down below the filtered list. ↓ Log them to track what you’ve tried.',
+            side: 'bottom',
+            align: 'start'
+          }
+        }
+      ];
     },
     whatsNewRelease() {
       return releaseNotes || { version: '', title: "What's New", items: [] };
@@ -2251,6 +2309,8 @@ export default {
       window.removeEventListener('popstate', this.handlePopState);
       window.removeEventListener('keydown', this.handleGlobalKeydown);
     }
+
+    this.closeOnboardingTour({ completed: false });
   },
   methods: {
     getCurrentPath() {
@@ -2278,6 +2338,11 @@ export default {
     },
     handleGlobalKeydown(event) {
       if (event?.key !== 'Escape') {
+        return;
+      }
+
+      if (this.isOnboardingTourActive()) {
+        this.closeOnboardingTour();
         return;
       }
 
@@ -2497,6 +2562,7 @@ export default {
         this.tags = tags;
         await this.restoreSession();
         await this.maybeShowWhatsNewModal();
+        await this.maybeShowOnboardingTour();
       } catch (err) {
         this.error = this.extractError(err);
       }
@@ -2520,6 +2586,20 @@ export default {
 
       window.localStorage.setItem(LAST_SEEN_WHATS_NEW_VERSION_STORAGE_KEY, version);
     },
+    getLastCompletedOnboardingTourVersion() {
+      if (typeof window === 'undefined') {
+        return '';
+      }
+
+      return window.localStorage.getItem(LAST_COMPLETED_ONBOARDING_TOUR_VERSION_STORAGE_KEY) || '';
+    },
+    markCurrentOnboardingTourVersionCompleted() {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      window.localStorage.setItem(LAST_COMPLETED_ONBOARDING_TOUR_VERSION_STORAGE_KEY, ONBOARDING_TOUR_VERSION);
+    },
     async maybeShowWhatsNewModal() {
       const version = String(this.whatsNewRelease?.version || '').trim();
       if (!version || typeof window === 'undefined') {
@@ -2541,6 +2621,21 @@ export default {
 
       this.markCurrentWhatsNewVersionSeen();
       this.activeModal = 'whatsNew';
+    },
+    async maybeShowOnboardingTour() {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      if (this.activeModal || this.isAdminRoute || this.isMyCocktailsRoute || this.isOnboardingTourActive()) {
+        return;
+      }
+
+      if (this.getLastCompletedOnboardingTourVersion() === ONBOARDING_TOUR_VERSION) {
+        return;
+      }
+
+      await this.startOnboardingTour();
     },
     async restoreSession() {
       if (!getStoredAuthToken()) {
@@ -2677,6 +2772,17 @@ export default {
       this.accountMenuOpen = false;
       this.activeModal = 'whatsNew';
     },
+    async startOnboardingTour({ force = false } = {}) {
+      if (!force && this.getLastCompletedOnboardingTourVersion() === ONBOARDING_TOUR_VERSION) {
+        return;
+      }
+
+      this.accountMenuOpen = false;
+      this.advancedFiltersOpen = false;
+      this.activeModal = '';
+      await this.$nextTick();
+      this.buildOnboardingDriver().drive();
+    },
     openAccountModal(defaultView = 'overview') {
       this.accountMenuOpen = false;
       this.activeModal = 'account';
@@ -2741,6 +2847,75 @@ export default {
       if (closingModal === 'recipe') {
         this.scrollToBrowseTopIfMobile();
       }
+      if (closingModal === 'whatsNew') {
+        this.maybeShowOnboardingTour();
+      }
+    },
+    isOnboardingTourActive() {
+      return Boolean(this.onboardingDriver && this.onboardingDriver.isActive());
+    },
+    buildOnboardingDriver() {
+      if (this.onboardingDriver) {
+        this.onboardingTourMarkCompleteOnDestroy = false;
+        this.onboardingDriver.destroy();
+      }
+
+      this.onboardingTourMarkCompleteOnDestroy = true;
+      this.onboardingDriver = driver({
+        animate: true,
+        allowClose: true,
+        overlayClickBehavior: 'close',
+        overlayOpacity: 0.42,
+        overlayColor: '#243447',
+        smoothScroll: true,
+        stagePadding: 14,
+        stageRadius: 18,
+        popoverOffset: 14,
+        showProgress: true,
+        showButtons: ['previous', 'next', 'close'],
+        nextBtnText: 'Next',
+        prevBtnText: 'Back',
+        doneBtnText: 'Done',
+        popoverClass: 'cc-tour-popover',
+        steps: this.onboardingTourSteps,
+        onCloseClick: () => {
+          this.closeOnboardingTour();
+        },
+        onDestroyed: () => {
+          if (this.onboardingTourMarkCompleteOnDestroy) {
+            this.markCurrentOnboardingTourVersionCompleted();
+          }
+          this.onboardingDriver = null;
+          this.onboardingTourMarkCompleteOnDestroy = true;
+        }
+      });
+
+      return this.onboardingDriver;
+    },
+    closeOnboardingTour({ completed = true } = {}) {
+      const activeDriver = this.onboardingDriver;
+      if (activeDriver) {
+        this.onboardingTourMarkCompleteOnDestroy = completed;
+        this.onboardingDriver = null;
+        activeDriver.destroy();
+      } else if (completed) {
+        this.markCurrentOnboardingTourVersionCompleted();
+      }
+    },
+    async ensureTourSelectedCocktail() {
+      const candidate = this.displayedCocktails.find((cocktail) => (cocktail.name || '').trim().toLowerCase() === 'old fashioned')
+        || this.displayedCocktails[0]
+        || this.allCocktails[0]
+        || null;
+
+      if (!candidate) {
+        return;
+      }
+
+      this.activeModal = '';
+      this.selectedCocktailId = candidate.id;
+      await this.$nextTick();
+      await this.loadCocktailDetail();
     },
     scrollToBrowseTopIfMobile() {
       if (typeof window === 'undefined') {
@@ -4634,6 +4809,61 @@ button:disabled {
 
 .modal-card p {
   margin: 0.35rem 0;
+}
+
+.driver-active-element {
+  border-radius: 18px;
+  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.08), 0 0 24px 10px rgba(121, 167, 196, 0.3);
+}
+
+.cc-tour-popover {
+  border: 1px solid rgba(158, 188, 208, 0.55);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 18px 40px rgba(24, 45, 64, 0.18);
+}
+
+.cc-tour-popover .driver-popover-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.15rem;
+  color: #18344b;
+}
+
+.cc-tour-popover .driver-popover-description {
+  color: #34546b;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.cc-tour-popover .driver-popover-progress-text {
+  color: #567188;
+}
+
+.cc-tour-popover .driver-popover-footer button,
+.cc-tour-popover .driver-popover-close-btn {
+  border-radius: 12px;
+}
+
+.cc-tour-popover .driver-popover-footer button {
+  border: 1px solid #c9dbe7;
+  background: #f6fbfd;
+  color: #18344b;
+  padding: 0.42rem 0.78rem;
+  text-shadow: none;
+}
+
+.cc-tour-popover .driver-popover-footer button:hover,
+.cc-tour-popover .driver-popover-footer button:focus {
+  background: #edf6fb;
+}
+
+.cc-tour-popover .driver-popover-close-btn {
+  color: #8aa2b5;
+}
+
+.cc-tour-popover .driver-popover-close-btn:hover,
+.cc-tour-popover .driver-popover-close-btn:focus {
+  color: #34546b;
 }
 
 .whats-new-list {
