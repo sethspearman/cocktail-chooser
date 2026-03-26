@@ -4,6 +4,7 @@
   "items": [
     "Added a new Blog link so you can jump straight to blog.cocktailchooser.com from the app.",
     "Made cocktail logging easier to discover with a selected-cocktail action row after you close a recipe.",
-    "Added a quick log modal with prefilled date and comment text for faster drink logging on mobile."
+    "Added a quick log modal with prefilled date and comment text for faster drink logging on mobile.",
+    "Added a guided onboarding tutorial you can replay any time from the menu."
   ]
 }
