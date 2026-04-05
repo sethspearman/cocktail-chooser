@@ -65,6 +65,7 @@ public class Startup
         services.AddScoped<IOcrImportRepository>(_ => new OcrImportRepository(connectionString));
         services.AddScoped<IUserRepository>(_ => new UserRepository(connectionString));
         services.AddScoped<IUserIngredientRepository>(_ => new UserIngredientRepository(connectionString));
+        services.AddScoped<IIngredientSubstitutionRepository>(_ => new IngredientSubstitutionRepository(connectionString));
         services.AddScoped<ICocktailTryLogRepository>(_ => new CocktailTryLogRepository(connectionString));
         services.AddScoped<ICocktailGroupingRepository>(_ => new CocktailGroupingRepository(connectionString));
         services.AddScoped<ICocktailTagRepository>(_ => new CocktailTagRepository(connectionString));
@@ -81,6 +82,7 @@ public class Startup
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserInventoryService, UserInventoryService>();
+        services.AddScoped<ICocktailAvailabilityService, CocktailAvailabilityService>();
         services.AddScoped<ICocktailTryLogService, CocktailTryLogService>();
         services.AddScoped<ICocktailGroupingService, CocktailGroupingService>();
         services.AddScoped<IAdminMaintenanceService, AdminMaintenanceService>();

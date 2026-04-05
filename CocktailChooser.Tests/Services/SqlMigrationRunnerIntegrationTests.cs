@@ -43,6 +43,25 @@ public class SqlMigrationRunnerIntegrationTests : IDisposable
         Assert.Equal(firstMigrationCount, secondMigrationCount);
     }
 
+    [Fact]
+    public void Run_CreatesIngredientSubstitutionsTable()
+    {
+        SqlMigrationRunner.Run(_connectionString);
+
+        using var connection = new SqliteConnection(_connectionString);
+        connection.Open();
+
+        var tableExists = connection.ExecuteScalar<long>(
+            """
+            SELECT COUNT(*)
+            FROM sqlite_master
+            WHERE type = 'table'
+              AND name = 'IngredientSubstitutions';
+            """);
+
+        Assert.Equal(1, tableExists);
+    }
+
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();

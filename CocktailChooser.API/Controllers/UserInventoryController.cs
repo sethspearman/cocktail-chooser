@@ -10,11 +10,16 @@ namespace CocktailChooser.API.Controllers;
 public class UserInventoryController : ControllerBase
 {
     private readonly IUserInventoryService _inventoryService;
+    private readonly ICocktailAvailabilityService _cocktailAvailabilityService;
     private readonly ICurrentUserContext _currentUserContext;
 
-    public UserInventoryController(IUserInventoryService inventoryService, ICurrentUserContext currentUserContext)
+    public UserInventoryController(
+        IUserInventoryService inventoryService,
+        ICocktailAvailabilityService cocktailAvailabilityService,
+        ICurrentUserContext currentUserContext)
     {
         _inventoryService = inventoryService;
+        _cocktailAvailabilityService = cocktailAvailabilityService;
         _currentUserContext = currentUserContext;
     }
 
@@ -60,6 +65,23 @@ public class UserInventoryController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    [HttpGet("cocktails/{cocktailId:int}/availability")]
+    public async Task<ActionResult<CocktailAvailabilityDto>> GetCocktailAvailability(int userId, int cocktailId)
+    {
+        if (!IsAuthorizedUser(userId))
+        {
+            return Unauthorized();
+        }
+
+        var availability = await _cocktailAvailabilityService.GetAvailabilityForUserAsync(cocktailId, userId);
+        if (availability is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(availability);
     }
 
     private bool IsAuthorizedUser(int userId)

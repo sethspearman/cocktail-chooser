@@ -1,18 +1,12 @@
 [
     {
-        "body": "## Overview\n\nIntroduce a lightweight **Onboarding Tour** to guide new users through the core features of Cocktail Chooser.\n\nThe app currently contains powerful features (filters, logging, persistent selection), but they are not immediately discoverable.\n\nThis tour will:\n\n- Highlight key UI areas\n- Guide users through the intended workflow\n- Reduce confusion on first use\n\nThe tour should be:\n\n- Short (4 steps)\n- Focused on actions, not explanations\n- Automatically shown on first launch (once per version)\n- Re-runnable from the menu\n\n---\n\n# Goals\n\n1. Help users quickly understand how to use the app\n2. Improve discoverability of logging and filters\n3. Establish the “your bar” mental model\n4. Reduce friction in first-time usage\n\n---\n\n# Tour Flow (4 Steps)\n\n## Step 1 — Menu (Account + Bar)\n\nHighlight: Main menu\n\nText:\n\nStart here. Create an account and add your ingredients so we can show you what you can make.\n\n---\n\n## Step 2 — Filters (Core Functionality)\n\nHighlight:\n\n- Only Cocktails I Can Make\n- Popular Only\n- Show Untried Only\n\nText:\n\nUse filters to narrow down your options.  \nTry “Only Cocktails I Can Make” to see drinks you can make right now.\n\nTip: “Untried Only” works best once you start logging drinks.\n\n---\n\n## Step 3 — Filter Button (Advanced Filtering)\n\nHighlight: Filter button\n\nText:\n\nTap here for advanced filtering like occasion, season, and more.\n\n---\n\n## Step 4 — Selected Cocktail + Logging Panel (Bottom Section)\n\nBehavior:\n\n- Automatically select a default cocktail (e.g. Old Fashioned)\n- Scroll the user to the bottom panel\n- Highlight the selected cocktail section\n\nText:\n\nWhen you select a cocktail, it stays here.  \nThis is where you can log, rate, and revisit it.\n\n---\n\n# Implementation Approach\n\n## Use Library (Recommended)\n\nUse a lightweight onboarding/tour library:\n\nOptions:\n\n- Shepherd.js\n- Intro.js\n- Driver.js (preferred for simplicity)\n\nRequirements:\n\n- Highlight DOM elements\n- Dim background\n- Tooltip positioning\n- Next / Previous navigation\n- Auto-scroll to elements\n\n---\n\n## Tour Behavior\n\n- Launch automatically on first app load (after feature release)\n- Can be dismissed at any time\n- Can be restarted from menu (e.g. “Help” or “Show Tutorial”)\n\n---\n\n## State Management\n\nUse localStorage:\n\nExample:\n\nonboarding_v1_completed = true\n\nFuture updates can increment version:\n\nonboarding_v2_completed\n\n---\n\n## Technical Notes\n\n- Ensure tour works on both mobile and desktop\n- Ensure proper z-index layering above modals and UI\n- Handle elements that may not yet be visible (scroll into view)\n- Step 4 requires programmatic selection of a cocktail\n\n---\n\n# Acceptance Criteria\n\n- Tour runs automatically for first-time users\n- Tour contains exactly 4 steps\n- Each step highlights the correct UI element\n- Step 4 scrolls to and highlights the selected cocktail panel\n- Tour can be dismissed at any time\n- Tour can be re-triggered from the menu\n- Tour works on mobile and desktop\n- Tour does not interfere with normal app usage after completion\n\n---\n\n# Notes\n\nThis feature focuses on **guiding user behavior**, not explaining the system.\n\nEach step should clearly answer:\n\n“What should I do next?”\n",
+        "body": "## Overview\n\nEvaluate and select the architecture for the Cocktail Chooser mobile app.\n\n---\n\n# Options\n\n1. WebView / PWA wrapper\n2. React Native\n3. Flutter\n4. Native (Swift + Kotlin)\n\n---\n\n# Evaluation Criteria\n\n- Code reuse from existing web app\n- Development speed\n- Performance\n- Maintainability\n- Access to device features\n\n---\n\n# Deliverable\n\n- Documented decision\n- Rationale for chosen approach\n- High-level architecture diagram\n\n---\n\n# Acceptance Criteria\n\n- Architecture decision is finalized\n- Tradeoffs are clearly documented\n- Team aligned on direction\n\n---\n\n# Labels\n\n- Mobile\n- Architecture\n- P1 - High",
         "labels": [
             {
-                "id": "LA_kwDOMSKbs88AAAACZQvARA",
-                "name": "Type: Core Feature",
+                "id": "LA_kwDOMSKbs88AAAACZQvMYw",
+                "name": "Type: Architecture",
                 "description": "",
-                "color": "9c6b56"
-            },
-            {
-                "id": "LA_kwDOMSKbs88AAAACZQvGwA",
-                "name": "Scope: MVP",
-                "description": "",
-                "color": "96f25c"
+                "color": "521650"
             },
             {
                 "id": "LA_kwDOMSKbs88AAAACZQvRrg",
@@ -21,37 +15,19 @@
                 "color": "280844"
             },
             {
-                "id": "LA_kwDOMSKbs88AAAACZQvbPw",
-                "name": "Type: UX",
+                "id": "LA_kwDOMSKbs88AAAACeGfYGA",
+                "name": "Mobile",
                 "description": "",
-                "color": "631ab7"
-            },
-            {
-                "id": "LA_kwDOMSKbs88AAAACaDBvvw",
-                "name": "_NEXT-UP",
-                "description": "",
-                "color": "60c06d"
-            },
-            {
-                "id": "LA_kwDOMSKbs88AAAACaDCvwQ",
-                "name": "BATTERS_BOX",
-                "description": "",
-                "color": "c7fef8"
+                "color": "f57319"
             }
         ],
-        "number": 91,
+        "number": 102,
         "state": "OPEN",
-        "title": "Introduce a lightweight **Onboarding Tour** to guide new users through the core features of Cocktail Chooser."
+        "title": "Evaluate and select the architecture for the Cocktail Chooser mobile app."
     },
     {
-        "body": "## Overview\n\nWhen a user selects a cocktail from the list, the cocktail detail modal opens correctly and supports viewing and printing.\n\nHowever, after the modal is closed, users may not realize that:\n\n- the selected cocktail remains open below the cocktail list\n- the selected cocktail panel is where drink logging happens\n- logging is necessary to make Tried / Untried filters meaningful\n\nThis creates a usability problem where an important feature exists but is not discoverable.\n\n---\n\n# Goals\n\n1. Make it obvious that a cocktail remains selected after the modal is closed\n2. Make drink logging easy to discover\n3. Guide users from viewing a cocktail to logging it\n\n---\n\n# Problem\n\nCurrent behavior:\n\n- User opens cocktail from the list\n- User closes modal\n- User sees cocktail list again\n- User may assume the interaction is complete\n\nMissing affordance:\n\n- No clear indication that the selected cocktail is still available below the list\n- No obvious call-to-action to log the drink\n\nAs a result, users may never use drink logging, making the Tried / Untried features much less valuable.\n\n---\n\n# Proposed UX\n\nAfter the cocktail detail modal is closed, show a visible selected-cocktail action row near the top of the main list area.\n\nExample:\n\nSelected: Negroni\n\n[ Log Cocktail ]\n\nOptional future secondary action:\n\n[ View Selected Cocktail ]\n\nThe primary action should scroll the user to the selected cocktail panel where the logging controls already exist.\n\n---\n\n# Functional Requirements\n\n## Selected Cocktail Indicator\n\nDisplay the name of the currently selected cocktail after the modal closes.\n\nExample:\n\nSelected: Old Fashioned\n\n## Primary CTA\n\nShow a prominent button:\n\nLog Cocktail\n\nBehavior:\n- Scroll to the selected cocktail panel below the list\n- Bring logging controls into view\n\n## Persistence\n\nThe selected cocktail indicator should remain visible while a cocktail is selected.\n\nIt should update when a different cocktail is selected.\n\n---\n\n# Acceptance Criteria\n\n- After closing a cocktail modal, the UI clearly indicates which cocktail is currently selected\n- A visible `Log Cocktail` button is shown\n- Clicking the button scrolls the user to the selected cocktail panel\n- The workflow from view → log is clear on mobile and desktop\n- Existing logging functionality remains unchanged\n\n---\n\n# Notes\n\nThis issue is primarily about discoverability and usability, not about changing the logging model itself.\n\nThe goal is to surface an already-existing feature so users understand how to use it.\n",
+        "body": "## Overview\n\nConvert Cocktail Chooser from a web application into a mobile application for:\n\n- iOS (iPhone)\n- Android\n\nThe goal is to deliver a mobile-first experience that:\n\n- Preserves core functionality\n- Improves usability on small screens\n- Enables future mobile-specific features\n\n---\n\n# Goals\n\n1. Deliver a functional mobile app for iOS and Android\n2. Reuse as much existing backend/API logic as possible\n3. Maintain feature parity with the current web app\n4. Improve UX for mobile usage patterns\n5. Prepare for future enhancements (notifications, offline support, etc.)\n\n---\n\n# Scope\n\n## In Scope\n\n- Cocktail browsing and filtering\n- Ingredient/bar management\n- Cocktail detail view\n- Logging drinks\n- Authentication (if applicable)\n- Onboarding experience\n\n## Out of Scope (Initial Version)\n\n- Push notifications\n- Offline mode (may be future phase)\n- Advanced analytics\n\n---\n\n# Technical Direction (Proposed)\n\nEvaluate and select one of the following approaches:\n\n- Option A: Wrap existing app (PWA / WebView)\n- Option B: Cross-platform app (e.g., React Native, Flutter)\n- Option C: Native apps (Swift + Kotlin)\n\nDecision criteria:\n\n- Development speed\n- Code reuse\n- Performance\n- Long-term maintainability\n\n---\n\n# Deliverables\n\n- Working iOS app\n- Working Android app\n- Build/deploy pipeline\n- App store readiness (icons, metadata, etc.)\n\n---\n\n# Success Criteria\n\n- App successfully runs on iOS and Android devices\n- Core features are usable and intuitive on mobile\n- No major regressions vs web app\n- Positive usability compared to current mobile web experience\n\n---\n\n# Labels\n\n- Epic\n- Mobile\n- P1 - High",
         "labels": [
-            {
-                "id": "LA_kwDOMSKbs88AAAACZQvGwA",
-                "name": "Scope: MVP",
-                "description": "",
-                "color": "96f25c"
-            },
             {
                 "id": "LA_kwDOMSKbs88AAAACZQvRrg",
                 "name": "P1- High",
@@ -59,33 +35,21 @@
                 "color": "280844"
             },
             {
-                "id": "LA_kwDOMSKbs88AAAACZQvbPw",
-                "name": "Type: UX",
+                "id": "LA_kwDOMSKbs88AAAACeGfOTQ",
+                "name": "EPIC",
                 "description": "",
-                "color": "631ab7"
+                "color": "596d04"
             },
             {
-                "id": "LA_kwDOMSKbs88AAAACZQyO_w",
-                "name": "Type: Enhancement",
+                "id": "LA_kwDOMSKbs88AAAACeGfYGA",
+                "name": "Mobile",
                 "description": "",
-                "color": "cf7519"
-            },
-            {
-                "id": "LA_kwDOMSKbs88AAAACaDBvvw",
-                "name": "_NEXT-UP",
-                "description": "",
-                "color": "60c06d"
-            },
-            {
-                "id": "LA_kwDOMSKbs88AAAACaDCn5A",
-                "name": "_WORKING_ON",
-                "description": "",
-                "color": "ca6603"
+                "color": "f57319"
             }
         ],
-        "number": 90,
+        "number": 101,
         "state": "OPEN",
-        "title": "Improve Cocktail Logging discoverability / UX affordance"
+        "title": "Convert Cocktail Chooser from a web application"
     },
     {
         "body": "# Overview\n\nUsers frequently lack one ingredient required for a cocktail.\n\nExample:\n\nNegroni requires:\n\nGin  \nSweet Vermouth  \nCampari\n\nUser has:\n\nGin  \nSweet Vermouth  \n❌ Campari\n\nHowever they *do* have:\n\nAperol\n\nWhich is a reasonable substitute.\n\nA **Substitution Engine** would allow the app to suggest:\n\n\"Makeable with substitution\"\n\nor\n\n\"Try this variation\"\n\nThis improves usability and encourages experimentation.\n\n---\n\n# Goals\n\nAllow the app to:\n\n1. Suggest ingredient substitutions\n2. Mark cocktails as **Makeable with Substitution**\n3. Recommend acceptable alternatives when ingredients are missing\n\n---\n\n# Example UX\n\nCocktail Card:\n\nNegroni\n\nMissing: Campari\n\nSuggested substitution:\nAperol\n\nYou can make this variation.\n\n---\n\n# Functional Requirements\n\n## Substitution Mapping\n\nCreate a substitution table:\n\nSubstitutions\n\nColumns:\n\nId  \nIngredientId  \nSubstituteIngredientId  \nConfidenceScore (optional)  \nNotes (optional)\n\nExample rows:\n\nCampari → Aperol  \nCointreau → Triple Sec  \nLemon Juice → Lime Juice  \n\n---\n\n## Matching Logic\n\nCurrent engine:\n\n```\ncanMake = all ingredients present\n```\n\nNew logic:\n\n```\ncanMake = all ingredients present\nOR\ncanMakeWithSubstitution = missing ingredients have valid substitutions\n```\n\n---\n\n## Cocktail Evaluation Metadata\n\nExtend evaluation result:\n\n```\n{\n  cocktailId,\n  canMake,\n  missingIngredients,\n  substitutionsAvailable\n}\n```\n\n---\n\n# UI Behavior\n\nWhen substitution is possible:\n\nShow badge:\n\n```\nMakeable with Substitution\n```\n\nDetail view shows:\n\n```\nSubstitute Aperol for Campari\n```\n\n---\n\n# Acceptance Criteria\n\n- Substitution table created\n- Matching engine checks substitutions\n- Cocktails display substitution suggestions\n- Substitution does not modify original recipe\n- Feature can be disabled if desired\n\n---\n\n# Future Enhancements\n\n## Substitution Confidence\n\nScore substitutions:\n\nHigh\nMedium\nExperimental\n\n---\n\n## Flavor Graph\n\nEventually build an ingredient similarity network.\n\n---\n\n## User Custom Substitutions\n\nAllow users to define:\n\n\"My substitute for Campari\"\n\n---\n",
