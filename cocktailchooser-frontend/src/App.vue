@@ -60,38 +60,84 @@
       </a>
     </div>
 
-    <section class="info-bar">
-      <div class="info-chip">
-        <span class="label">You Can Make</span>
-        <strong>{{ makeableCocktails.length }}</strong>
+    <section class="build-your-bar-panel">
+      <div class="build-your-bar-copy">
+        <span class="build-your-bar-kicker">Build Your Bar</span>
+        <h2>Track what you can make now and what one bottle unlocks next.</h2>
+        <p>{{ myBarGuidanceMessage }}</p>
+        <p v-if="selectedUserId" class="build-your-bar-scope">
+          Showing <strong>{{ buildYourBarStats.makeableCount }}</strong> makeable and
+          <strong>{{ buildYourBarStats.almostUnlockedCount }}</strong> almost-unlocked cocktails
+          in the current filtered view.
+          <span class="subtle">
+            Across all browseable cocktails: {{ buildYourBarAllStats.makeableCount }} makeable,
+            {{ buildYourBarAllStats.almostUnlockedCount }} almost unlocked.
+          </span>
+        </p>
       </div>
-      <div class="info-chip">
-        <span class="label">Showing</span>
-        <strong>{{ displayedCocktails.length }}</strong>
+      <div class="build-your-bar-stats">
+        <button
+          type="button"
+          class="build-your-bar-stat build-your-bar-stat-button"
+          :disabled="!selectedUserId"
+          @click="setBuildYourBarMode('CAN_MAKE')">
+          <span class="label">Can Make Now</span>
+          <strong>{{ buildYourBarStats.makeableCount }}</strong>
+          <small class="subtle">All browseable: {{ buildYourBarAllStats.makeableCount }}</small>
+        </button>
+        <button
+          type="button"
+          class="build-your-bar-stat build-your-bar-stat-button"
+          :disabled="!selectedUserId"
+          @click="setBuildYourBarMode('ALMOST_UNLOCKED')">
+          <span class="label">Almost Unlocked</span>
+          <strong>{{ buildYourBarStats.almostUnlockedCount }}</strong>
+          <small class="subtle">All browseable: {{ buildYourBarAllStats.almostUnlockedCount }}</small>
+        </button>
+        <div class="build-your-bar-stat build-your-bar-stat-wide">
+          <span class="label">Best Next Bottle</span>
+          <strong>{{ nextIngredientRecommendationSummary }}</strong>
+          <small v-if="selectedUserId" class="subtle">Based on current filters</small>
+        </div>
+        <div class="build-your-bar-stat build-your-bar-stat-wide">
+          <span class="label">Last Tried</span>
+          <strong>{{ lastTriedSummary }}</strong>
+        </div>
       </div>
-      <div class="info-chip wide-chip">
-        <span class="label">Last Tried</span>
-        <strong>{{ lastTriedSummary }}</strong>
+      <div v-if="selectedUserId && buildYourBarStats.topUnlockIngredients.length" class="build-your-bar-recommendations">
+        <span class="label">Top 3 Next Bottles</span>
+        <div class="build-your-bar-recommendation-list">
+          <button
+            v-for="row in buildYourBarStats.topUnlockIngredients"
+            :key="`build-bar-rec-${row.ingredient.id}`"
+            type="button"
+            class="build-your-bar-recommendation"
+            @click="setBuildYourBarMode('ALMOST_UNLOCKED')">
+            <strong>{{ row.ingredient.name }}</strong>
+            <span class="subtle">Unlocks {{ row.count }} cocktail{{ row.count === 1 ? '' : 's' }}</span>
+          </button>
+        </div>
       </div>
-      <div class="info-chip wide-chip">
-        <span class="label">Try Adding</span>
-        <strong>{{ nextIngredientRecommendationSummary }}</strong>
+      <div class="build-your-bar-actions">
+        <button
+          v-if="selectedUserId"
+          type="button"
+          class="inline-link-button"
+          @click="setBuildYourBarMode('ALMOST_UNLOCKED')">
+          View Almost Unlocked
+        </button>
+        <button type="button" class="inline-link-button" @click="openMyBarModal">
+          {{ selectedUserId ? 'Update My Bar' : 'Open My Bar' }}
+        </button>
+        <button
+          v-if="!selectedUserId"
+          type="button"
+          class="inline-link-button secondary-link"
+          @click="openAccountModal('login')">
+          Log in
+        </button>
       </div>
     </section>
-
-    <div class="my-bar-inline-hint">
-      <span class="inline-hint-text">{{ myBarGuidanceMessage }}</span>
-      <button type="button" class="inline-link-button" @click="openMyBarModal">
-        {{ selectedUserId ? 'Update My Bar!' : 'Open My Bar!' }}
-      </button>
-      <button
-        v-if="!selectedUserId"
-        type="button"
-        class="inline-link-button secondary-link"
-        @click="openAccountModal('login')">
-        Log in
-      </button>
-    </div>
 
     <header class="hero">
       <div class="hero-top">
@@ -1984,45 +2030,22 @@ export default {
     triedCocktailIdSet() {
       return new Set(this.userCocktailLogs.map((log) => log.cocktailId));
     },
+    buildYourBarStats() {
+      return this.summarizeBuildYourBarStats(this.filteredCocktailEvaluationsIgnoringMode);
+    },
+    buildYourBarAllStats() {
+      return this.summarizeBuildYourBarStats(this.evaluatedBrowseCocktails);
+    },
     nextIngredientRecommendation() {
       if (!this.selectedUserId) {
         return null;
       }
 
-      const unlockCounts = new Map();
-
-      this.allCocktails.forEach((cocktail) => {
-        if (this.canMakeById(cocktail.id)) {
-          return;
-        }
-
-        const missing = this.getMissingIngredients(cocktail.id);
-        if (missing.length !== 1) {
-          return;
-        }
-
-        const ingredient = missing[0];
-        unlockCounts.set(ingredient.id, {
-          ingredient,
-          count: (unlockCounts.get(ingredient.id)?.count || 0) + 1
-        });
-      });
-
-      if (unlockCounts.size === 0) {
-        return null;
-      }
-
-      return [...unlockCounts.values()].sort((a, b) => {
-        if (b.count !== a.count) {
-          return b.count - a.count;
-        }
-
-        return a.ingredient.name.localeCompare(b.ingredient.name);
-      })[0];
+      return this.buildYourBarStats.nextIngredientRecommendation;
     },
     nextIngredientRecommendationSummary() {
       if (!this.selectedUserId) {
-        return 'Log in';
+        return 'Log in to get a recommendation';
       }
 
       if (!this.nextIngredientRecommendation) {
@@ -2932,6 +2955,85 @@ export default {
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       });
+    },
+    scrollBuildYourBarIntoView() {
+      this.$nextTick(() => {
+        const target = this.$refs.browseTopPanel;
+        if (target && typeof target.scrollIntoView === 'function') {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    },
+    summarizeBuildYourBarStats(evaluations) {
+      if (!this.selectedUserId) {
+        return {
+          makeableCount: 0,
+          almostUnlockedCount: 0,
+          nextIngredientRecommendation: null,
+          topUnlockIngredients: []
+        };
+      }
+
+      const unlockCounts = new Map();
+      let makeableCount = 0;
+      let almostUnlockedCount = 0;
+
+      evaluations.forEach((evaluation) => {
+        if (evaluation.canMake) {
+          makeableCount += 1;
+          return;
+        }
+
+        if (evaluation.missingCount !== 1) {
+          return;
+        }
+
+        almostUnlockedCount += 1;
+        const ingredient = this.getSingleMissingIngredient(evaluation.cocktail.id);
+        if (!ingredient) {
+          return;
+        }
+
+        const ingredientId = Number(ingredient.id);
+        unlockCounts.set(ingredientId, {
+          ingredient,
+          count: (unlockCounts.get(ingredientId)?.count || 0) + 1
+        });
+      });
+
+      const topUnlockIngredients = [...unlockCounts.values()].sort((a, b) => {
+        if (b.count !== a.count) {
+          return b.count - a.count;
+        }
+
+        return a.ingredient.name.localeCompare(b.ingredient.name);
+      });
+
+      return {
+        makeableCount,
+        almostUnlockedCount,
+        nextIngredientRecommendation: topUnlockIngredients[0] || null,
+        topUnlockIngredients: topUnlockIngredients.slice(0, 3)
+      };
+    },
+    setBuildYourBarMode(mode) {
+      if (!this.selectedUserId) {
+        this.openAccountModal('login');
+        return;
+      }
+
+      if (mode === 'CAN_MAKE') {
+        this.cocktailListMode = 'makeable';
+        this.filterState.mode = 'CAN_MAKE';
+      } else if (mode === 'ALMOST_UNLOCKED') {
+        this.cocktailListMode = 'all';
+        this.filterState.mode = 'ALMOST_UNLOCKED';
+      } else {
+        this.cocktailListMode = 'all';
+        this.filterState.mode = 'SHOW_ALL';
+      }
+
+      this.scrollBuildYourBarIntoView();
     },
     openQuickLogModal() {
       if (!this.selectedCocktailId) {
@@ -4231,63 +4333,125 @@ body {
   color: #084766;
 }
 
-.info-bar {
+.build-your-bar-panel {
   position: sticky;
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: repeat(4, minmax(140px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr) auto;
+  gap: 0.75rem;
+  align-items: center;
   margin-bottom: 0.9rem;
-  padding: 0.55rem;
+  padding: 0.75rem;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.96), rgba(247, 252, 255, 0.96));
   backdrop-filter: blur(8px);
+  box-shadow: 0 10px 24px rgba(28, 54, 70, 0.08);
 }
 
-.info-chip {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 0.45rem 0.6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
+.build-your-bar-copy h2 {
+  margin: 0;
+  font-family: 'Fraunces', serif;
+  font-size: 1.2rem;
+  line-height: 1.2;
 }
 
-.info-chip .label {
+.build-your-bar-copy p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+}
+
+.build-your-bar-scope {
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.build-your-bar-kicker,
+.build-your-bar-stat .label {
   color: var(--muted);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
-.info-chip strong {
+.build-your-bar-kicker {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+}
+
+.build-your-bar-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.build-your-bar-stat {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(206, 221, 228, 0.9);
+  border-radius: 12px;
+  padding: 0.55rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.build-your-bar-stat-button {
+  cursor: pointer;
+  text-align: left;
+}
+
+.build-your-bar-stat-button:hover:not(:disabled),
+.build-your-bar-stat-button:focus-visible:not(:disabled) {
+  border-color: #7ca9be;
+  box-shadow: 0 0 0 3px rgba(124, 169, 190, 0.16);
+}
+
+.build-your-bar-stat strong {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.hero {
-  margin-bottom: 1rem;
+.build-your-bar-stat small {
+  margin-top: 0.2rem;
 }
 
-.my-bar-inline-hint {
+.build-your-bar-recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.build-your-bar-recommendation-list {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.build-your-bar-recommendation {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.18rem;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(206, 221, 228, 0.9);
+  border-radius: 12px;
+  padding: 0.55rem 0.7rem;
+}
+
+.build-your-bar-actions {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
-  margin: -0.15rem 0 0.7rem;
-  padding: 0 0.15rem;
-  color: var(--muted);
-  font-size: 0.92rem;
+  justify-content: flex-end;
 }
 
-.inline-hint-text {
-  white-space: pre-wrap;
-  margin-right: 0.8rem;
+.hero {
+  margin-bottom: 1rem;
 }
 
 .inline-link-button {
@@ -5300,8 +5464,21 @@ button:disabled {
     box-shadow: none;
   }
 
-  .info-bar {
-    display: none;
+  .build-your-bar-panel {
+    position: static;
+    grid-template-columns: 1fr;
+  }
+
+  .build-your-bar-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .build-your-bar-recommendation-list {
+    flex-direction: column;
+  }
+
+  .build-your-bar-actions {
+    justify-content: flex-start;
   }
 
   .grid,
@@ -5315,10 +5492,6 @@ button:disabled {
 
   .hero-top {
     display: block;
-  }
-
-  .my-bar-inline-hint {
-    align-items: flex-start;
   }
 
   .selected-cocktail-row {
@@ -5359,6 +5532,12 @@ button:disabled {
 
   .admin-import-table {
     font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .build-your-bar-stats {
+    grid-template-columns: 1fr;
   }
 }
 </style>
