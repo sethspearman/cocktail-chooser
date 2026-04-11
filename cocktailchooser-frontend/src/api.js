@@ -217,6 +217,21 @@ export async function getCocktailTimePeriods() {
   return data;
 }
 
+export async function getCurrentSiteMessage() {
+  const { data } = await api.get('/site-message/current');
+  return data;
+}
+
+export async function getAdminCurrentSiteMessage() {
+  const { data } = await api.get('/admin/site-message/current');
+  return data;
+}
+
+export async function saveAdminCurrentSiteMessage(payload) {
+  const { data } = await api.put('/admin/site-message/current', payload);
+  return data;
+}
+
 export async function exportAdminCocktails({ sourceId = null, offset = null, limit = null } = {}) {
   const params = {};
   if (sourceId) {
