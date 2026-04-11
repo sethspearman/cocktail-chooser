@@ -1,5 +1,18 @@
 <template>
   <div class="app-shell">
+    <div v-if="visibleSiteMessage" class="site-banner" role="status" aria-live="polite">
+      <div class="site-banner-copy">
+        <strong>Notice</strong>
+        <span>{{ visibleSiteMessage.messageText }}</span>
+      </div>
+      <button
+        type="button"
+        class="site-banner-dismiss"
+        aria-label="Dismiss site message"
+        @click="dismissSiteMessage">
+        ×
+      </button>
+    </div>
     <div v-if="accountMenuOpen" class="menu-overlay" @click="accountMenuOpen = false"></div>
     <div class="top-nav-row">
       <div class="app-menu" :class="{ open: accountMenuOpen }">
@@ -326,8 +339,6 @@
         </div>
       </div>
       <div class="advanced-filters-body">
-        <p class="subtle">Core advanced filters are now wired into the main display pipeline.</p>
-
         <div class="advanced-group">
           <div class="subheading">Main Filters</div>
           <div class="auth-stack">
@@ -936,6 +947,13 @@ Steps:
           <button
             type="button"
             class="menu-button"
+            :class="{ active: adminView === 'siteBanner' }"
+            @click="adminView = 'siteBanner'">
+            {{ adminView === 'siteBanner' ? '✓ Site Banner' : 'Site Banner' }}
+          </button>
+          <button
+            type="button"
+            class="menu-button"
             :class="{ active: adminView === 'maintenance' }"
             @click="adminView = 'maintenance'">
             {{ adminView === 'maintenance' ? '✓ Maintenance' : 'Maintenance' }}
@@ -1027,6 +1045,39 @@ Steps:
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="adminView === 'siteBanner'" class="auth-stack">
+          <div class="admin-block">
+            <h3>Site Banner</h3>
+            <p class="subtle">Edit the dismissible banner shown at the top of the app.</p>
+            <div class="auth-stack">
+              <textarea
+                v-model.trim="adminSiteMessageForm.messageText"
+                rows="6"
+                spellcheck="true"
+                placeholder="Banner message text"></textarea>
+              <label class="toolbar-checkbox">
+                <input v-model="adminSiteMessageForm.isActive" type="checkbox" />
+                Banner active
+              </label>
+              <div class="menu-actions">
+                <button
+                  type="button"
+                  class="menu-button"
+                  :disabled="adminSiteMessageBusy"
+                  @click="loadAdminSiteMessage">
+                  {{ adminSiteMessageBusy ? 'Working...' : 'Reload' }}
+                </button>
+                <button
+                  type="button"
+                  :disabled="adminSiteMessageBusy || !adminSiteMessageForm.messageText.trim()"
+                  @click="saveAdminSiteMessage">
+                  {{ adminSiteMessageBusy ? 'Saving...' : 'Save Banner' }}
+                </button>
+              </div>
+              <p v-if="adminSiteMessageSavedMessage" class="success">{{ adminSiteMessageSavedMessage }}</p>
             </div>
           </div>
         </div>
@@ -1317,6 +1368,7 @@ import {
   deleteCollection,
   exportAdminCocktails,
   getAdminCocktailDuplicates,
+  getAdminCurrentSiteMessage,
   getAdminIngredientDuplicates,
   getAdminPendingCocktails,
   getMyCocktails,
@@ -1327,6 +1379,7 @@ import {
   getCocktailTimePeriods,
   getCollectionCocktails,
   getCollections,
+  getCurrentSiteMessage,
   getCurrentUser,
   getCocktailTryLogs,
   getTags,
@@ -1348,6 +1401,7 @@ import {
   rejectCocktail,
   removeCocktailFromCollection,
   removeTagFromCocktail,
+  saveAdminCurrentSiteMessage,
   setAuthToken,
   submitCocktailFromText,
   updateCollection,
@@ -1358,6 +1412,8 @@ import 'driver.js/dist/driver.css';
 import releaseNotes from './release_notes.json';
 
 const POPULAR_ONLY_STORAGE_KEY = 'cocktailchooser.popularOnly';
+const SITE_MESSAGE_DISMISSAL_KEY = 'cocktailchooser.dismissedSiteMessageId';
+const SITE_MESSAGE_DISMISSAL_AT_KEY = 'cocktailchooser.dismissedSiteMessageAt';
 const LAST_SEEN_WHATS_NEW_VERSION_STORAGE_KEY = 'cocktailchooser.lastSeenWhatsNewVersion';
 const LAST_COMPLETED_ONBOARDING_TOUR_VERSION_STORAGE_KEY = 'cocktailchooser.lastCompletedOnboardingTourVersion';
 const ADVANCED_INGREDIENT_PREVIEW_COUNT = 15;
@@ -1460,6 +1516,9 @@ export default {
       timePeriodOptions: [],
       userCocktailLogs: [],
       currentUser: null,
+      siteMessage: null,
+      dismissedSiteMessageId: '',
+      dismissedSiteMessageAt: '',
 
       selectedUserId: 0,
       selectedCocktailId: 0,
@@ -1537,6 +1596,13 @@ export default {
       adminExportJson: '',
       adminImportJson: '',
       adminImportSummary: null,
+      adminSiteMessageForm: {
+        id: 0,
+        messageText: '',
+        isActive: false
+      },
+      adminSiteMessageBusy: false,
+      adminSiteMessageSavedMessage: '',
       adminView: 'importExport',
       adminBusy: false,
       adminModerationBusy: false,
@@ -2190,6 +2256,22 @@ export default {
 
       return 'Log in or create an account to save My Bar and your cocktail history.';
     },
+    visibleSiteMessage() {
+      if (!this.siteMessage || !this.siteMessage.id) {
+        return null;
+      }
+
+      if (this.dismissedSiteMessageId !== String(this.siteMessage.id)) {
+        return this.siteMessage;
+      }
+
+      const dismissedAt = Date.parse(this.dismissedSiteMessageAt || '');
+      if (Number.isNaN(dismissedAt)) {
+        return this.siteMessage;
+      }
+
+      return (Date.now() - dismissedAt) >= (24 * 60 * 60 * 1000) ? this.siteMessage : null;
+    },
     myBarGuidanceMessage() {
       if (!this.selectedUserId) {
         return 'To see what you can make, add ingredients to My Bar from the menu.';
@@ -2285,6 +2367,8 @@ export default {
         await this.loadAdminMaintenanceData();
       } else if (newView === 'taxonomy') {
         await this.loadAdminTaxonomyData();
+      } else if (newView === 'siteBanner') {
+        await this.loadAdminSiteMessage();
       } else {
         await Promise.all([
           this.loadAdminExportPayload(),
@@ -2296,6 +2380,7 @@ export default {
   async created() {
     this.currentPath = this.getCurrentPath();
     this.restorePopularOnlyPreference();
+    this.restoreDismissedSiteMessage();
     await this.loadInitialData();
   },
   mounted() {
@@ -2532,6 +2617,14 @@ export default {
         this.popularOnly = true;
       }
     },
+    restoreDismissedSiteMessage() {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      this.dismissedSiteMessageId = window.localStorage.getItem(SITE_MESSAGE_DISMISSAL_KEY) || '';
+      this.dismissedSiteMessageAt = window.localStorage.getItem(SITE_MESSAGE_DISMISSAL_AT_KEY) || '';
+    },
     async loadInitialData() {
       this.error = '';
       if (typeof document !== 'undefined') {
@@ -2560,12 +2653,35 @@ export default {
         this.timePeriodOptions = timePeriods;
         this.tagTypes = tagTypes;
         this.tags = tags;
+        await this.loadSiteMessage();
         await this.restoreSession();
         await this.maybeShowWhatsNewModal();
         await this.maybeShowOnboardingTour();
       } catch (err) {
         this.error = this.extractError(err);
       }
+    },
+    async loadSiteMessage() {
+      try {
+        this.siteMessage = await getCurrentSiteMessage();
+      } catch (err) {
+        if (err?.response?.status === 404) {
+          this.siteMessage = null;
+          return;
+        }
+
+        throw err;
+      }
+    },
+    dismissSiteMessage() {
+      if (!this.siteMessage || typeof window === 'undefined') {
+        return;
+      }
+
+      this.dismissedSiteMessageId = String(this.siteMessage.id);
+      this.dismissedSiteMessageAt = new Date().toISOString();
+      window.localStorage.setItem(SITE_MESSAGE_DISMISSAL_KEY, this.dismissedSiteMessageId);
+      window.localStorage.setItem(SITE_MESSAGE_DISMISSAL_AT_KEY, this.dismissedSiteMessageAt);
     },
     getLastSeenWhatsNewVersion() {
       if (typeof window === 'undefined') {
@@ -2820,6 +2936,8 @@ export default {
         this.loadAdminMaintenanceData();
       } else if (this.adminView === 'taxonomy') {
         this.loadAdminTaxonomyData();
+      } else if (this.adminView === 'siteBanner') {
+        this.loadAdminSiteMessage();
       } else {
         if (!this.adminExportJson) {
           this.loadAdminExportPayload();
@@ -2986,6 +3104,11 @@ export default {
 
       if (this.adminView === 'taxonomy') {
         await this.loadAdminTaxonomyData();
+        return;
+      }
+
+      if (this.adminView === 'siteBanner') {
+        await this.loadAdminSiteMessage();
         return;
       }
 
@@ -3226,6 +3349,63 @@ export default {
         this.error = this.extractError(err);
       } finally {
         this.adminBusy = false;
+      }
+    },
+    async loadAdminSiteMessage() {
+      if (!this.isAdminUser) {
+        return;
+      }
+
+      this.error = '';
+      this.adminSiteMessageBusy = true;
+      this.adminSiteMessageSavedMessage = '';
+      try {
+        const payload = await getAdminCurrentSiteMessage();
+        this.adminSiteMessageForm = {
+          id: Number(payload?.id || 0),
+          messageText: payload?.messageText || '',
+          isActive: !!payload?.isActive
+        };
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminSiteMessageBusy = false;
+      }
+    },
+    async saveAdminSiteMessage() {
+      if (!this.isAdminUser) {
+        return;
+      }
+
+      this.error = '';
+      this.adminSiteMessageBusy = true;
+      this.adminSiteMessageSavedMessage = '';
+      try {
+        const payload = await saveAdminCurrentSiteMessage({
+          id: this.adminSiteMessageForm.id || null,
+          messageText: this.adminSiteMessageForm.messageText,
+          isActive: !!this.adminSiteMessageForm.isActive
+        });
+
+        this.adminSiteMessageForm = {
+          id: Number(payload?.id || 0),
+          messageText: payload?.messageText || '',
+          isActive: !!payload?.isActive
+        };
+
+        this.dismissedSiteMessageId = '';
+        this.dismissedSiteMessageAt = '';
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem(SITE_MESSAGE_DISMISSAL_KEY);
+          window.localStorage.removeItem(SITE_MESSAGE_DISMISSAL_AT_KEY);
+        }
+
+        await this.loadSiteMessage();
+        this.adminSiteMessageSavedMessage = 'Banner saved.';
+      } catch (err) {
+        this.error = this.extractError(err);
+      } finally {
+        this.adminSiteMessageBusy = false;
       }
     },
     async importAdminPayload() {
@@ -4229,6 +4409,40 @@ body {
 .top-nav-link:focus-visible {
   background: #fff;
   color: #084766;
+}
+
+.site-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #f0c780;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 247, 221, 0.97), rgba(255, 255, 255, 0.94));
+  box-shadow: 0 10px 24px rgba(63, 46, 15, 0.08);
+}
+
+.site-banner-copy {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.site-banner-copy strong {
+  color: #8a5a00;
+}
+
+.site-banner-dismiss {
+  border: none;
+  background: transparent;
+  color: #8a5a00;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0.1rem 0.25rem;
 }
 
 .info-bar {
@@ -5315,6 +5529,10 @@ button:disabled {
 
   .hero-top {
     display: block;
+  }
+
+  .site-banner {
+    align-items: flex-start;
   }
 
   .my-bar-inline-hint {
