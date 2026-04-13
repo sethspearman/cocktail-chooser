@@ -14,7 +14,8 @@ Scope guard:
 - SQLite (default database)
 - Dapper (preferred ORM)
 - VueJS frontend (TypeScript preferred)
-- MAUI is a possible future client (after the core web experience is stable)
+- Mobile direction: Capacitor wrapper around the existing Vue app for the first iOS/Android release
+- `CocktailChooser.Maui` remains an exploratory prototype, not the current mobile delivery path
 
 Architecture preferences:
 - Constructor injection
@@ -43,6 +44,10 @@ Future:
 - Save favorites
 - Smart recommendations
 - Mobile app client
+
+Mobile architecture decision:
+
+- See `docs/mobile-app-architecture.md`
 
 ## Database Notes
 

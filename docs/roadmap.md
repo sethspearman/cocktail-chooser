@@ -31,3 +31,15 @@ Scope guard: This roadmap is for a smart tool for casual home bartenders. It pri
 - [ ] Improve recipe quantity readability (Unicode quantity display) (#36)
 - [ ] Remove UI deprecation warnings (#19)
 - [ ] Replace/reshape "Novice Mode" into lightweight onboarding or better defaults, if still needed (#41)
+
+---
+
+## Phase 4 -- Mobile App
+
+**Outcome:** CocktailChooser ships as an installable iPhone and Android app without splitting the product across multiple frontend codebases too early.
+
+- [ ] Finalize wrapper-first mobile architecture decision (#102)
+- [ ] Package the Vue app for iOS and Android via Capacitor (#101)
+- [ ] Add mobile environment configuration for API targets
+- [ ] Audit and improve core phone-sized flows: browse, My Bar, detail, logging, onboarding
+- [ ] Define post-v1 criteria for deeper native features before considering a rewrite

@@ -1,0 +1,13 @@
+{
+  "appId": "com.cocktailchooser.mobile",
+  "appName": "Cocktail Chooser",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

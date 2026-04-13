@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Cocktail Chooser</string>
+    <string name="title_activity_main">Cocktail Chooser</string>
+    <string name="package_name">com.cocktailchooser.mobile</string>
+    <string name="custom_url_scheme">com.cocktailchooser.mobile</string>
+</resources>
