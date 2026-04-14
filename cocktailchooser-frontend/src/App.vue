@@ -38,7 +38,7 @@
               <div class="subtle">{{ currentUser ? 'Signed in' : 'Sign in or create an account to save My Bar' }}</div>
             </div>
           </div>
-          <div class="menu-actions">
+          <div class="menu-actions menu-primary-actions">
             <button type="button" class="menu-button" @click="openAccountModal(currentUser ? 'overview' : 'login')">
               {{ currentUser ? 'Account' : 'Log in / Create account' }}
             </button>
@@ -51,14 +51,10 @@
             <button v-if="isAdminUser" type="button" class="menu-button" @click="openAdminModal">Admin</button>
             <button type="button" class="menu-button" @click="openAddCocktailModal">Add a Cocktail</button>
             <button type="button" class="menu-button" @click="openMyBarModal">My Bar Checklist</button>
-            <a
-              :href="BLOG_URL"
-              class="menu-button menu-link-button"
-              target="_blank"
-              rel="noopener noreferrer">
-              Blog
-            </a>
-            <a v-if="developerContactAction" :href="developerContactAction.href" class="menu-button menu-link-button">
+          </div>
+          <div v-if="developerContactAction" class="menu-secondary-actions">
+            <span class="menu-section-label">Need help?</span>
+            <a :href="developerContactAction.href" class="menu-button menu-link-button menu-secondary-link">
               {{ developerContactAction.label }}
             </a>
           </div>
@@ -150,20 +146,24 @@
             type="button"
             class="menu-button advanced-toggle-button"
             data-tour="advanced-filters-button"
-            :title="advancedFiltersOpen ? 'Advanced Filters (Hide)' : 'Advanced Filters (Show)'"
-            :aria-label="advancedFiltersOpen ? 'Hide Advanced Filters' : 'Show Advanced Filters'"
+            :title="advancedFiltersOpen ? 'Close Filters' : 'Open Filters'"
+            :aria-label="advancedFiltersOpen ? 'Close Filters' : 'Open Filters'"
             @click="toggleAdvancedFilters">
             <span class="advanced-toggle-chevron" aria-hidden="true">{{ advancedFiltersOpen ? '❮❮' : '❯❯' }}</span>
+            <span class="advanced-toggle-label">{{ advancedFiltersOpen ? 'Close Filters' : 'Open Filters' }}</span>
             <svg class="advanced-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" />
             </svg>
           </button>
-          <label class="toolbar-checkbox">
+          <label class="toolbar-checkbox toolbar-primary-toggle">
             <input v-model="onlyCocktailsICanMake" type="checkbox" />
-            Only Cocktails I Can Make
+            <span class="toolbar-primary-toggle-copy">
+              <strong>Only cocktails I can make</strong>
+              <span class="subtle">Hide drinks that need ingredients I do not have.</span>
+            </span>
           </label>
-          <div class="search-input-wrap">
-            <input v-model.trim="cocktailSearch" placeholder="Search cocktails" />
+          <div class="search-input-wrap toolbar-search-wrap">
+            <input v-model.trim="cocktailSearch" placeholder="Search cocktails by name" />
             <button
               v-if="cocktailSearch"
               type="button"
@@ -178,12 +178,14 @@
             <option v-for="spirit in spirits" :key="spirit" :value="spirit">{{ spirit }}</option>
           </select>
           <input
+            class="toolbar-ingredient-input"
             v-model.trim="ingredientFilterSearch"
             list="cocktail-ingredient-filter-options"
             @change="addSelectedIngredientFilter"
             @keyup.enter.prevent="addSelectedIngredientFilter"
-            placeholder="Find Ingredient..." />
+            placeholder="Quick ingredient filter..." />
           <button
+            class="toolbar-primary-action"
             :disabled="effectiveMode !== 'CAN_MAKE' || filteredMakeableCocktails.length === 0"
             @click="pickRandomMakeableCocktail">
             Pick One for Me
@@ -320,7 +322,7 @@
       </div>
     </section>
 
-    <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="shouldShowGlobalError" class="error">{{ error }}</p>
 
     <div v-if="advancedFiltersOpen && !isMyCocktailsRoute" class="advanced-filters-overlay" @click="closeAdvancedFilters"></div>
     <aside v-if="advancedFiltersOpen && !isMyCocktailsRoute" class="advanced-filters-drawer open" aria-label="Advanced Filters" @click.stop>
@@ -332,7 +334,7 @@
           aria-label="Hide Advanced Filters"
           @click="closeAdvancedFilters">
           <span class="menu-button advanced-collapse-button" aria-hidden="true">❮❮</span>
-          <strong>Advanced Filters</strong>
+          <strong>Close Filters</strong>
         </button>
         <div class="menu-actions advanced-header-actions">
           <button type="button" class="menu-button" @click="resetAllFilters">Reset All Filters</button>
@@ -821,6 +823,7 @@ Steps:
             <div class="auth-stack">
               <input v-model.trim="loginForm.email" type="email" placeholder="Email" />
               <input v-model="loginForm.password" type="password" placeholder="Password" />
+              <p v-if="accountErrorMessage && accountMenuView === 'login'" class="error account-error">{{ accountErrorMessage }}</p>
               <button :disabled="!canLogin" @click="loginUser">Log in</button>
             </div>
           </div>
@@ -831,6 +834,7 @@ Steps:
               <input v-model.trim="registerForm.displayName" placeholder="Display name" />
               <input v-model.trim="registerForm.email" type="email" placeholder="Email" />
               <input v-model="registerForm.password" type="password" placeholder="Password (8+ chars)" />
+              <p v-if="accountErrorMessage && accountMenuView === 'register'" class="error account-error">{{ accountErrorMessage }}</p>
               <button :disabled="!canRegister" @click="registerUser">Create account</button>
             </div>
           </div>
@@ -2255,6 +2259,16 @@ export default {
       }
 
       return 'Log in or create an account to save My Bar and your cocktail history.';
+    },
+    accountErrorMessage() {
+      if (this.activeModal === 'account' && !this.currentUser) {
+        return this.error;
+      }
+
+      return '';
+    },
+    shouldShowGlobalError() {
+      return Boolean(this.error) && !this.accountErrorMessage;
     },
     visibleSiteMessage() {
       if (!this.siteMessage || !this.siteMessage.id) {
@@ -4359,6 +4373,10 @@ export default {
   --muted: #54656f;
   --accent: #13795b;
   --accent-soft: #e8f8f2;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
 }
 
 * {
@@ -4372,10 +4390,24 @@ body {
   background: var(--bg);
 }
 
+html,
+body,
+#app {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 .app-shell {
+  width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 1.25rem;
+  padding:
+    calc(1rem + var(--safe-area-top))
+    calc(1rem + var(--safe-area-right))
+    calc(1.25rem + var(--safe-area-bottom))
+    calc(1rem + var(--safe-area-left));
+  overflow-x: clip;
 }
 
 .menu-overlay {
@@ -4390,6 +4422,8 @@ body {
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.45rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .top-nav-link {
@@ -4422,6 +4456,8 @@ body {
   border-radius: 14px;
   background: linear-gradient(135deg, rgba(255, 247, 221, 0.97), rgba(255, 255, 255, 0.94));
   box-shadow: 0 10px 24px rgba(63, 46, 15, 0.08);
+  width: 100%;
+  max-width: 100%;
 }
 
 .site-banner-copy {
@@ -4447,7 +4483,7 @@ body {
 
 .info-bar {
   position: sticky;
-  top: 0;
+  top: var(--safe-area-top);
   z-index: 10;
   display: grid;
   grid-template-columns: repeat(4, minmax(140px, 1fr));
@@ -4486,6 +4522,8 @@ body {
 
 .hero {
   margin-bottom: 1rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .my-bar-inline-hint {
@@ -4537,6 +4575,8 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(260px, 1fr));
   gap: 1rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .panel {
@@ -4545,6 +4585,10 @@ body {
   border-radius: 14px;
   backdrop-filter: blur(5px);
   padding: 1rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .wide {
@@ -4569,6 +4613,8 @@ body {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  width: 100%;
+  min-width: 0;
 }
 
 .toolbar-checkbox {
@@ -4595,14 +4641,55 @@ body {
   margin: 0;
 }
 
+.toolbar-primary-toggle {
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(247, 251, 253, 0.96);
+  color: var(--text);
+}
+
+.toolbar-primary-toggle-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.toolbar-primary-toggle-copy strong {
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.toolbar-primary-toggle .subtle {
+  line-height: 1.35;
+}
+
+.toolbar-primary-action {
+  background: linear-gradient(135deg, #e6f7f2, #f0fbf8);
+  border-color: #c8ebe0;
+  font-weight: 700;
+}
+
+.toolbar-search-wrap,
+.toolbar-search-wrap input,
+.toolbar-ingredient-input {
+  width: 100%;
+}
+
 .search-input-wrap {
   position: relative;
   display: inline-flex;
   align-items: center;
+  min-width: 0;
 }
 
 .search-input-wrap input {
   padding-right: 2rem;
+  min-width: 0;
 }
 
 .search-clear-btn {
@@ -4645,6 +4732,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .advanced-filters-drawer.open {
@@ -4656,12 +4744,13 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.75rem;
+  padding: calc(0.75rem + var(--safe-area-top)) calc(0.75rem + var(--safe-area-right)) 0.75rem 0.75rem;
   border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
   z-index: 2;
   background: rgba(255, 255, 255, 0.98);
+  flex-wrap: wrap;
 }
 
 .advanced-collapse-button {
@@ -4690,6 +4779,7 @@ body {
 .advanced-filters-body {
   padding: 0.75rem;
   overflow-y: visible;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -4700,6 +4790,7 @@ body {
   border-radius: 10px;
   padding: 0.55rem;
   background: #fff;
+  min-width: 0;
 }
 
 .advanced-group .toolbar-checkbox {
@@ -4729,6 +4820,10 @@ body {
 
 .advanced-header-actions {
   justify-content: flex-end;
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .advanced-ingredient-search {
@@ -4897,6 +4992,31 @@ button:disabled {
   margin-bottom: 0.65rem;
 }
 
+.menu-primary-actions {
+  margin-top: 0.2rem;
+}
+
+.menu-secondary-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(212, 222, 234, 0.9);
+}
+
+.menu-section-label {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.menu-secondary-link {
+  color: #0b5a85;
+}
+
 .account-summary {
   display: flex;
   flex-direction: column;
@@ -4925,6 +5045,12 @@ button:disabled {
   letter-spacing: -0.03em;
   min-width: 1.5rem;
   text-align: center;
+}
+
+.advanced-toggle-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
 }
 
 .advanced-toggle-icon {
@@ -4983,6 +5109,11 @@ button:disabled {
   font-size: 0.82rem;
 }
 
+.account-error {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -4990,7 +5121,11 @@ button:disabled {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 0.75rem 1rem;
+  padding:
+    calc(0.75rem + var(--safe-area-top))
+    calc(1rem + var(--safe-area-right))
+    calc(0.75rem + var(--safe-area-bottom))
+    calc(1rem + var(--safe-area-left));
   z-index: 40;
   overflow-y: auto;
 }
@@ -5002,8 +5137,9 @@ button:disabled {
   border-radius: 16px;
   box-shadow: 0 18px 42px rgba(21, 37, 48, 0.18);
   padding: 1rem;
-  max-height: calc(100dvh - 1.5rem);
+  max-height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom) - 1.5rem);
   overflow-y: auto;
+  overflow-x: hidden;
   margin-top: 0;
 }
 
@@ -5101,6 +5237,7 @@ button:disabled {
   justify-content: space-between;
   gap: 0.5rem;
   margin-bottom: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .modal-header h2 {
@@ -5507,6 +5644,11 @@ button:disabled {
 }
 
 @media (max-width: 900px) {
+  .app-shell {
+    padding-left: max(0.5rem, calc(0.5rem + var(--safe-area-left)));
+    padding-right: max(0.5rem, calc(0.5rem + var(--safe-area-right)));
+  }
+
   .advanced-filters-drawer {
     width: 100vw;
     max-width: 100vw;
@@ -5531,8 +5673,29 @@ button:disabled {
     display: block;
   }
 
+  .hero h1 {
+    font-size: clamp(2.25rem, 10vw, 3.25rem);
+    line-height: 0.96;
+    letter-spacing: -0.03em;
+  }
+
+  .hero p {
+    margin-top: 0.65rem;
+    max-width: 18rem;
+    font-size: 1rem;
+    line-height: 1.45;
+  }
+
   .site-banner {
     align-items: flex-start;
+    border-radius: 18px;
+    padding: 0.85rem 0.95rem;
+  }
+
+  .site-banner-dismiss {
+    align-self: flex-start;
+    padding: 0.25rem 0.35rem;
+    font-size: 1.4rem;
   }
 
   .my-bar-inline-hint {
@@ -5548,22 +5711,122 @@ button:disabled {
     justify-content: flex-start;
   }
 
+  .menu-trigger,
+  .top-nav-link {
+    min-height: 3.25rem;
+    padding-inline: 1rem;
+  }
+
   .app-menu-dropdown {
     left: 0;
     right: auto;
     width: min(24rem, calc(100vw - 2rem));
     max-width: calc(100vw - 2rem);
+    padding: 0.9rem;
+    border-radius: 20px;
   }
 
   .app-menu-dropdown .menu-actions {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.5rem;
   }
 
   .app-menu-dropdown .menu-actions .menu-button,
   .app-menu-dropdown .menu-actions .menu-link-button {
     width: 100%;
     justify-content: center;
+    min-height: 3.15rem;
+    border-radius: 14px;
+  }
+
+  .menu-user-summary {
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(212, 222, 234, 0.9);
+  }
+
+  .menu-user-summary strong {
+    display: block;
+    margin-bottom: 0.08rem;
+  }
+
+  .menu-secondary-actions {
+    margin-top: 0.95rem;
+    gap: 0.55rem;
+  }
+
+  .menu-secondary-link {
+    justify-content: center;
+  }
+
+  .top-nav-row {
+    align-items: stretch;
+    gap: 0.6rem;
+    justify-content: flex-start;
+  }
+
+  .top-nav-row > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .modal-header .menu-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .panel {
+    padding: 0.65rem;
+    border-radius: 18px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .toolbar > * {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .toolbar .search-input-wrap,
+  .toolbar .search-input-wrap input,
+  .toolbar select,
+  .toolbar > input,
+  .toolbar > button,
+  .toolbar .menu-button,
+  .toolbar .advanced-toggle-button {
+    width: 100%;
+  }
+
+  .toolbar > button,
+  .toolbar .menu-button,
+  .toolbar .advanced-toggle-button,
+  .toolbar input,
+  .toolbar select {
+    min-height: 3.25rem;
+  }
+
+  .toolbar-checkbox {
+    width: 100%;
+    padding: 0.15rem 0;
+  }
+
+  .toolbar-primary-toggle {
+    padding: 0.8rem 0.75rem;
+    border-radius: 16px;
+  }
+
+  .toolbar-primary-toggle input[type='checkbox'] {
+    margin-top: 0.25rem;
+  }
+
+  .toolbar-primary-toggle-copy strong {
+    font-size: 1rem;
   }
 
   .match-list {
@@ -5573,6 +5836,70 @@ button:disabled {
 
   .toolbar-checkbox-cluster {
     width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.2rem 0.75rem;
+    padding-top: 0.2rem;
+    border-top: 1px solid rgba(212, 222, 234, 0.8);
+  }
+
+  .advanced-toggle-button {
+    justify-content: space-between;
+    padding-inline: 0.9rem;
+  }
+
+  .advanced-filters-body {
+    padding: 0.8rem 0.65rem calc(1rem + var(--safe-area-bottom));
+    gap: 0.9rem;
+  }
+
+  .advanced-group {
+    padding: 0.8rem 0.75rem;
+    border-radius: 16px;
+  }
+
+  .advanced-group .toolbar-checkbox {
+    font-size: 1.02rem;
+  }
+
+  .advanced-header-actions {
+    width: 100%;
+    justify-content: stretch;
+    margin-left: 0;
+  }
+
+  .advanced-header-actions .menu-button {
+    flex: 1 1 12rem;
+    min-height: 3.1rem;
+  }
+
+  .advanced-collapse-hitarea {
+    min-height: 3rem;
+  }
+
+  .advanced-collapse-hitarea strong {
+    font-size: 1.2rem;
+  }
+
+  .selected-cocktail-actions {
+    width: 100%;
+  }
+
+  .selected-cocktail-actions .menu-button {
+    width: 100%;
+    min-height: 3.1rem;
+  }
+
+  .modal-backdrop {
+    padding-left: max(0.5rem, calc(0.5rem + var(--safe-area-left)));
+    padding-right: max(0.5rem, calc(0.5rem + var(--safe-area-right)));
+  }
+
+  .modal-card,
+  .modal-card-wide,
+  .modal-card-xl {
+    width: 100%;
+    max-width: 100%;
   }
 
   .admin-import-table {
