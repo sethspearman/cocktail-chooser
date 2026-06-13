@@ -90,12 +90,17 @@ export async function createCocktail(payload) {
 }
 
 export async function previewCocktailFromText(payload) {
-  const { data } = await api.post('/cocktails/preview-from-text', payload);
+  const { data } = await api.post('/cocktails/preview-from-text', payload, { timeout: 30000 });
   return data;
 }
 
 export async function submitCocktailFromText(payload) {
   const { data } = await api.post('/cocktails/submit-from-text', payload);
+  return data;
+}
+
+export async function submitCocktailFromPreview(payload) {
+  const { data } = await api.post('/cocktails/submit-from-preview', payload);
   return data;
 }
 

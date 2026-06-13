@@ -24,6 +24,11 @@ public class Startup
         var connectionString = Configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Missing connection string: DefaultConnection");
 
+        services.AddHttpClient("claude", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        services.AddSingleton<IClaudeRecipeParserService, ClaudeRecipeParserService>();
         services.AddControllers();
         services.AddCors(options =>
         {

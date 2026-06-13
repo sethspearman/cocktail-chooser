@@ -623,62 +623,88 @@
           <template v-if="newCocktailForm.mode === 'paste'">
             <textarea
               v-model="newCocktailForm.rawText"
-              rows="14"
-              placeholder="Name:
-Description:
-Ingredients:
-- 2 oz gin
-- 1 oz lemon juice
-Steps:
-1. Add ingredients to shaker with ice
-2. Shake and strain"
+              rows="12"
+              placeholder="Paste a cocktail recipe in any format — from a book, website, or notes app. No special formatting needed."
             ></textarea>
-            <div class="toolbar">
-              <select v-model="newCocktailForm.timePeriodId">
-                <option value="">Time period override (optional)</option>
-                <option v-for="timePeriod in timePeriodOptions" :key="`time-${timePeriod.id}`" :value="timePeriod.id">
-                  {{ timePeriod.name }}
-                </option>
-              </select>
-            </div>
-            <div v-if="addCocktailPreview" ref="addCocktailPreviewSection" class="structured-list">
-              <div class="subheading">Preview</div>
-              <p><strong>Name:</strong> {{ addCocktailPreview.name || 'Missing' }}</p>
-              <p><strong>Description:</strong> {{ addCocktailPreview.description || 'Missing' }}</p>
-              <p v-if="addCocktailPreview.timePeriodName"><strong>Time Period:</strong> {{ addCocktailPreview.timePeriodName }}</p>
-              <p v-if="addCocktailPreview.errors && addCocktailPreview.errors.length">
-                <strong>Validation:</strong> {{ addCocktailPreview.errors.join(' ') }}
-              </p>
-              <div class="subheading">Ingredients</div>
-              <ul>
-                <li
-                  v-for="(ingredient, index) in addCocktailPreview.ingredients || []"
-                  :key="`preview-ingredient-${index}`">
-                  {{ ingredient.name }}
-                  <small v-if="ingredient.isNew">(new)</small>
-                </li>
-              </ul>
-              <div class="subheading">Steps</div>
-              <ol>
-                <li v-for="(step, index) in addCocktailPreview.steps || []" :key="`preview-step-${index}`">
-                  {{ step }}
-                </li>
-              </ol>
-              <p v-if="!selectedUserId" class="subtle">Log in to submit for approval.</p>
-            </div>
             <div class="menu-actions add-cocktail-actions">
               <button
                 type="button"
-                :disabled="!canReviewCocktailPaste || addCocktailPreviewLoading || (addCocktailPreview && addCocktailPreview.isValid && !pasteNeedsReview)"
+                :disabled="!canReviewCocktailPaste || addCocktailPreviewLoading"
                 @click="reviewNewCocktailPaste">
-                {{ addCocktailPreviewLoading ? 'Reviewing...' : (addCocktailPreview && addCocktailPreview.isValid && !pasteNeedsReview ? 'Reviewed' : 'Review') }}
-              </button>
-              <button type="button" :disabled="!canSubmitCocktailPaste || addCocktailSubmitLoading" @click="submitNewCocktailFromPaste">
-                {{ addCocktailSubmitLoading ? 'Submitting...' : 'Submit for Approval' }}
+                {{ addCocktailPreviewLoading ? 'Parsing...' : 'Parse Recipe' }}
               </button>
               <button type="button" class="menu-button" @click="closeActiveModal">Cancel</button>
             </div>
-            <p v-if="submitFromPasteDisabledReason" class="subtle">{{ submitFromPasteDisabledReason }}</p>
+
+            <div v-if="addCocktailPreview" ref="addCocktailPreviewSection" class="structured-list">
+              <div class="subheading">Review &amp; Edit</div>
+
+              <p v-if="addCocktailPreview.warnings && addCocktailPreview.warnings.length" class="subtle">
+                {{ addCocktailPreview.warnings.join(' ') }}
+              </p>
+              <p v-if="addCocktailPreview.errors && addCocktailPreview.errors.length" class="error-text">
+                {{ addCocktailPreview.errors.join(' ') }}
+              </p>
+
+              <label class="field-label">Name</label>
+              <input v-model.trim="addCocktailPreview.name" placeholder="Cocktail name" />
+
+              <label class="field-label">Description</label>
+              <textarea v-model.trim="addCocktailPreview.description" rows="3" placeholder="Description (optional)"></textarea>
+
+              <label class="field-label">Flavor Profile</label>
+              <input v-model.trim="addCocktailPreview.flavorProfile" placeholder="e.g. citrus, bitter, sweet (optional)" />
+
+              <div class="toolbar">
+                <select v-model="newCocktailForm.timePeriodId">
+                  <option value="">Time period (optional)</option>
+                  <option v-for="timePeriod in timePeriodOptions" :key="`time-${timePeriod.id}`" :value="timePeriod.id">
+                    {{ timePeriod.name }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="subheading">Ingredients</div>
+              <div class="structured-list">
+                <div
+                  v-for="(ingredient, index) in addCocktailPreview.ingredients || []"
+                  :key="`preview-ing-${index}`"
+                  :class="['structured-row', ingredient.isNew ? 'with-badge' : '']">
+                  <input
+                    v-model.trim="ingredient.amount"
+                    list="amount-options"
+                    placeholder="Amount" />
+                  <input
+                    v-model.trim="ingredient.name"
+                    list="ingredient-options"
+                    placeholder="Ingredient" />
+                  <small v-if="ingredient.isNew" class="new-badge">new</small>
+                  <button type="button" class="menu-button row-remove" @click="addCocktailPreview.ingredients.splice(index, 1)">Remove</button>
+                </div>
+                <button type="button" class="menu-button add-row-button" @click="addCocktailPreview.ingredients.push({ amount: '', name: '', isNew: true })">Add Ingredient</button>
+              </div>
+
+              <div class="subheading">Steps</div>
+              <div class="structured-list">
+                <div
+                  v-for="(step, index) in addCocktailPreview.steps || []"
+                  :key="`preview-step-${index}`"
+                  class="structured-row structured-step-row">
+                  <input v-model.trim="addCocktailPreview.steps[index]" :placeholder="`Step ${index + 1}`" />
+                  <button type="button" class="menu-button row-remove" @click="addCocktailPreview.steps.splice(index, 1)">Remove</button>
+                </div>
+                <button type="button" class="menu-button add-row-button" @click="addCocktailPreview.steps.push('')">Add Step</button>
+              </div>
+
+              <p v-if="!selectedUserId" class="subtle">Log in to submit for approval.</p>
+
+              <div class="menu-actions add-cocktail-actions">
+                <button type="button" :disabled="!canSubmitCocktailPaste || addCocktailSubmitLoading" @click="submitNewCocktailFromPaste">
+                  {{ addCocktailSubmitLoading ? 'Submitting...' : 'Submit for Approval' }}
+                </button>
+              </div>
+              <p v-if="submitFromPasteDisabledReason" class="subtle">{{ submitFromPasteDisabledReason }}</p>
+            </div>
           </template>
 
           <template v-else>
@@ -1407,7 +1433,7 @@ import {
   removeTagFromCocktail,
   saveAdminCurrentSiteMessage,
   setAuthToken,
-  submitCocktailFromText,
+  submitCocktailFromPreview,
   updateCollection,
   upsertUserInventory
 } from './api';
@@ -2241,11 +2267,15 @@ export default {
       }
 
       if (!this.addCocktailPreview) {
-        return 'Run Review first.';
+        return 'Parse the recipe first.';
       }
 
-      if (!this.addCocktailPreview.isValid) {
-        return 'Fix review errors before submitting.';
+      const name = (this.addCocktailPreview.name || '').trim();
+      const ingredients = (this.addCocktailPreview.ingredients || []).filter((i) => (i.name || '').trim());
+      const steps = (this.addCocktailPreview.steps || []).filter((s) => (s || '').trim());
+
+      if (!name || !ingredients.length || !steps.length) {
+        return 'Name, at least one ingredient, and at least one step are required.';
       }
 
       return '';
@@ -3870,18 +3900,30 @@ export default {
         return;
       }
 
-      if (!this.addCocktailPreview || !this.addCocktailPreview.isValid) {
-        this.error = 'Run Review and fix validation errors before submitting.';
+      if (!this.addCocktailPreview) {
+        this.error = 'Parse the recipe before submitting.';
         return;
       }
+
+      const name = (this.addCocktailPreview.name || '').trim();
+      const ingredients = (this.addCocktailPreview.ingredients || []).filter((i) => (i.name || '').trim());
+      const steps = (this.addCocktailPreview.steps || []).filter((s) => (s || '').trim());
+
+      if (!name) { this.error = 'Name is required.'; return; }
+      if (!ingredients.length) { this.error = 'At least one ingredient is required.'; return; }
+      if (!steps.length) { this.error = 'At least one step is required.'; return; }
 
       this.error = '';
       this.addCocktailSubmitLoading = true;
       try {
-        const created = await submitCocktailFromText({
-          rawText: this.newCocktailForm.rawText,
+        const created = await submitCocktailFromPreview({
+          name,
+          description: (this.addCocktailPreview.description || '').trim() || null,
+          flavorProfile: (this.addCocktailPreview.flavorProfile || '').trim() || null,
+          timePeriodId: this.newCocktailForm.timePeriodId ? Number(this.newCocktailForm.timePeriodId) : (this.addCocktailPreview.matchedTimePeriodId || null),
           cocktailSourceId: Number(this.newCocktailForm.cocktailSourceId),
-          timePeriodIdOverride: this.newCocktailForm.timePeriodId ? Number(this.newCocktailForm.timePeriodId) : null
+          ingredients: ingredients.map((i) => ({ amount: (i.amount || '').trim(), name: i.name.trim() })),
+          steps: steps.map((s) => s.trim())
         });
 
         const [ingredients, cocktailIngredients] = await Promise.all([
@@ -5079,6 +5121,29 @@ button:disabled {
   gap: 0.45rem;
 }
 
+.field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 0.5rem;
+}
+
+.error-text {
+  color: var(--danger, #c0392b);
+  font-size: 0.9rem;
+}
+
+.new-badge {
+  font-size: 0.7rem;
+  background: var(--accent, #2ecc71);
+  color: #fff;
+  border-radius: 3px;
+  padding: 1px 4px;
+  white-space: nowrap;
+}
+
 .structured-list {
   display: flex;
   flex-direction: column;
@@ -5090,6 +5155,10 @@ button:disabled {
   grid-template-columns: minmax(8rem, 11rem) minmax(0, 1fr) auto;
   gap: 0.45rem;
   align-items: center;
+}
+
+.structured-row.with-badge {
+  grid-template-columns: minmax(8rem, 11rem) minmax(0, 1fr) auto auto;
 }
 
 .structured-step-row {

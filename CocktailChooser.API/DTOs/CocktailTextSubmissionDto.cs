@@ -14,6 +14,7 @@ public class CocktailTextSubmitRequestDto
 
 public class CocktailTextIngredientPreviewDto
 {
+    public string Amount { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public bool IsNew { get; set; }
 }
@@ -28,5 +29,23 @@ public class CocktailTextPreviewResponseDto
     public List<CocktailTextIngredientPreviewDto> Ingredients { get; set; } = new();
     public List<string> Steps { get; set; } = new();
     public List<string> Errors { get; set; } = new();
+    public List<string> Warnings { get; set; } = new();
     public bool IsValid => Errors.Count == 0;
+}
+
+public class CocktailTextIngredientSubmitDto
+{
+    public string Amount { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+}
+
+public class CocktailTextSubmitFromPreviewRequestDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? FlavorProfile { get; set; }
+    public int? TimePeriodId { get; set; }
+    public int? CocktailSourceId { get; set; }
+    public List<CocktailTextIngredientSubmitDto> Ingredients { get; set; } = new();
+    public List<string> Steps { get; set; } = new();
 }

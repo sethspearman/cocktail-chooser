@@ -23,6 +23,7 @@ namespace CocktailChooser.API.Services
         Task<CocktailDto> CreateCocktailAsync(CocktailDto cocktailDto, int? createdByUserId = null);
         Task<CocktailTextPreviewResponseDto> PreviewFromTextAsync(CocktailTextPreviewRequestDto requestDto);
         Task<CocktailDto> SubmitFromTextAsync(CocktailTextSubmitRequestDto requestDto, int userId);
+        Task<CocktailDto> SubmitFromPreviewAsync(CocktailTextSubmitFromPreviewRequestDto requestDto, int userId);
         Task<bool> ApproveCocktailAsync(int id, int approvedByUserId);
         Task<bool> RejectCocktailAsync(int id);
         Task<bool> UpdateCocktailAsync(CocktailDto cocktailDto);
