@@ -3926,11 +3926,11 @@ export default {
           steps: steps.map((s) => s.trim())
         });
 
-        const [ingredients, cocktailIngredients] = await Promise.all([
+        const [refreshedIngredients, cocktailIngredients] = await Promise.all([
           getIngredients(),
           getCocktailIngredients()
         ]);
-        this.ingredients = ingredients;
+        this.ingredients = refreshedIngredients;
         this.cocktailIngredients = cocktailIngredients;
 
         await Promise.all([
