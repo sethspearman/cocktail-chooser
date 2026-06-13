@@ -59,7 +59,8 @@ public sealed class ClaudeRecipeParserService : IClaudeRecipeParserService
         "- Each ingredient must have both an amount and a name; if no amount is stated use empty string\n" +
         "- Ingredient names should be title-cased (e.g. Angostura Bitters, Simple Syrup)\n" +
         "- Do not include serving size, yield, or prep time as steps\n" +
-        "- Return only the JSON object, no other text";
+        "- Return only the raw JSON object, no other text\n" +
+        "- Do NOT wrap the JSON in markdown code fences (no ```json or ``` markers)";
 
     public ClaudeRecipeParserService(
         IHttpClientFactory httpClientFactory,
@@ -133,9 +134,11 @@ public sealed class ClaudeRecipeParserService : IClaudeRecipeParserService
             return null;
         }
 
+        var jsonText = ExtractJsonObject(text);
+
         try
         {
-            return JsonSerializer.Deserialize<ClaudeParseResult>(text, new JsonSerializerOptions
+            return JsonSerializer.Deserialize<ClaudeParseResult>(jsonText, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
@@ -145,5 +148,19 @@ public sealed class ClaudeRecipeParserService : IClaudeRecipeParserService
             _logger.LogError(ex, "Failed to deserialize Claude response into a recipe. Model returned: {Text}. Falling back to basic parser.", text);
             return null;
         }
+    }
+
+    // The model sometimes wraps the JSON in a markdown code fence (```json ... ```)
+    // or adds stray prose despite the system prompt. Pull out the JSON object itself.
+    private static string ExtractJsonObject(string text)
+    {
+        var start = text.IndexOf('{');
+        var end = text.LastIndexOf('}');
+        if (start >= 0 && end > start)
+        {
+            return text.Substring(start, end - start + 1);
+        }
+
+        return text.Trim();
     }
 }
