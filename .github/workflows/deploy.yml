@@ -73,6 +73,15 @@ jobs:
       - name: Rsync UI to server staging
         run: rsync -av --delete out/ui/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/cocktailchooser/incoming/ui/
 
+      # Refresh the Anthropic key the API service reads via EnvironmentFile.
+      # Piped over stdin so the secret never appears in the remote process args.
+      - name: Write Anthropic env file to server
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          printf 'Anthropic__ApiKey=%s\n' "$ANTHROPIC_API_KEY" \
+            | ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "umask 077 && cat > /opt/cocktailchooser/anthropic.env"
+
       - name: Run deploy script
         run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "bash /opt/cocktailchooser/deploy.sh"
 

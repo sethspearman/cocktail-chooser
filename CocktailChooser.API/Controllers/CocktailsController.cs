@@ -174,6 +174,25 @@ namespace CocktailChooser.API.Controllers
             }
         }
 
+        [HttpPost("submit-from-preview")]
+        public async Task<ActionResult<CocktailDto>> SubmitFromPreview(CocktailTextSubmitFromPreviewRequestDto requestDto)
+        {
+            if (!_currentUserContext.UserId.HasValue)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var created = await _cocktailService.SubmitFromPreviewAsync(requestDto, _currentUserContext.UserId.Value);
+                return CreatedAtAction(nameof(GetCocktail), new { id = created.Id }, created);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpPost("{id}/approve")]
         public async Task<IActionResult> ApproveCocktail(int id)
         {

@@ -1,9 +1,38 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 
 const AUTH_TOKEN_KEY = 'cocktailchooser.authToken';
+const DEFAULT_BROWSER_API_BASE_URL = '/api';
+const DEFAULT_ANDROID_EMULATOR_API_BASE_URL = 'http://10.0.2.2:5190/api';
+const DEFAULT_IOS_SIMULATOR_API_BASE_URL = 'http://localhost:5190/api';
+
+function getConfiguredApiBaseUrl() {
+  if (process.env.VUE_APP_API_BASE_URL) {
+    return process.env.VUE_APP_API_BASE_URL;
+  }
+
+  if (!Capacitor.isNativePlatform()) {
+    return DEFAULT_BROWSER_API_BASE_URL;
+  }
+
+  if (process.env.VUE_APP_NATIVE_API_BASE_URL) {
+    return process.env.VUE_APP_NATIVE_API_BASE_URL;
+  }
+
+  switch (Capacitor.getPlatform()) {
+  case 'android':
+    return process.env.VUE_APP_ANDROID_API_BASE_URL || DEFAULT_ANDROID_EMULATOR_API_BASE_URL;
+  case 'ios':
+    return process.env.VUE_APP_IOS_API_BASE_URL || DEFAULT_IOS_SIMULATOR_API_BASE_URL;
+  default:
+    return DEFAULT_BROWSER_API_BASE_URL;
+  }
+}
+
+export const API_BASE_URL = getConfiguredApiBaseUrl();
 
 const api = axios.create({
-  baseURL: process.env.VUE_APP_API_BASE_URL || '/api',
+  baseURL: API_BASE_URL,
   timeout: 15000
 });
 
@@ -61,12 +90,17 @@ export async function createCocktail(payload) {
 }
 
 export async function previewCocktailFromText(payload) {
-  const { data } = await api.post('/cocktails/preview-from-text', payload);
+  const { data } = await api.post('/cocktails/preview-from-text', payload, { timeout: 30000 });
   return data;
 }
 
 export async function submitCocktailFromText(payload) {
   const { data } = await api.post('/cocktails/submit-from-text', payload);
+  return data;
+}
+
+export async function submitCocktailFromPreview(payload) {
+  const { data } = await api.post('/cocktails/submit-from-preview', payload);
   return data;
 }
 

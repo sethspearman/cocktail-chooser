@@ -52,6 +52,7 @@ public class CocktailService : ICocktailService
     private readonly IRecipeSourceRepository _recipeSourceRepository;
     private readonly ICocktailTagRepository _cocktailTagRepository;
     private readonly IOcrRecipeParser _recipeParser;
+    private readonly IClaudeRecipeParserService _claudeParser;
 
     public CocktailService(
         ICocktailRepository cocktailRepository,
@@ -61,7 +62,8 @@ public class CocktailService : ICocktailService
         IAmountRepository amountRepository,
         IRecipeSourceRepository recipeSourceRepository,
         ICocktailTagRepository cocktailTagRepository,
-        IOcrRecipeParser recipeParser)
+        IOcrRecipeParser recipeParser,
+        IClaudeRecipeParserService claudeParser)
     {
         _cocktailRepository = cocktailRepository;
         _ingredientRepository = ingredientRepository;
@@ -71,6 +73,7 @@ public class CocktailService : ICocktailService
         _recipeSourceRepository = recipeSourceRepository;
         _cocktailTagRepository = cocktailTagRepository;
         _recipeParser = recipeParser;
+        _claudeParser = claudeParser;
     }
 
     public async Task<IEnumerable<CocktailDto>> GetAllCocktailsAsync(
@@ -412,36 +415,72 @@ public class CocktailService : ICocktailService
 
     public async Task<CocktailTextPreviewResponseDto> PreviewFromTextAsync(CocktailTextPreviewRequestDto requestDto)
     {
-        var draft = ParsePasteDraft(requestDto.RawText);
-        var response = new CocktailTextPreviewResponseDto
-        {
-            Name = draft.Name,
-            Description = draft.Description,
-            FlavorProfile = draft.FlavorProfile,
-            TimePeriodName = draft.TimePeriodName,
-            Steps = draft.Steps
-        };
+        var response = new CocktailTextPreviewResponseDto();
+        List<(string Amount, string Name)> parsedIngredients;
 
-        response.Errors.AddRange(draft.Errors);
-
-        var ingredients = (await _ingredientRepository.GetAllAsync()).ToList();
-        foreach (var ingredientName in draft.Ingredients)
+        var claudeResult = await _claudeParser.ParseAsync(requestDto.RawText);
+        if (claudeResult != null)
         {
-            var exists = FindBestIngredientMatch(ingredientName, ingredients) != null;
+            response.Name = claudeResult.Name;
+            response.Description = claudeResult.Description;
+            response.FlavorProfile = claudeResult.FlavorProfile;
+            response.TimePeriodName = claudeResult.TimePeriod;
+            response.Steps = claudeResult.Steps ?? new List<string>();
+            parsedIngredients = (claudeResult.Ingredients ?? new List<ClaudeIngredient>())
+                .Select(i => (i.Amount ?? string.Empty, i.Name ?? string.Empty))
+                .Where(i => !string.IsNullOrWhiteSpace(i.Item2))
+                .ToList();
+        }
+        else
+        {
+            response.Warnings.Add("AI parsing unavailable — using basic parser. Ensure your text includes Name:, Ingredients:, and Steps: sections.");
+            var draft = ParsePasteDraft(requestDto.RawText);
+            response.Name = draft.Name;
+            response.Description = draft.Description;
+            response.FlavorProfile = draft.FlavorProfile;
+            response.TimePeriodName = draft.TimePeriodName;
+            response.Steps = draft.Steps;
+            response.Errors.AddRange(draft.Errors);
+            parsedIngredients = draft.Ingredients
+                .Select(i => (i.Amount, i.Name))
+                .ToList();
+        }
+
+        if (string.IsNullOrWhiteSpace(response.Name))
+        {
+            response.Errors.Add("Name is required.");
+        }
+
+        if (parsedIngredients.Count == 0)
+        {
+            response.Errors.Add("At least one ingredient is required.");
+        }
+
+        if (response.Steps.Count == 0)
+        {
+            response.Errors.Add("At least one step is required.");
+        }
+
+        var allIngredients = (await _ingredientRepository.GetAllAsync()).ToList();
+        foreach (var (amount, name) in parsedIngredients)
+        {
+            var exists = FindBestIngredientMatch(name, allIngredients) != null;
             response.Ingredients.Add(new CocktailTextIngredientPreviewDto
             {
-                Name = ingredientName,
+                Amount = amount,
+                Name = name,
                 IsNew = !exists
             });
         }
 
-        if (!string.IsNullOrWhiteSpace(draft.TimePeriodName))
+        if (!string.IsNullOrWhiteSpace(response.TimePeriodName))
         {
             var timePeriods = (await _cocktailRepository.GetTimePeriodsAsync()).ToList();
-            var match = timePeriods.FirstOrDefault(x => string.Equals(x.Name, draft.TimePeriodName, StringComparison.OrdinalIgnoreCase));
+            var match = timePeriods.FirstOrDefault(x => string.Equals(x.Name, response.TimePeriodName, StringComparison.OrdinalIgnoreCase));
             if (match == null)
             {
-                response.Errors.Add($"Unknown time period: '{draft.TimePeriodName}'. Choose an existing time period.");
+                response.Warnings.Add($"Time period '{response.TimePeriodName}' not recognized — you can select one manually.");
+                response.TimePeriodName = null;
             }
             else
             {
@@ -464,35 +503,80 @@ public class CocktailService : ICocktailService
             throw new ArgumentException(string.Join(" ", preview.Errors));
         }
 
-        var timePeriodId = requestDto.TimePeriodIdOverride ?? preview.MatchedTimePeriodId;
-        var ingredientLines = preview.Ingredients.Select(x => x.Name).ToList();
-        var stepLines = preview.Steps.ToList();
-        var methodText = stepLines.Count > 0 ? string.Join(". ", stepLines) : null;
+        return await BuildAndCreateFromPreview(
+            name: preview.Name!,
+            description: preview.Description,
+            flavorProfile: preview.FlavorProfile,
+            timePeriodId: requestDto.TimePeriodIdOverride ?? preview.MatchedTimePeriodId,
+            cocktailSourceId: requestDto.CocktailSourceId,
+            ingredients: preview.Ingredients.Select(x => new CocktailTextIngredientSubmitDto { Amount = x.Amount, Name = x.Name }).ToList(),
+            steps: preview.Steps,
+            userId: userId);
+    }
 
+    public async Task<CocktailDto> SubmitFromPreviewAsync(CocktailTextSubmitFromPreviewRequestDto requestDto, int userId)
+    {
+        if (string.IsNullOrWhiteSpace(requestDto.Name))
+        {
+            throw new ArgumentException("Name is required.");
+        }
+
+        if (requestDto.Ingredients == null || requestDto.Ingredients.Count == 0)
+        {
+            throw new ArgumentException("At least one ingredient is required.");
+        }
+
+        if (requestDto.Steps == null || requestDto.Steps.Count == 0)
+        {
+            throw new ArgumentException("At least one step is required.");
+        }
+
+        return await BuildAndCreateFromPreview(
+            name: requestDto.Name,
+            description: requestDto.Description,
+            flavorProfile: requestDto.FlavorProfile,
+            timePeriodId: requestDto.TimePeriodId,
+            cocktailSourceId: requestDto.CocktailSourceId,
+            ingredients: requestDto.Ingredients,
+            steps: requestDto.Steps,
+            userId: userId);
+    }
+
+    private async Task<CocktailDto> BuildAndCreateFromPreview(
+        string name,
+        string? description,
+        string? flavorProfile,
+        int? timePeriodId,
+        int? cocktailSourceId,
+        List<CocktailTextIngredientSubmitDto> ingredients,
+        List<string> steps,
+        int userId)
+    {
+        var methodText = steps.Count > 0 ? string.Join(". ", steps) : null;
+        var ingredientNames = ingredients.Select(x => x.Name).ToList();
         var isAdminSubmission = IsAdminUserId(userId);
         var approvalUtc = isAdminSubmission ? DateTime.UtcNow.ToString("O") : null;
+
         var dto = new CocktailDto
         {
-            Name = preview.Name!,
-            Description = preview.Description,
+            Name = name,
+            Description = description,
             Method = methodText,
-            IngredientLines = ingredientLines.Count > 0 ? string.Join('\n', ingredientLines) : null,
-            StepLines = stepLines.Count > 0 ? string.Join('\n', stepLines) : null,
-            FlavorProfile = preview.FlavorProfile,
-            StructuredIngredients = ingredientLines
+            IngredientLines = ingredientNames.Count > 0 ? string.Join('\n', ingredientNames) : null,
+            StepLines = steps.Count > 0 ? string.Join('\n', steps) : null,
+            FlavorProfile = flavorProfile,
+            StructuredIngredients = ingredients
                 .Select(x => new CocktailIngredientEntryDto
                 {
-                    IngredientName = x
+                    IngredientName = x.Name,
+                    AmountText = string.IsNullOrWhiteSpace(x.Amount) ? null : x.Amount
                 })
                 .ToList(),
-            StructuredSteps = stepLines
-                .Select(x => new CocktailStepEntryDto
-                {
-                    Instruction = x
-                })
+            StructuredSteps = steps
+                .Select(x => new CocktailStepEntryDto { Instruction = x })
                 .ToList(),
             TimePeriodId = timePeriodId,
-            CocktailSourceId = requestDto.CocktailSourceId,
+            CocktailSourceId = cocktailSourceId,
             IsPopular = 0,
             IsApproved = isAdminSubmission ? 1 : 0,
             ApprovedUtc = approvalUtc,
@@ -801,9 +885,10 @@ public class CocktailService : ICocktailService
 
         draft.Ingredients = (sectionLines.TryGetValue("ingredients", out var ingredientLines) ? ingredientLines : new List<string>())
             .Select(CleanListPrefix)
-            .Select(ExtractIngredientNameFromLine)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(ExtractIngredientFromLine)
+            .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+            .GroupBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
             .ToList();
 
         if (draft.Ingredients.Count == 0)
@@ -852,6 +937,29 @@ public class CocktailService : ICocktailService
 
         var joined = string.Join('\n', lines.Select(x => x.Trim()).Where(x => x.Length > 0));
         return string.IsNullOrWhiteSpace(joined) ? null : joined;
+    }
+
+    private static ParsedIngredient ExtractIngredientFromLine(string line)
+    {
+        var trimmed = line.Trim();
+        if (trimmed.Length == 0)
+        {
+            return new ParsedIngredient { Name = trimmed };
+        }
+
+        // Format: "amount, name" (structured mode)
+        var commaIndex = trimmed.IndexOf(',');
+        if (commaIndex >= 0 && commaIndex < trimmed.Length - 1)
+        {
+            return new ParsedIngredient
+            {
+                Amount = trimmed[..commaIndex].Trim(),
+                Name = trimmed[(commaIndex + 1)..].Trim()
+            };
+        }
+
+        // No comma — treat whole line as name, no amount
+        return new ParsedIngredient { Name = ExtractIngredientNameFallback(trimmed) };
     }
 
     private static string ExtractIngredientNameFromLine(string line)
@@ -1364,8 +1472,14 @@ public class CocktailService : ICocktailService
         public string? Description { get; set; }
         public string? FlavorProfile { get; set; }
         public string? TimePeriodName { get; set; }
-        public List<string> Ingredients { get; set; } = new();
+        public List<ParsedIngredient> Ingredients { get; set; } = new();
         public List<string> Steps { get; set; } = new();
         public List<string> Errors { get; } = new();
+    }
+
+    private sealed class ParsedIngredient
+    {
+        public string Amount { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
     }
 }

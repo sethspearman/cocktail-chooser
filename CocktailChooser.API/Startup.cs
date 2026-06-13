@@ -10,6 +10,8 @@ using CocktailChooser.Data.Repositories;
 
 public class Startup
 {
+    private const string DevelopmentClientCorsPolicy = "DevelopmentClientCorsPolicy";
+
     public Startup(IConfiguration configuration)
     {
         Configuration = configuration;
@@ -22,7 +24,21 @@ public class Startup
         var connectionString = Configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Missing connection string: DefaultConnection");
 
+        services.AddHttpClient("claude", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        services.AddSingleton<IClaudeRecipeParserService, ClaudeRecipeParserService>();
         services.AddControllers();
+        services.AddCors(options =>
+        {
+            options.AddPolicy(DevelopmentClientCorsPolicy, policy =>
+            {
+                policy.AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
         {
@@ -102,7 +118,17 @@ public class Startup
         }
 
         app.UseRouting();
-        app.UseHttpsRedirection();
+
+        if (env.IsDevelopment())
+        {
+            app.UseCors(DevelopmentClientCorsPolicy);
+        }
+
+        if (!env.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
+
         app.UseMiddleware<AuthTokenMiddleware>();
         app.UseAuthorization();
         app.UseEndpoints(endpoints =>
