@@ -2327,10 +2327,10 @@ export default {
 
       if (this.nextIngredientRecommendation) {
         const { ingredient, count } = this.nextIngredientRecommendation;
-        return `Update My Bar from the menu. Adding ${ingredient.name} unlocks ${count} more cocktails.`;
+        return `Update My Bar. Adding ${ingredient.name} unlocks ${count} more cocktails.`;
       }
 
-      return 'Update My Bar from the menu.';
+      return 'Update My Bar.';
     }
   },
   watch: {
